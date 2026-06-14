@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { loadData, getCurrentPhase, PHASE_META } from "@/lib/cycle";
 import type { Recommendations } from "@/lib/matcher";
 import Link from "next/link";
@@ -11,6 +12,7 @@ const REC_CARDS = [
 ];
 
 export default function InsightsPage() {
+  const router = useRouter();
   const [recs, setRecs] = useState<Recommendations | null>(null);
   const [phase, setPhase] = useState("follicular");
   const [openScience, setOpenScience] = useState<string | null>(null);
@@ -41,6 +43,17 @@ export default function InsightsPage() {
 
   return (
     <div style={{ minHeight: "100vh", padding: "20px 16px 24px" }}>
+      {/* Back button */}
+      <button onClick={() => router.back()} style={{
+        display: "flex", alignItems: "center", gap: 6, background: "none", border: "none",
+        cursor: "pointer", color: "#6E3482", fontSize: 14, fontWeight: 600,
+        padding: "0 0 14px", fontFamily: "inherit",
+      }}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M19 12H5M12 5l-7 7 7 7" stroke="#6E3482" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        Back
+      </button>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
         <div>
           <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 800, color: "#1C0B2E", letterSpacing: "-.02em" }}>Your Insights</h1>

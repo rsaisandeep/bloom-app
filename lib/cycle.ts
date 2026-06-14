@@ -94,7 +94,13 @@ export function getCurrentPhase(cycles: CycleEntry[]): { phase: Phase; dayOfCycl
 
 export function getAverageCycleLength(cycles: CycleEntry[]): number {
   const completed = cycles.filter((c) => c.cycleLength && c.cycleLength > 0);
-  if (completed.length === 0) return 28;
+  if (completed.length === 0) {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('bloom_cycle_length');
+      if (stored) return parseInt(stored);
+    }
+    return 28;
+  }
   const recent = completed.slice(-6);
   return Math.round(recent.reduce((s, c) => s + (c.cycleLength ?? 28), 0) / recent.length);
 }

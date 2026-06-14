@@ -1,208 +1,250 @@
-"use client";
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { loadData, getCurrentPhase, getPredictions, PHASE_META, type BloomData } from "@/lib/cycle";
+'use client';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import {
+  loadData, getCurrentPhase, getPredictions, getAverageCycleLength,
+  PHASE_META, type Phase, type BloomData,
+} from '@/lib/cycle';
 
-const PHASE_ACCENT: Record<string, string> = {
-  menstrual:  "rgba(249,168,212,0.85)",
-  follicular: "rgba(196,181,253,0.85)",
-  ovulation:  "rgba(253,230,138,0.85)",
-  luteal:     "rgba(165,180,252,0.85)",
+const RING_COLORS: Record<Phase, [string, string]> = {
+  menstrual:  ['#f87171', '#fca5a5'],
+  follicular: ['#a78bfa', '#c4b5fd'],
+  ovulation:  ['#fbbf24', '#fde68a'],
+  luteal:     ['#818cf8', '#a5b4fc'],
 };
 
-const CARD_EASE = "cubic-bezier(.22,.61,.36,1)";
+const DAY_NAMES = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-export default function Home() {
+export default function HomePage() {
   const [data, setData] = useState<BloomData>({ cycles: [], logs: [] });
-  const [mounted, setMounted] = useState(false);
+  const [username, setUsername] = useState('');
 
-  useEffect(() => { setData(loadData()); setMounted(true); }, []);
-
-  const { phase, dayOfCycle } = getCurrentPhase(data.cycles);
-  const meta = PHASE_META[phase];
-  const predictions = getPredictions(data.cycles);
-  const avgLen = predictions?.avgLength ?? 28;
-  const progress = Math.min(360, Math.round((dayOfCycle / avgLen) * 360));
-  const phaseAccent = PHASE_ACCENT[phase];
-  const todayLog = data.logs.find((l) => l.date === new Date().toISOString().split("T")[0]);
+  useEffect(() => {
+    const raw = localStorage.getItem('bloom_session');
+    if (raw) { try { const { username: u } = JSON.parse(raw); setUsername(u || ''); } catch {} }
+    setData(loadData());
+  }, []);
 
   const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+  const { phase, dayOfCycle } = getCurrentPhase(data.cycles);
+  const avgLen = getAverageCycleLength(data.cycles);
+  const predictions = getPredictions(data.cycles);
+  const meta = PHASE_META[phase];
+  const todayLog = data.logs.find(l => l.date === todayStr);
+  const hasCycles = data.cycles.length > 0;
+
+  // Week strip: 3 days before, today, 3 after
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(today); d.setDate(today.getDate() - 3 + i); return d;
   });
 
-  if (!mounted) return null;
+  // Phase ring
+  const R = 50, C = 2 * Math.PI * R;
+  const ringFill = hasCycles ? Math.min(dayOfCycle / avgLen, 1) : 0;
+  const [c1, c2] = RING_COLORS[phase];
+  const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
   return (
-    <div style={{ minHeight: "100vh", padding: "0 0 8px" }}>
+    <div style={{ minHeight: '100vh', padding: '0 16px' }}>
 
-      {/* Header */}
-      <div style={{ padding: "16px 20px 12px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div>
-          <p style={{ margin: 0, fontSize: ".78rem", fontWeight: 600, color: "#8A6A9A", letterSpacing: ".3px" }}>
-            {today.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
-          </p>
-          <h1 style={{ margin: "2px 0 0", fontSize: "1.75rem", fontWeight: 800, color: "#1C0B2E", letterSpacing: "-.02em" }}>
-            Hello 👋
-          </h1>
+      {/* ── Header ── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 0 14px' }}>
+        {/* Hamburger */}
+        <button style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, display: 'flex', flexDirection: 'column', gap: 5 }}>
+          {[0,1,2].map(i => <div key={i} style={{ width: 20, height: 2, background: '#1C0B2E', borderRadius: 2 }} />)}
+        </button>
+
+        <div style={{ textAlign: 'center', flex: 1 }}>
+          <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: '#8A6A9A' }}>Welcome back,</p>
+          <p style={{ margin: '1px 0 0', fontSize: 16, fontWeight: 800, color: '#1C0B2E' }}>{cap(username) || 'there'}!</p>
         </div>
-        <div style={{
-          width: 40, height: 40, borderRadius: "50%",
-          background: "linear-gradient(135deg, #6E3482, #49225B)",
-          boxShadow: "0 4px 16px rgba(110,52,130,0.35), inset 0 1px 0 rgba(255,255,255,0.25)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          color: "#fff", fontWeight: 800, fontSize: ".9rem",
-        }}>B</div>
+
+        {/* Avatar */}
+        <Link href="/profile" style={{
+          width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
+          background: 'linear-gradient(135deg,#6E3482,#A56ABD)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 15, fontWeight: 800, color: '#fff', textDecoration: 'none',
+          boxShadow: '0 4px 12px rgba(110,52,130,0.30)',
+        }}>
+          {username?.[0]?.toUpperCase() || '🌸'}
+        </Link>
       </div>
 
-      {/* Week strip — glass card */}
-      <div style={{ margin: "0 16px 16px" }}>
-        <div className="glass-card" style={{ padding: "12px 14px", borderRadius: 18 }}>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            {weekDays.map((d, i) => {
-              const isToday = d.toDateString() === today.toDateString();
-              const hasLog = data.logs.some((l) => l.date === d.toISOString().split("T")[0]);
-              const dayNames = ["S","M","T","W","T","F","S"];
-              return (
-                <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                  <span style={{ fontSize: ".65rem", fontWeight: 700, color: "#8A6A9A", letterSpacing: ".2px" }}>
-                    {dayNames[d.getDay()]}
-                  </span>
-                  <div style={{
-                    width: 34, height: 34, borderRadius: "50%",
-                    background: isToday ? "linear-gradient(135deg,#6E3482,#49225B)" : "transparent",
-                    color: isToday ? "#fff" : "#1C0B2E",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: ".82rem", fontWeight: 800,
-                    boxShadow: isToday ? "0 4px 12px rgba(110,52,130,0.4), inset 0 1px 0 rgba(255,255,255,0.3)" : "none",
-                    transition: `all .2s ${CARD_EASE}`,
-                  }}>{d.getDate()}</div>
-                  {hasLog && <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#A56ABD" }} />}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+      {/* ── Month label ── */}
+      <p style={{ margin: '0 0 12px', textAlign: 'center', fontSize: 15, fontWeight: 700, color: '#1C0B2E' }}>
+        {MONTHS[today.getMonth()]} {today.getFullYear()}
+      </p>
 
-      {/* Circular day indicator */}
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", margin: "8px 0 20px" }}>
-        <div style={{ position: "relative", width: 210, height: 210 }}>
-          <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", transform: "rotate(-90deg)" }} viewBox="0 0 200 200">
-            <circle cx="100" cy="100" r="88" fill="none" stroke="rgba(165,106,189,0.18)" strokeWidth="13" />
-            <circle cx="100" cy="100" r="88" fill="none" stroke={phaseAccent}
-              strokeWidth="13" strokeDasharray={`${(progress/360)*553} 553`} strokeLinecap="round" />
-          </svg>
-          <div style={{
-            position: "absolute", inset: 16, borderRadius: "50%",
-            background: "var(--glass)", backdropFilter: "var(--blur)", WebkitBackdropFilter: "var(--blur)",
-            border: "1px solid var(--glass-border)",
-            boxShadow: "0 8px 32px rgba(110,52,130,0.12), inset 0 1px 0 rgba(255,255,255,0.6)",
-            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-          }}>
-            <span style={{ fontFamily: "var(--font-outfit)", fontSize: "3.2rem", fontWeight: 800, lineHeight: 1, color: "#1C0B2E", letterSpacing: "-2px" }}>
-              {dayOfCycle}
-            </span>
-            <span style={{ fontSize: ".68rem", fontWeight: 600, color: "#8A6A9A", marginTop: 2, letterSpacing: ".3px" }}>DAY OF CYCLE</span>
-            <span style={{ fontSize: ".88rem", fontWeight: 800, color: "#6E3482", marginTop: 4 }}>{meta.label} Phase</span>
-            <span style={{ fontSize: "1.3rem", marginTop: 2 }}>{meta.emoji}</span>
-          </div>
-        </div>
-        <div style={{ display: "flex", gap: 16, marginTop: 10 }}>
-          {[["#fca5a5","Period"],["#fde68a","Fertile window"]].map(([c,l]) => (
-            <div key={l} style={{ display: "flex", alignItems: "center", gap: 5 }}>
-              <div style={{ width: 8, height: 8, borderRadius: "50%", background: c }} />
-              <span style={{ fontSize: ".7rem", fontWeight: 600, color: "#8A6A9A" }}>{l}</span>
+      {/* ── Week strip ── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
+        {weekDays.map((d, i) => {
+          const isToday = d.toDateString() === today.toDateString();
+          const isPast = d < today && !isToday;
+          const dStr = d.toISOString().split('T')[0];
+          const hasLog = data.logs.some(l => l.date === dStr);
+          return (
+            <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, flex: 1 }}>
+              <div style={{
+                width: 38, height: 38, borderRadius: '50%',
+                background: isToday ? '#1C0B2E' : 'transparent',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 14, fontWeight: isToday ? 700 : 500,
+                color: isToday ? '#fff' : isPast ? '#C4B5D4' : '#1C0B2E',
+                position: 'relative',
+              }}>
+                {d.getDate()}
+                {hasLog && !isToday && (
+                  <div style={{ position: 'absolute', bottom: 2, width: 4, height: 4, borderRadius: '50%', background: '#A56ABD' }} />
+                )}
+              </div>
+              <span style={{ fontSize: 10, fontWeight: isToday ? 700 : 500, color: isToday ? '#6E3482' : '#9CA3AF', letterSpacing: 0.3 }}>
+                {DAY_NAMES[d.getDay()]}
+              </span>
             </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
 
-      {/* Info cards row 1 */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, margin: "0 16px 10px" }}>
-        {[
-          {
-            icon: "🛡️", label: "NEXT PERIOD", labelColor: "#2A8A44", bg: "rgba(232,248,238,0.82)", border: "rgba(100,200,130,0.3)",
-            value: predictions ? (predictions.daysUntilPeriod > 0 ? `${predictions.daysUntilPeriod} days` : "Today") : "—",
-            valueColor: "#166534",
-            sub: predictions ? predictions.nextPeriod.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "Set up cycle",
-          },
-          {
-            icon: "🔮", label: "CURRENT CYCLE", labelColor: "#B85E20", bg: "rgba(255,243,232,0.82)", border: "rgba(224,160,80,0.3)",
-            value: meta.label,
-            valueColor: "#92400e",
-            sub: predictions ? `${predictions.fertileStart.toLocaleDateString("en-US",{month:"short",day:"numeric"})} – ${predictions.fertileEnd.toLocaleDateString("en-US",{month:"short",day:"numeric"})}` : "",
-          },
-        ].map((c, i) => (
-          <div key={i} className="glass-card" style={{ background: c.bg, borderColor: c.border, padding: "14px 14px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-              <span style={{ fontSize: "1rem" }}>{c.icon}</span>
-              <span style={{ fontSize: ".6rem", fontWeight: 800, letterSpacing: ".6px", color: c.labelColor }}>{c.label}</span>
+      {/* ── Cycle status card ── */}
+      <div style={{
+        borderRadius: 24, padding: '20px', marginBottom: 14,
+        background: 'linear-gradient(135deg,#6E3482 0%,#49225B 60%,#2D0F3D 100%)',
+        boxShadow: '0 12px 40px rgba(110,52,130,0.35)',
+        position: 'relative', overflow: 'hidden',
+      }}>
+        {/* shimmer overlay */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg,rgba(255,255,255,0.10) 0%,transparent 55%)', pointerEvents: 'none', borderRadius: 'inherit' }} />
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+          {/* Ring */}
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            <svg width="120" height="120" style={{ display: 'block', transform: 'rotate(-90deg)' }}>
+              <defs>
+                <linearGradient id="phaseGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor={c1} />
+                  <stop offset="100%" stopColor={c2} />
+                </linearGradient>
+              </defs>
+              <circle cx="60" cy="60" r={R} fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="12" />
+              <circle cx="60" cy="60" r={R} fill="none" stroke="url(#phaseGrad)" strokeWidth="12"
+                strokeDasharray={`${C * ringFill} ${C}`} strokeLinecap="round" />
+            </svg>
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', fontWeight: 600, letterSpacing: 0.5 }}>DAY</span>
+              <span style={{ fontSize: 30, color: '#fff', fontWeight: 800, lineHeight: 1.1 }}>
+                {hasCycles ? dayOfCycle : '?'}
+              </span>
             </div>
-            <p style={{ margin: 0, fontSize: "1.15rem", fontWeight: 800, color: c.valueColor, lineHeight: 1.1 }}>{c.value}</p>
-            <p style={{ margin: "3px 0 0", fontSize: ".72rem", fontWeight: 500, color: "#8A6A9A" }}>{c.sub}</p>
           </div>
-        ))}
-      </div>
 
-      {/* Action cards row 2 */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, margin: "0 16px 16px" }}>
-        {/* Log card */}
-        <div className="glass-card tint-pink" style={{ padding: "14px" }}>
-          <p style={{ margin: "0 0 8px", fontSize: ".6rem", fontWeight: 800, letterSpacing: ".5px", color: "#9d174d" }}>🕐 TODAY'S LOG</p>
-          {todayLog ? (
-            <>
-              <p style={{ margin: 0, fontSize: ".92rem", fontWeight: 800, color: "#9d174d" }}>Logged ✓</p>
-              <p style={{ margin: "2px 0 8px", fontSize: ".72rem", color: "#be185d" }}>{todayLog.mood} · {todayLog.energy}</p>
-            </>
-          ) : (
-            <Link href="/log" style={{
-              display: "inline-flex", alignItems: "center", justifyContent: "center",
-              width: 36, height: 36, borderRadius: "50%", marginBottom: 6,
-              background: "linear-gradient(135deg,#6E3482,#49225B)",
-              boxShadow: "0 4px 14px rgba(110,52,130,0.35)",
-              color: "#fff", fontSize: "1.4rem", fontWeight: 700, textDecoration: "none",
-            }}>+</Link>
-          )}
-          <Link href="/log" style={{
-            display: "block", textAlign: "center", fontSize: ".72rem", fontWeight: 700,
-            padding: "7px 0", borderRadius: 12,
-            background: "rgba(255,255,255,0.7)", backdropFilter: "blur(8px)",
-            border: "1px solid rgba(255,255,255,0.7)",
-            color: "#6E3482", textDecoration: "none",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.8)",
-          }}>Log Symptoms</Link>
-        </div>
-
-        {/* About today card */}
-        <div className="glass-card tint-purple" style={{ padding: "14px" }}>
-          <p style={{ margin: "0 0 8px", fontSize: ".6rem", fontWeight: 800, letterSpacing: ".5px", color: "#4c1d95" }}>📸 ABOUT TODAY</p>
-          <span style={{ fontSize: "1.8rem", display: "block", marginBottom: 4 }}>{meta.emoji}</span>
-          <p style={{ margin: 0, fontSize: ".88rem", fontWeight: 800, color: "#1C0B2E" }}>{meta.label} Day {dayOfCycle}</p>
-          <Link href="/insights" style={{
-            display: "block", textAlign: "center", fontSize: ".72rem", fontWeight: 700,
-            marginTop: 8, padding: "7px 0", borderRadius: 12,
-            background: "rgba(255,255,255,0.7)", backdropFilter: "blur(8px)",
-            border: "1px solid rgba(255,255,255,0.7)",
-            color: "#6E3482", textDecoration: "none",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.8)",
-          }}>Read More</Link>
+          {/* Info */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ margin: '0 0 2px', fontSize: 10, color: 'rgba(255,255,255,0.5)', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>CURRENT PHASE</p>
+            <p style={{ margin: '0 0 5px', fontSize: 18, color: '#fff', fontWeight: 800, lineHeight: 1.2 }}>
+              {meta.emoji} {meta.label}
+            </p>
+            <p style={{ margin: '0 0 14px', fontSize: 12, color: 'rgba(255,255,255,0.60)', lineHeight: 1.5 }}>
+              {hasCycles ? meta.description : 'Add your last period date to unlock predictions.'}
+            </p>
+            {hasCycles && predictions ? (
+              <div style={{ background: 'rgba(255,255,255,0.12)', borderRadius: 10, padding: '7px 12px', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 12 }}>🗓</span>
+                <span style={{ fontSize: 12, color: '#fff', fontWeight: 600 }}>
+                  {predictions.daysUntilPeriod > 0 ? `Next period in ${predictions.daysUntilPeriod}d` : 'Period may be due'}
+                </span>
+              </div>
+            ) : !hasCycles ? (
+              <Link href="/onboarding" style={{ display: 'inline-block', background: 'rgba(255,255,255,0.18)', borderRadius: 10, padding: '7px 14px', fontSize: 12, color: '#fff', fontWeight: 700, textDecoration: 'none' }}>
+                Set up cycle →
+              </Link>
+            ) : null}
+          </div>
         </div>
       </div>
 
-      {/* Setup prompt */}
-      {data.cycles.length === 0 && (
-        <div style={{ margin: "0 16px" }} className="glass-card" >
-          <p style={{ margin: "0 0 4px", fontWeight: 800, fontSize: "1rem", color: "#6E3482", textAlign: "center" }}>Set up your cycle 🌸</p>
-          <p style={{ margin: "0 0 14px", fontSize: ".8rem", color: "#8A6A9A", textAlign: "center" }}>Log your last period to unlock predictions</p>
-          <Link href="/log" style={{
-            display: "block", textAlign: "center", fontWeight: 800, fontSize: ".92rem",
-            padding: "13px", borderRadius: 14, color: "#fff", textDecoration: "none",
-            background: "linear-gradient(135deg,#6E3482,#49225B)",
-            boxShadow: "0 8px 24px rgba(110,52,130,0.35), inset 0 1px 0 rgba(255,255,255,0.2)",
-          }}>Start Tracking →</Link>
+      {/* ── Quick stats ── */}
+      {hasCycles && predictions && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
+          <div className="glass-card" style={{ padding: '14px 16px' }}>
+            <p style={{ margin: '0 0 4px', fontSize: 10, fontWeight: 700, color: '#8A6A9A', letterSpacing: 0.8, textTransform: 'uppercase' }}>NEXT CYCLE</p>
+            <p style={{ margin: '0 0 2px', fontSize: 24, fontWeight: 800, color: '#6E3482' }}>{Math.max(predictions.daysUntilPeriod, 0)}d</p>
+            <p style={{ margin: 0, fontSize: 11, color: '#8A6A9A' }}>
+              {predictions.nextPeriod.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            </p>
+          </div>
+          <div className="glass-card" style={{ padding: '14px 16px' }}>
+            <p style={{ margin: '0 0 4px', fontSize: 10, fontWeight: 700, color: '#8A6A9A', letterSpacing: 0.8, textTransform: 'uppercase' }}>VITAL SIGNS</p>
+            <p style={{ margin: '0 0 2px', fontSize: 14, fontWeight: 800, color: '#1C0B2E' }}>Normal</p>
+            <p style={{ margin: 0, fontSize: 11, color: '#8A6A9A' }}>You're in {meta.label} phase</p>
+          </div>
         </div>
       )}
+
+      {/* ── Log Today card ── */}
+      <Link href="/log" style={{ textDecoration: 'none', display: 'block', marginBottom: 12 }}>
+        <div className="glass-card" style={{ padding: '16px 18px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: todayLog ? 10 : 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 20 }}>📝</span>
+              <div>
+                <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#1C0B2E' }}>{todayLog ? "Today's Log" : 'Log Today'}</p>
+                {!todayLog && <p style={{ margin: '1px 0 0', fontSize: 12, color: '#8A6A9A' }}>How are you feeling?</p>}
+              </div>
+            </div>
+            <span style={{ fontSize: 16, color: '#A56ABD' }}>›</span>
+          </div>
+          {todayLog ? (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {([
+                { emoji: '🩸', val: todayLog.flow },
+                { emoji: '😊', val: todayLog.mood },
+                { emoji: '⚡', val: todayLog.energy },
+                { emoji: '💊', val: todayLog.cramps },
+              ] as { emoji: string; val: string | undefined }[]).filter(x => x.val && x.val !== 'none').map((x, i) => (
+                <span key={i} style={{ fontSize: 11, fontWeight: 600, color: '#6E3482', background: 'rgba(110,52,130,0.08)', borderRadius: 8, padding: '4px 10px' }}>
+                  {x.emoji} {x.val}
+                </span>
+              ))}
+              {!todayLog.flow || todayLog.flow === 'none' ? (
+                <span style={{ fontSize: 11, fontWeight: 600, color: '#8A6A9A', background: 'rgba(138,106,154,0.08)', borderRadius: 8, padding: '4px 10px' }}>✓ Logged today</span>
+              ) : null}
+            </div>
+          ) : (
+            <p style={{ margin: 0, fontSize: 13, color: '#8A6A9A', lineHeight: 1.5 }}>
+              Track symptoms for personalized insights →
+            </p>
+          )}
+        </div>
+      </Link>
+
+      {/* ── Insights card ── */}
+      <Link href="/insights" style={{ textDecoration: 'none', display: 'block', marginBottom: 12 }}>
+        <div className="glass-card tint-purple" style={{ padding: '16px 18px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 20 }}>✨</span>
+              <div>
+                <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#1C0B2E' }}>Your Insights</p>
+                <p style={{ margin: '1px 0 0', fontSize: 12, color: '#8A6A9A' }}>
+                  Personalized for {hasCycles ? `${meta.label} phase` : 'you'}
+                </p>
+              </div>
+            </div>
+            <span style={{ fontSize: 16, color: '#A56ABD' }}>›</span>
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+            {['🥗 Food', '🏃 Exercise', '💆 Self-care'].map(label => (
+              <span key={label} style={{ fontSize: 11, fontWeight: 600, color: '#6E3482', background: 'rgba(110,52,130,0.08)', borderRadius: 8, padding: '4px 10px' }}>
+                {label}
+              </span>
+            ))}
+          </div>
+        </div>
+      </Link>
+
     </div>
   );
 }

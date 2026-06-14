@@ -21,7 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-full flex flex-col max-w-md mx-auto relative">
         <AuthGuard>
           <NavWrapper />
-          <main className="flex-1">{children}</main>
+          <main className="flex-1" style={{ paddingBottom: '90px' }}>{children}</main>
         </AuthGuard>
       </body>
     </html>

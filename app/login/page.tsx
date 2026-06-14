@@ -35,13 +35,12 @@ export default function LoginPage() {
           setLoading(false);
           return;
         }
-        // On login, pull existing data from sheet into localStorage
         if (mode === 'login') {
           const dataRes = await apiLoadData(u, password);
           if (dataRes.ok && dataRes.data) saveData(dataRes.data);
         }
         localStorage.setItem('bloom_session', JSON.stringify({ username: u, password }));
-        router.push('/');
+        router.push(mode === 'register' ? '/onboarding' : '/');
       } else {
         // localStorage fallback (no API URL set)
         await new Promise(r => setTimeout(r, 400));
@@ -58,7 +57,7 @@ export default function LoginPage() {
           if (JSON.parse(stored).password !== password) { setMsg({ text: 'Incorrect password.', err: true }); setLoading(false); return; }
         }
         localStorage.setItem('bloom_session', JSON.stringify({ username: u, password }));
-        router.push('/');
+        router.push(mode === 'register' ? '/onboarding' : '/');
       }
     } catch {
       setMsg({ text: 'Network error. Try again.', err: true });

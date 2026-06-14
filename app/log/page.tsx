@@ -44,6 +44,17 @@ export default function LogPage() {
 
   return (
     <div style={{ minHeight: "100vh", padding: "20px 16px 24px" }}>
+      {/* Back button */}
+      <button onClick={() => router.back()} style={{
+        display: "flex", alignItems: "center", gap: 6, background: "none", border: "none",
+        cursor: "pointer", color: "#6E3482", fontSize: 14, fontWeight: 600,
+        padding: "0 0 14px", fontFamily: "inherit",
+      }}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M19 12H5M12 5l-7 7 7 7" stroke="#6E3482" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        Back
+      </button>
       <h1 style={{ margin: "0 0 2px", fontSize: "1.75rem", fontWeight: 800, color: "#1C0B2E", letterSpacing: "-.02em" }}>
         Today's Check-in
       </h1>
