@@ -1,6 +1,10 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { apiLogin, apiRegister, apiLoadData } from '@/lib/api';
+import { saveData } from '@/lib/cycle';
+
+const API_CONFIGURED = !!process.env.NEXT_PUBLIC_BLOOM_API_URL;
 
 export default function LoginPage() {
   const router = useRouter();
@@ -10,7 +14,7 @@ export default function LoginPage() {
   const [msg, setMsg] = useState<{ text: string; err: boolean } | null>(null);
   const [loading, setLoading] = useState(false);
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!username.trim() || !password.trim()) {
       setMsg({ text: 'Fill in all fields.', err: true });
@@ -19,36 +23,47 @@ export default function LoginPage() {
     setLoading(true);
     setMsg({ text: 'Working…', err: false });
 
-    // Small artificial delay for UX feel
-    setTimeout(() => {
-      if (mode === 'register') {
-        const existing = localStorage.getItem(`bloom_user_${username.trim().toLowerCase()}`);
-        if (existing) {
-          setMsg({ text: 'Username already taken.', err: true });
+    const u = username.trim().toLowerCase();
+
+    try {
+      if (API_CONFIGURED) {
+        // Google Sheets backend
+        const fn = mode === 'register' ? apiRegister : apiLogin;
+        const r = await fn(u, password);
+        if (!r.ok) {
+          setMsg({ text: r.error, err: true });
           setLoading(false);
           return;
         }
-        const user = { username: username.trim(), password };
-        localStorage.setItem(`bloom_user_${username.trim().toLowerCase()}`, JSON.stringify(user));
-        localStorage.setItem('bloom_session', JSON.stringify({ username: user.username }));
+        // On login, pull existing data from sheet into localStorage
+        if (mode === 'login') {
+          const dataRes = await apiLoadData(u, password);
+          if (dataRes.ok && dataRes.data) saveData(dataRes.data);
+        }
+        localStorage.setItem('bloom_session', JSON.stringify({ username: u, password }));
         router.push('/');
       } else {
-        const stored = localStorage.getItem(`bloom_user_${username.trim().toLowerCase()}`);
-        if (!stored) {
-          setMsg({ text: 'Account not found. Register first.', err: true });
-          setLoading(false);
-          return;
+        // localStorage fallback (no API URL set)
+        await new Promise(r => setTimeout(r, 400));
+        if (mode === 'register') {
+          if (localStorage.getItem(`bloom_user_${u}`)) {
+            setMsg({ text: 'Username already taken.', err: true });
+            setLoading(false);
+            return;
+          }
+          localStorage.setItem(`bloom_user_${u}`, JSON.stringify({ username: u, password }));
+        } else {
+          const stored = localStorage.getItem(`bloom_user_${u}`);
+          if (!stored) { setMsg({ text: 'Account not found.', err: true }); setLoading(false); return; }
+          if (JSON.parse(stored).password !== password) { setMsg({ text: 'Incorrect password.', err: true }); setLoading(false); return; }
         }
-        const user = JSON.parse(stored);
-        if (user.password !== password) {
-          setMsg({ text: 'Incorrect password.', err: true });
-          setLoading(false);
-          return;
-        }
-        localStorage.setItem('bloom_session', JSON.stringify({ username: user.username }));
+        localStorage.setItem('bloom_session', JSON.stringify({ username: u, password }));
         router.push('/');
       }
-    }, 420);
+    } catch {
+      setMsg({ text: 'Network error. Try again.', err: true });
+      setLoading(false);
+    }
   }
 
   const isReg = mode === 'register';
@@ -102,7 +117,6 @@ export default function LoginPage() {
           position: 'relative',
           overflow: 'hidden',
         }}>
-          {/* shimmer top line */}
           <div style={{
             position: 'absolute', top: 0, left: 0, right: 0, height: 1,
             background: 'linear-gradient(90deg, transparent, rgba(165,106,189,0.6), transparent)',

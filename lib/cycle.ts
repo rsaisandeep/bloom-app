@@ -25,6 +25,11 @@ export interface BloomData {
 
 const STORAGE_KEY = "bloom_data";
 
+// Lazy import to avoid circular deps — sync.ts imports from cycle.ts
+function syncAfterSave() {
+  import('./sync').then(m => m.syncToSheet()).catch(() => {});
+}
+
 export function loadData(): BloomData {
   if (typeof window === "undefined") return { cycles: [], logs: [] };
   try {
@@ -45,6 +50,7 @@ export function saveLog(log: DayLog) {
   if (idx >= 0) data.logs[idx] = log;
   else data.logs.push(log);
   saveData(data);
+  syncAfterSave();
 }
 
 export function startPeriod(date: string) {
@@ -61,6 +67,7 @@ export function startPeriod(date: string) {
   }
   data.cycles.push({ startDate: date });
   saveData(data);
+  syncAfterSave();
 }
 
 export function getCurrentPhase(cycles: CycleEntry[]): { phase: Phase; dayOfCycle: number } {
