@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
 import "./globals.css";
-import TopTabs from "@/components/BottomNav";
+import AuthGuard from "@/components/AuthGuard";
+import NavWrapper from "@/components/NavWrapper";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -18,8 +19,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${outfit.variable} h-full`}>
       <body className="min-h-full flex flex-col max-w-md mx-auto relative">
-        <TopTabs />
-        <main className="flex-1">{children}</main>
+        <AuthGuard>
+          <NavWrapper />
+          <main className="flex-1">{children}</main>
+        </AuthGuard>
       </body>
     </html>
   );
