@@ -48,8 +48,8 @@ function login({ username, password }) {
   const row = findRow(sheet, 1, username.toLowerCase().trim());
   if (!row) return { ok: false, error: 'Account not found.' };
 
-  const storedPassword = row[1];
-  if (storedPassword !== password) return { ok: false, error: 'Incorrect password.' };
+  const storedPassword = String(row[1]);
+  if (storedPassword !== String(password)) return { ok: false, error: 'Incorrect password.' };
 
   return { ok: true, username: row[0] };
 }
