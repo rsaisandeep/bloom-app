@@ -51,14 +51,16 @@ export default function BottomNav() {
   const path = usePathname();
   return (
     <nav style={{
-      position: 'fixed', bottom: 12, left: '50%', transform: 'translateX(-50%)',
+      position: 'fixed',
+      bottom: 'calc(12px + env(safe-area-inset-bottom))',
+      left: '50%', transform: 'translateX(-50%)',
       width: 'calc(100% - 24px)', maxWidth: 424,
-      background: 'rgba(255,255,255,0.62)',
+      background: 'rgba(250,246,252,0.86)',
       backdropFilter: 'blur(34px) saturate(180%)', WebkitBackdropFilter: 'blur(34px) saturate(180%)',
-      border: '1px solid rgba(255,255,255,0.75)',
+      border: '1px solid rgba(255,255,255,0.85)',
       borderRadius: 28,
       zIndex: 200,
-      boxShadow: '0 12px 40px rgba(110,52,130,0.18), inset 0 1px 0 rgba(255,255,255,0.9)',
+      boxShadow: '0 12px 40px rgba(110,52,130,0.20), inset 0 1px 0 rgba(255,255,255,0.95)',
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-around', padding: '10px 6px' }}>
         {TABS.map(({ href, label, Icon }) => {

@@ -6,7 +6,7 @@ import {
   loadData, getCurrentPhase, getPredictions, getAverageCycleLength,
   PHASE_META, type Phase, type BloomData,
 } from '@/lib/cycle';
-import type { Recommendations } from '@/lib/matcher';
+import { getActionItems } from '@/lib/actions';
 import { fetchFromSheet } from '@/lib/data';
 import Hamburger from '@/components/Hamburger';
 
@@ -31,23 +31,28 @@ export default function HomePage() {
   const router = useRouter();
   const [data, setData] = useState<BloomData>({ cycles: [], logs: [] });
   const [username, setUsername] = useState('');
-  const [recs, setRecs] = useState<Recommendations | null>(null);
+  const [done, setDone] = useState<number[]>([]);
+
+  const todayKey = new Date().toISOString().split('T')[0];
 
   useEffect(() => {
     const raw = localStorage.getItem('bloom_session');
     if (raw) { try { const { username: u } = JSON.parse(raw); setUsername(u || ''); } catch {} }
     setData(loadData());
-    fetchFromSheet().then((d) => {
-      setData(d);
-      const { phase: p } = getCurrentPhase(d.cycles);
-      const todayStr = new Date().toISOString().split('T')[0];
-      const todayLog = d.logs.find((l) => l.date === todayStr);
-      fetch('/api/recommendations', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phase: p, log: todayLog ?? {} }),
-      }).then((r) => r.json()).then(setRecs).catch(() => {});
+    fetchFromSheet().then(setData);
+    try {
+      const saved = localStorage.getItem(`bloom_actions_${todayKey}`);
+      if (saved) setDone(JSON.parse(saved));
+    } catch {}
+  }, [todayKey]);
+
+  function toggleDone(i: number) {
+    setDone((prev) => {
+      const next = prev.includes(i) ? prev.filter((x) => x !== i) : [...prev, i];
+      localStorage.setItem(`bloom_actions_${todayKey}`, JSON.stringify(next));
+      return next;
     });
-  }, []);
+  }
 
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0];
@@ -67,12 +72,8 @@ export default function HomePage() {
   const [c1, c2] = RING_COLORS[phase];
   const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-  // Actionable items derived from recommendations
-  const actions = recs ? [
-    { emoji: '🥗', text: recs.food.text, tint: 'rgba(232,248,238,0.7)', accent: '#166534' },
-    { emoji: '🏃', text: recs.exercise.text, tint: 'rgba(237,233,255,0.7)', accent: '#4c1d95' },
-    { emoji: '💆', text: recs.selfcare.text, tint: 'rgba(252,232,240,0.7)', accent: '#9d174d' },
-  ] : [];
+  // Predefined reminder-style action items based on phase + today's symptoms
+  const actions = getActionItems(phase, todayLog);
 
   function logout() {
     localStorage.removeItem('bloom_session');
@@ -182,36 +183,58 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* ── Today's focus — actionable items ── */}
+      {/* ── Today's focus — checkable reminders ── */}
       <div className="anim-rise" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '6px 2px 10px' }}>
-        <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#1C0B2E' }}>Today&apos;s focus</p>
+        <div>
+          <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#1C0B2E' }}>Today&apos;s focus</p>
+          <p style={{ margin: '1px 0 0', fontSize: 12, color: '#8A6A9A' }}>
+            {done.length}/{actions.length} done · {meta.label} phase
+          </p>
+        </div>
         <Link href={todayLog ? '/reports' : '/log'} style={{ fontSize: 12, fontWeight: 700, color: '#A56ABD', textDecoration: 'none' }}>
           {todayLog ? 'See report ›' : 'Log to refine ›'}
         </Link>
       </div>
 
-      {actions.length > 0 ? (
-        <div className="stagger" style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
-          {actions.map((a, i) => (
-            <div key={i} className="glass-card" style={{
-              background: a.tint, padding: '14px 16px',
-              display: 'flex', alignItems: 'flex-start', gap: 12,
+      <div className="glass-card stagger" style={{ padding: '6px 8px', marginBottom: 14 }}>
+        {actions.map((a, i) => {
+          const isDone = done.includes(i);
+          return (
+            <button key={i} onClick={() => toggleDone(i)} style={{
+              width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+              padding: '12px 10px', background: 'none', border: 'none', cursor: 'pointer',
+              borderBottom: i < actions.length - 1 ? '1px solid rgba(165,106,189,0.12)' : 'none',
+              textAlign: 'left', fontFamily: 'var(--font-outfit)',
             }}>
+              <span style={{ fontSize: 22, flexShrink: 0, opacity: isDone ? 0.45 : 1, transition: 'opacity .2s' }}>{a.icon}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{
+                  margin: 0, fontSize: 14, fontWeight: 700,
+                  color: isDone ? '#A99BB5' : '#1C0B2E',
+                  textDecoration: isDone ? 'line-through' : 'none', transition: 'all .2s',
+                }}>{a.title}</p>
+                <p style={{ margin: '1px 0 0', fontSize: 12, color: '#8A6A9A', textDecoration: isDone ? 'line-through' : 'none' }}>{a.sub}</p>
+              </div>
+              {/* Checkbox */}
               <div style={{
-                width: 36, height: 36, borderRadius: 12, flexShrink: 0,
-                background: 'rgba(255,255,255,0.7)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
-              }}>{a.emoji}</div>
-              <p style={{ margin: 0, fontSize: 13.5, fontWeight: 600, color: '#1C0B2E', lineHeight: 1.5, paddingTop: 2 }}>{a.text}</p>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="glass-card anim-rise" style={{ padding: '18px', textAlign: 'center', marginBottom: 14 }}>
-          <div style={{ fontSize: 30, animation: 'breathe 1.6s ease-in-out infinite' }}>🌸</div>
-          <p style={{ margin: '8px 0 0', fontSize: 13, color: '#8A6A9A' }}>Loading your personalized focus…</p>
-        </div>
-      )}
+                width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
+                border: isDone ? 'none' : '2px solid rgba(165,106,189,0.45)',
+                background: isDone ? 'linear-gradient(135deg,#6E3482,#A56ABD)' : 'transparent',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'all .25s cubic-bezier(.34,1.56,.64,1)',
+                transform: isDone ? 'scale(1.08)' : 'scale(1)',
+                boxShadow: isDone ? '0 4px 12px rgba(110,52,130,0.35)' : 'none',
+              }}>
+                {isDone && (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <path d="M5 13l4 4L19 7" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </div>
+            </button>
+          );
+        })}
+      </div>
 
       {/* ── Log Today card ── */}
       <Link href="/log" style={{ textDecoration: 'none', display: 'block', marginBottom: 12 }}>
