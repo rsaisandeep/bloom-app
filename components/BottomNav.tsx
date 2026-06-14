@@ -2,81 +2,80 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-function HomeIcon({ active }: { active: boolean }) {
-  const c = active ? '#6E3482' : '#9CA3AF';
+function CycleIcon({ c }: { c: string }) {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-      <path d="M3 9.5L12 3L21 9.5V20C21 20.55 20.55 21 20 21H15V15H9V21H4C3.45 21 3 20.55 3 20V9.5Z"
-        stroke={c} strokeWidth="1.8" strokeLinejoin="round"
-        fill={active ? 'rgba(110,52,130,0.12)' : 'none'} />
+      <path d="M21 12a9 9 0 1 1-3.6-7.2" stroke={c} strokeWidth="1.9" strokeLinecap="round" />
+      <path d="M21 4v4h-4" stroke={c} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="12" cy="12" r="2.4" fill={c} />
     </svg>
   );
 }
-
-function CalendarIcon({ active }: { active: boolean }) {
-  const c = active ? '#6E3482' : '#9CA3AF';
+function CalendarIcon({ c }: { c: string }) {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-      <rect x="3" y="4" width="18" height="18" rx="3"
-        stroke={c} strokeWidth="1.8"
-        fill={active ? 'rgba(110,52,130,0.12)' : 'none'} />
-      <line x1="16" y1="2" x2="16" y2="6" stroke={c} strokeWidth="1.8" strokeLinecap="round" />
-      <line x1="8" y1="2" x2="8" y2="6" stroke={c} strokeWidth="1.8" strokeLinecap="round" />
-      <line x1="3" y1="10" x2="21" y2="10" stroke={c} strokeWidth="1.8" />
+      <rect x="3" y="4.5" width="18" height="16.5" rx="4" stroke={c} strokeWidth="1.9" />
+      <line x1="3" y1="9.5" x2="21" y2="9.5" stroke={c} strokeWidth="1.9" />
+      <line x1="8" y1="2.5" x2="8" y2="6" stroke={c} strokeWidth="1.9" strokeLinecap="round" />
+      <line x1="16" y1="2.5" x2="16" y2="6" stroke={c} strokeWidth="1.9" strokeLinecap="round" />
     </svg>
   );
 }
-
-function ProfileIcon({ active }: { active: boolean }) {
-  const c = active ? '#6E3482' : '#9CA3AF';
+function ReportsIcon({ c }: { c: string }) {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="8" r="4" stroke={c} strokeWidth="1.8"
-        fill={active ? 'rgba(110,52,130,0.12)' : 'none'} />
-      <path d="M4 20C4 16.69 7.58 14 12 14C16.42 14 20 16.69 20 20"
-        stroke={c} strokeWidth="1.8" strokeLinecap="round" />
+      <rect x="3" y="3" width="18" height="18" rx="5" stroke={c} strokeWidth="1.9" />
+      <line x1="8" y1="15" x2="8" y2="11" stroke={c} strokeWidth="2.2" strokeLinecap="round" />
+      <line x1="12" y1="15" x2="12" y2="8" stroke={c} strokeWidth="2.2" strokeLinecap="round" />
+      <line x1="16" y1="15" x2="16" y2="12.5" stroke={c} strokeWidth="2.2" strokeLinecap="round" />
+    </svg>
+  );
+}
+function ReadIcon({ c }: { c: string }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <path d="M4 5.5C4 4.7 4.7 4 5.5 4H11v15H5.5C4.7 19 4 18.3 4 17.5V5.5Z" stroke={c} strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M20 5.5C20 4.7 19.3 4 18.5 4H13v15h5.5c.8 0 1.5-.7 1.5-1.5V5.5Z" stroke={c} strokeWidth="1.8" strokeLinejoin="round" />
     </svg>
   );
 }
 
 const TABS = [
-  { href: '/', label: 'Home', Icon: HomeIcon },
+  { href: '/', label: 'Cycle', Icon: CycleIcon },
   { href: '/calendar', label: 'Calendar', Icon: CalendarIcon },
-  { href: '/profile', label: 'Profile', Icon: ProfileIcon },
+  { href: '/reports', label: 'Reports', Icon: ReportsIcon },
+  { href: '/read', label: 'Read', Icon: ReadIcon },
 ];
 
 export default function BottomNav() {
   const path = usePathname();
   return (
     <nav style={{
-      position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
-      width: '100%', maxWidth: 448,
-      background: 'rgba(255,255,255,0.96)',
-      backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
-      borderTop: '1px solid rgba(165,106,189,0.12)',
+      position: 'fixed', bottom: 12, left: '50%', transform: 'translateX(-50%)',
+      width: 'calc(100% - 24px)', maxWidth: 424,
+      background: 'rgba(255,255,255,0.62)',
+      backdropFilter: 'blur(34px) saturate(180%)', WebkitBackdropFilter: 'blur(34px) saturate(180%)',
+      border: '1px solid rgba(255,255,255,0.75)',
+      borderRadius: 28,
       zIndex: 200,
-      boxShadow: '0 -4px 24px rgba(110,52,130,0.08)',
+      boxShadow: '0 12px 40px rgba(110,52,130,0.18), inset 0 1px 0 rgba(255,255,255,0.9)',
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-around', padding: '10px 0 20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-around', padding: '10px 6px' }}>
         {TABS.map(({ href, label, Icon }) => {
           const active = path === href;
+          const c = active ? '#6E3482' : '#A99BB5';
           return (
             <Link key={href} href={href} style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center',
-              gap: 4, padding: '2px 28px', textDecoration: 'none', position: 'relative',
+              gap: 4, padding: '6px 14px', textDecoration: 'none', position: 'relative',
+              borderRadius: 18,
+              background: active ? 'linear-gradient(135deg,rgba(165,106,189,0.20),rgba(110,52,130,0.10))' : 'transparent',
+              transition: 'background .3s cubic-bezier(.34,1.4,.64,1)',
             }}>
-              {active && (
-                <div style={{
-                  position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)',
-                  width: 24, height: 3, borderRadius: 2,
-                  background: 'linear-gradient(90deg,#6E3482,#A56ABD)',
-                }} />
-              )}
-              <Icon active={active} />
+              <Icon c={c} />
               <span style={{
-                fontSize: 10, fontWeight: active ? 700 : 500,
-                color: active ? '#6E3482' : '#9CA3AF', letterSpacing: 0.3,
-                fontFamily: 'var(--font-outfit)',
+                fontSize: 10, fontWeight: active ? 800 : 600,
+                color: c, letterSpacing: 0.2, fontFamily: 'var(--font-outfit)',
               }}>{label}</span>
             </Link>
           );

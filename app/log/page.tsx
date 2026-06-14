@@ -49,7 +49,7 @@ export default function LogPage() {
     saveLog(log); // update local cache immediately
     await saveToSheet(loadData()); // persist to sheet
     setSaved(true);
-    setTimeout(() => router.push("/insights"), 500);
+    setTimeout(() => router.push("/reports"), 500);
   }
 
   return (
