@@ -1,0 +1,227 @@
+{
+  "phase": "luteal",
+  "days": "15-28",
+  "description": "Progesterone rises after ovulation. If no pregnancy, both estrogen and progesterone drop sharply in late luteal, triggering PMS. Metabolism is highest (burns ~300 extra calories/day). Most vulnerable phase for mood, cravings, and fatigue.",
+  "hormone_profile": "Progesterone ↑↑, Estrogen ↓ (after mid-luteal), Serotonin ↓, GABA ↓",
+
+  "default": {
+    "food": {
+      "science": "Progesterone slows digestion and gut motility, causing bloating and constipation. Serotonin drops as estrogen falls. Body burns 100-300 extra calories. B6, magnesium, and calcium are the most evidence-backed nutrients for PMS relief (Oxford Nutrition Reviews, 2025).",
+      "versions": [
+        "Your metabolism is actually running higher this week — your body burns up to 300 extra calories per day in the luteal phase. Eat enough! Focus on magnesium (dark chocolate, spinach, almonds), vitamin B6 (salmon, chicken, bananas), and calcium (dairy, leafy greens) — all three are clinically proven to reduce PMS symptoms.",
+        "The luteal phase is when nutrition matters most. B6 helps your brain make serotonin (which is dropping right now). Magnesium reduces anxiety, cramps, and water retention. Calcium reduces mood swings. Stack these in your meals: salmon with spinach and a glass of milk hits all three.",
+        "Your body needs more fuel this week — don't under-eat. Focus on slow-digesting complex carbs (oats, sweet potato, brown rice) to keep blood sugar stable, plenty of fiber to counteract progesterone-induced gut slowdown, and magnesium-rich foods to ease the coming PMS symptoms."
+      ]
+    },
+    "exercise": {
+      "science": "Progesterone raises body temperature and increases perceived exertion. Moderate exercise reduces PMS symptoms significantly. High-intensity exercise may worsen fatigue in late luteal phase. Yoga specifically shown to reduce PMS in RCTs.",
+      "versions": [
+        "Moderate movement is your best friend this week. Walking, swimming, cycling, or yoga — sustained, enjoyable exercise reduces PMS symptoms including mood swings and bloating. Ease back on intensity as you approach your period — your body temperature runs higher now, making hard effort feel harder.",
+        "The luteal phase calls for consistent moderate exercise, not peak intensity. A 30-minute walk, yoga class, or swim feels better and delivers more PMS relief than pushing hard. Research shows yoga specifically reduces PMS symptoms through cortisol regulation.",
+        "Listen to your body's signals during the luteal phase. Early on (days 15-20) you can still train moderately hard. As you approach your period (days 24-28), shift toward gentle movement: yoga, walking, light cycling. The body's recovery capacity is reduced in late luteal."
+      ]
+    },
+    "selfcare": {
+      "science": "Progesterone withdrawal and serotonin drop increase emotional sensitivity. Self-compassion practices reduce emotional reactivity. Reducing social obligations and environmental stressors has measurable PMS benefit. Sleep quality deteriorates in late luteal — melatonin support helps.",
+      "versions": [
+        "The luteal phase is when your emotional sensitivity is highest — that's not weakness, it's biology. Serotonin drops, progesterone affects GABA (your calming neurotransmitter), and your brain is more reactive to stress. Protect your environment: reduce commitments, prioritize rest, and be intentional about what you allow in.",
+        "This week calls for a softer schedule. Progesterone affects your brain's calming chemistry, making stress feel bigger and recovery slower. Say no to things that drain you, yes to things that restore. This isn't avoidance — it's strategic self-preservation.",
+        "Late luteal phase is a time to turn inward. Your nervous system is more sensitive and that's okay — it's biology, not personality. Reduce noise, increase warmth, prioritize sleep, and practice noticing your emotions without reacting to them. The storm passes with your next period."
+      ]
+    }
+  },
+
+  "rules": [
+    {
+      "id": "luteal_pms_severe_mood_irritable",
+      "priority": 10,
+      "conditions": { "mood": ["irritable"] },
+      "recommendations": {
+        "food": {
+          "science": "Irritability in PMS is driven by serotonin deficiency (from falling estrogen) and progesterone's effect on GABA receptors. B6 is a cofactor in serotonin synthesis. 50mg B6 + 200mg magnesium reduced PMS severity by 69% in clinical trial (Journal of Women's Health).",
+          "versions": [
+            "Irritability right now is a serotonin problem — your estrogen is dropping and taking serotonin with it. Fix it at the source: eat tryptophan-rich foods (turkey, eggs, pumpkin seeds) WITH complex carbs (oats, brown rice) — the carbs drive tryptophan into the brain. Add vitamin B6 (salmon, chicken, banana) as the cofactor your brain needs to convert tryptophan to serotonin.",
+            "The irritability you're feeling has a biochemical cause: low serotonin from falling estrogen. Prioritize foods that rebuild it: eggs, turkey, and tofu for tryptophan; chicken, salmon, and banana for B6; almonds and spinach for magnesium. Avoid sugar and caffeine — the crash worsens mood dysregulation.",
+            "Your irritability is PMS chemistry — not you. A clinical trial found that B6 (50mg) + magnesium (200mg) together reduced PMS symptom severity by 69%. Food sources of B6: salmon, chicken, sunflower seeds, potato. Magnesium: dark chocolate, almonds, spinach, avocado. Also cut alcohol and refined sugar — they deplete both."
+          ]
+        },
+        "exercise": {
+          "science": "Aerobic exercise boosts serotonin and BDNF within 20-30 minutes. Exercise is clinically proven to reduce PMS irritability, comparable to SSRI medication in mild-moderate cases (sports medicine research). Even 20 minutes is effective.",
+          "versions": [
+            "Movement is the fastest tool you have for irritability. A brisk 20-30 minute walk or run will boost serotonin and endorphins within minutes — the same pathways that antidepressants target, but faster. Get outside if possible: sunlight exposure also increases serotonin production.",
+            "When you're irritable, exercise feels like the last thing you want — but it's the most powerful thing you can do. 20 minutes of aerobic movement (walking, cycling, dancing) directly increases serotonin in your brain. The irritability often lifts during or immediately after.",
+            "Irritability responds to movement faster than almost anything else. Your brain needs serotonin — exercise triggers its release in minutes. A fast walk, some jumping rope, or a dance session. Even cleaning aggressively counts. Get the body moving and the mood follows."
+          ]
+        },
+        "selfcare": {
+          "science": "Anger and irritability in PMS are linked to low GABA (a calming neurotransmitter) from progesterone fluctuation. Magnesium increases GABA receptor sensitivity. Breathing exercises activate vagal tone, reducing reactivity. Journaling reduces rumination.",
+          "versions": [
+            "Your irritability has a physical cause — low GABA from progesterone fluctuation. You can't just 'calm down', but you can support your nervous system: magnesium supplement or bath (Epsom salts), slow diaphragmatic breathing (4-count inhale, 6-count exhale), and removing yourself from triggering situations temporarily.",
+            "Give yourself permission to need more space this week. Your emotional threshold is genuinely lower right now — it's not overreaction, it's under-buffering. An Epsom salt bath (magnesium absorbs through skin), noise-cancelling headphones, or a solo walk can restore your equilibrium without having to explain yourself.",
+            "When irritability peaks, the best intervention is pause + move. Before reacting to anything frustrating: take 5 slow breaths (this literally shifts your nervous system). Then move your body for 10 minutes. Come back to the situation after. This isn't about suppression — it's about having enough calm to respond rather than react."
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "luteal_pms_anxiety_sad",
+      "priority": 10,
+      "conditions": { "mood": ["anxious", "sad"] },
+      "recommendations": {
+        "food": {
+          "science": "PMS anxiety and depression are linked to serotonin and GABA dysregulation. Omega-3 fatty acids reduce neuroinflammation associated with PMS depression. Magnesium + B6 combination reduces PMS anxiety by 69% (clinical trial). Tryptophan foods with carbs increase serotonin precursor availability (Oxford Nutrition Reviews, 2025).",
+          "versions": [
+            "PMS anxiety and low mood are serotonin-deficiency states — your dropping estrogen takes serotonin with it. The nutritional fix: omega-3 rich foods (salmon, walnuts, flaxseeds) reduce neuroinflammation; tryptophan foods (eggs, turkey, tofu) with complex carbs boost serotonin; magnesium (dark chocolate, spinach) calms the nervous system. Avoid alcohol — it worsens both anxiety and depression.",
+            "What you're feeling is biochemical — serotonin and GABA are both lower than usual right now. Support them through food: fatty fish or walnuts for omega-3s (anti-inflammatory for the brain), pumpkin seeds and bananas for B6 (serotonin cofactor), and plenty of magnesium. Reduce caffeine — it spikes cortisol and worsens anxiety significantly.",
+            "Anxiety and sadness before your period have a clear nutritional component. Studies show omega-3 supplementation reduces PMS depression symptoms. Eat salmon, sardines, or walnuts daily this week. Add B6-rich foods (chicken, potato, sunflower seeds) and magnesium (almonds, dark chocolate, leafy greens). Minimize sugar, caffeine, and alcohol."
+          ]
+        },
+        "exercise": {
+          "science": "Yoga reduced PMS psychological symptoms (anxiety, depression, irritability) in 3 RCTs. Aerobic exercise increases BDNF (brain-derived neurotrophic factor), which is lower in depression. Even one 30-minute walk reduces state anxiety for 2-4 hours.",
+          "versions": [
+            "Yoga is the most evidence-backed exercise for PMS anxiety and low mood — three separate clinical trials confirm it. Yin yoga, restorative yoga, or gentle vinyasa work well. If yoga isn't your thing, a 30-minute walk in nature reduces anxiety for 2-4 hours after. Do something gentle and consistent every day this week.",
+            "When anxiety and sadness hit during PMS, gentle movement beats staying still. A walk, slow yoga, or swimming works with your body rather than against it. Avoid high-intensity workouts when already anxious — the cortisol spike can temporarily worsen the feeling. Aim for something calming and rhythmic.",
+            "Your brain needs BDNF — a growth factor that's lower when you're depressed. Aerobic exercise, even light walking, increases it within 20 minutes. A short outdoor walk also provides sunlight (vitamin D and serotonin synthesis) and a change of environment — both proven mood boosters."
+          ]
+        },
+        "selfcare": {
+          "science": "Self-compassion meditation reduces emotional reactivity to PMS symptoms more effectively than distraction. Social support buffers cortisol during high-stress states. Light therapy (10,000 lux, 20 min morning) reduces PMS depression in women with seasonal sensitivity.",
+          "versions": [
+            "Anxiety and low mood before your period deserve gentle, deliberate care. Try a 10-minute self-compassion meditation (apps like Insight Timer have PMS-specific ones). Reach out to someone you feel safe with — social connection releases oxytocin, which directly counters the anxiety chemistry. Avoid isolation even when it's tempting.",
+            "What you're experiencing is temporary and has a biological cause. You don't have to fix it — just get through it with care. Warm lighting, cozy environment, familiar comfort shows, nourishing food. Reduce stimulation. Let yourself be held by simple, soothing things.",
+            "The most powerful antidote to PMS sadness is knowing it's temporary and biochemical. Journal the feeling — write what you feel without judging it. Research shows externalizing anxious thoughts on paper reduces their intensity. Pair with a cup of chamomile tea (has mild anxiolytic properties from apigenin)."
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "luteal_severe_bloating",
+      "priority": 9,
+      "conditions": { "bloating": ["severe"] },
+      "recommendations": {
+        "food": {
+          "science": "Progesterone slows gut motility and increases water retention. High sodium pulls fluid into tissues. Potassium-rich foods reduce water retention by countering sodium. Magnesium reduces bloating and water retention. Probiotics reduce gas production (Medical News Today review).",
+          "versions": [
+            "Progesterone slows your digestion and promotes water retention — that's the bloat culprit. Counter it: cut sodium dramatically (avoid processed food, restaurant food, soy sauce), load up on potassium (banana, avocado, sweet potato), and drink more water (paradoxically reduces retention). Avoid gas-producers: beans, broccoli, carbonated drinks, chewing gum.",
+            "Bloating in the luteal phase is a two-part problem: water retention (hormonal) and gas buildup (slowed digestion). For retention: cut salt, eat potassium. For gas: avoid cruciferous vegetables, beans, carbonated drinks. For both: walk after meals, add fennel or peppermint tea, and stay well hydrated.",
+            "Your gut has slowed and your body is holding water — both courtesy of progesterone. Best anti-bloat foods: cucumber (hydrating, diuretic), fennel (relaxes intestinal muscle), bananas (potassium for water balance), ginger (speeds gastric emptying). Best to avoid: broccoli, cabbage, carbonated drinks, highly processed sodium-heavy food."
+          ]
+        },
+        "exercise": {
+          "science": "30 minutes of aerobic exercise improves lymphatic drainage and reduces fluid accumulation. Core engagement in yoga (twisting poses) stimulates digestion and moves gas through the intestinal tract. Regular pre-period exercise significantly reduces bloating vs. sedentary controls (medical review).",
+          "versions": [
+            "Walking is the best exercise for bloating — it promotes lymphatic drainage (your body's fluid management system) and stimulates intestinal movement. A 30-minute walk after dinner is one of the most effective bloat reducers you can do. Consistent daily movement throughout the luteal phase prevents it from building up.",
+            "Yoga twisting poses directly address period bloating: they compress and release the intestines, helping move trapped gas and stimulate digestion. Try seated spinal twist, supine twist, and cat-cow poses. A 20-minute routine focused on the core and lower body works better for bloating than cardio today.",
+            "Gentle aerobic movement — a brisk walk, light cycling, or swimming — moves fluid through your lymphatic system and reduces both gas and water retention. Avoid intense core exercise when severely bloated (increases discomfort). Focus on movement that gets you breathing deeply and gently increases circulation."
+          ]
+        },
+        "selfcare": {
+          "science": "Abdominal massage in clockwise direction follows the colon path and reduces gas buildup. Fennel and peppermint tea relax smooth muscle in the intestines. Loose clothing reduces discomfort and doesn't worsen bloating perception.",
+          "versions": [
+            "Clockwise abdominal massage literally moves gas through your colon in the direction it needs to travel. Lie on your back, use fingertips to make circular clockwise motions on your belly — start at your lower right, sweep across the top, down the left side. Do this for 5 minutes after a warm pack. Follow with fennel tea.",
+            "For immediate bloat relief: peppermint tea relaxes intestinal smooth muscle (reducing gas pressure) within 20-30 minutes of drinking. Avoid tight waistbands today — they increase discomfort and can slow digestion. A warm heating pad on the abdomen also relaxes the muscle contractions that cause gas cramps.",
+            "Reduce environmental triggers today: avoid eating quickly (swallowing air worsens bloating), skip carbonated drinks completely, and don't use straws. Small, frequent meals digest better than large ones when progesterone has slowed your gut. Probiotics (a glass of kefir or a probiotic capsule) help reduce gas-producing bacteria activity."
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "luteal_cravings_high",
+      "priority": 8,
+      "conditions": { "cravings": ["sweet", "salty", "everything"] },
+      "recommendations": {
+        "food": {
+          "science": "Luteal phase metabolism increases 100-300 calories/day. Serotonin drop creates carbohydrate cravings (carbs boost serotonin). Magnesium deficiency creates chocolate cravings. Progesterone increases appetite and fat storage preference (Oxford meta-analysis, energy intake across menstrual cycle, 2025).",
+          "versions": [
+            "Cravings right now are real physiological signals, not lack of willpower. Your brain wants serotonin (from carbs) and your cells are low in magnesium (craving chocolate). Work with it, not against it: eat complex carbs (sweet potato, oats, brown rice) for serotonin, dark chocolate for magnesium. You actually need 100-300 more calories this week — eat them from quality sources.",
+            "Your body is burning more fuel and craving serotonin-boosting carbs — that's luteal phase physiology. Instead of fighting the cravings, redirect them: sweet potato instead of candy, dark chocolate instead of milk chocolate, oat-based snacks instead of chips. These satisfy the craving mechanism while delivering real nutrients.",
+            "Chocolate cravings before your period are often a magnesium deficiency signal. Dark chocolate (70%+ cacao) satisfies the craving AND delivers 40-50mg magnesium per square. Eat it consciously. For carb cravings: oats, brown rice, and sweet potato give you the serotonin precursors your brain is actually seeking."
+          ]
+        },
+        "exercise": {
+          "science": "Exercise burns the extra luteal calories and reduces craving intensity by modulating dopamine and serotonin. Studies show women who exercise regularly in the luteal phase have significantly less severe food cravings (sports science and PMS research).",
+          "versions": [
+            "Regular movement during the luteal phase reduces craving intensity — it's not just about burning calories. Exercise boosts serotonin and dopamine, the same things your brain is craving from food. A 30-minute moderate workout reduces cravings for several hours afterward.",
+            "When cravings hit hard, a 20-minute walk is more effective than willpower. Exercise raises serotonin and reduces cortisol — both of which directly reduce craving intensity. The cravings often dissipate significantly during or after movement.",
+            "Build movement into your day as a craving-management tool. Consistency matters more than intensity during the luteal phase — daily 30-minute moderate exercise keeps serotonin levels more stable, reducing the dramatic swings that create uncontrollable cravings."
+          ]
+        },
+        "selfcare": {
+          "science": "Eating without judgment reduces binge-restrict cycles that worsen PMS. Mindful eating reduces overall caloric intake more effectively than restriction. Planning satisfying, nutrient-dense snacks prevents reactive craving-driven eating.",
+          "versions": [
+            "Plan for the cravings rather than fighting them. Stock your kitchen with satisfying options that also nourish you: dark chocolate, oat energy balls, sweet potato chips, roasted nuts, fruit with nut butter. When cravings hit, you'll reach for something that helps rather than harms.",
+            "Eat without guilt this week. Restricting food during the luteal phase when your metabolism is genuinely higher often leads to worse cravings and lower mood. Eat enough, choose wisely, and extend yourself the same compassion you'd give anyone dealing with real physiological hunger.",
+            "The luteal phase craving cycle: low serotonin → carb craving → blood sugar spike → crash → lower serotonin → more craving. Break it with stable blood sugar eating: every meal should have protein + fat + complex carb. Never go more than 4 hours without eating. Stable blood sugar = dramatically reduced cravings."
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "luteal_fatigue_exhausted",
+      "priority": 9,
+      "conditions": { "energy": ["low", "exhausted"] },
+      "recommendations": {
+        "food": {
+          "science": "Progesterone is thermogenic and sedating — it genuinely causes fatigue. Iron levels may be depleting pre-period. B vitamins (B1, B2, B6, B12) and CoQ10 support mitochondrial energy production. Avoiding blood sugar crashes is critical (high progesterone worsens insulin sensitivity).",
+          "versions": [
+            "Luteal fatigue is progesterone doing its job — it's a sedating hormone, and there's no fighting that completely. Support your energy with stable blood sugar eating: never skip meals, always pair carbs with protein and fat, and eat every 3-4 hours. B vitamins (meat, eggs, leafy greens) support mitochondrial energy production when your cells need it most.",
+            "The exhaustion you feel is progesterone-driven — it raises your body temperature and has a mild sedating effect. Work with it: eat small, frequent meals to keep blood sugar stable (drops worsen fatigue dramatically), choose iron-rich food (you're approaching menstruation), and prioritize magnesium for sleep quality.",
+            "Luteal fatigue is real and physiological. Your body is metabolizing progesterone and preparing for menstruation — energy-intensive work. Fuel it: iron-rich food (spinach, lentils, meat), B12 (eggs, dairy, meat), and complex carbs for sustained energy. Avoid caffeine after noon — progesterone affects sleep quality and caffeine worsens it."
+          ]
+        },
+        "exercise": {
+          "science": "Moderate exercise improves luteal phase energy more than rest. Studies show 30 minutes of moderate activity (walking, cycling, yoga) reduces fatigue and improves mood in the luteal phase. High-intensity exercise when fatigued raises cortisol and worsens energy the next day.",
+          "versions": [
+            "When you're exhausted in the luteal phase, light movement beats the couch — but only light. A 20-30 minute walk, gentle cycling, or restorative yoga gives you an endorphin boost without depleting your reserves. Avoid HIIT or heavy lifting when this tired — the cortisol spike will worsen your energy tomorrow.",
+            "Fatigue in the luteal phase responds to movement, not rest. 20-30 minutes of gentle aerobic activity — walking, swimming, yoga — improves energy more reliably than staying still. The key is to do something that feels restorative, not demanding. Rhythmic, easy, enjoyable.",
+            "Honor the fatigue but move through it gently. A short walk, some gentle stretching, or a slow yoga class is enough today. Research shows consistent moderate movement throughout the luteal phase significantly reduces cumulative fatigue by the time your period arrives."
+          ]
+        },
+        "selfcare": {
+          "science": "Sleep quality declines in late luteal due to progesterone's effect on sleep architecture and core temperature. Cooling the bedroom (65-68°F / 18-20°C) improves sleep quality. Magnesium glycinate improves sleep onset and quality (evidence-based supplement review).",
+          "versions": [
+            "Your sleep is likely disrupted right now — progesterone raises your core body temperature, making deep sleep harder. Cool your bedroom (aim for 65-68°F), use lighter bedding, and consider magnesium glycinate before bed (200-400mg) — it's evidence-backed for improving sleep quality during the luteal phase.",
+            "Protect your sleep this week — it's both harder to get and more important than usual. Dark room, cool temperature, no screens for an hour before bed. A magnesium supplement before sleep improves both sleep quality and next-day energy. Chamomile tea has mild sedative properties from apigenin.",
+            "Rest isn't just about sleep — it's about reducing total demands on your body. Clear unnecessary commitments from your schedule this week if you can. Schedule easier, quieter evenings. Your body is doing significant hormonal work and it needs more recovery than usual."
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "luteal_insomnia_poor_sleep",
+      "priority": 8,
+      "conditions": { "sleep": ["poor", "insomnia"] },
+      "recommendations": {
+        "food": {
+          "science": "Progesterone metabolizes to allopregnanolone, which modulates GABA-A receptors (sleep-inducing). But progesterone fluctuation disrupts this — causing insomnia in PMS. Tryptophan + magnesium support melatonin synthesis. Avoiding blood sugar drops overnight prevents 3am wake-ups (nutrition and sleep research).",
+          "versions": [
+            "PMS insomnia is driven by progesterone fluctuating and disrupting your GABA sleep receptors. Help your brain make melatonin: eat tryptophan-rich foods at dinner (turkey, eggs, cheese), pair with complex carbs, and take magnesium glycinate before bed (200mg). Avoid caffeine after 12pm — its half-life is 6 hours and you're more sensitive to it now.",
+            "Sleep disruption before your period often stems from low blood sugar overnight (which triggers cortisol and wakes you at 3-4am) and progesterone's effect on sleep architecture. Fix the blood sugar: a small protein-fat snack before bed (nuts with cheese, or peanut butter on rice cake) keeps blood sugar stable through the night.",
+            "Your insomnia is hormonal, not behavioral — progesterone fluctuation is genuinely disruptive to sleep. Support melatonin synthesis: kiwi fruit at dinner (contains serotonin that converts to melatonin), tart cherry juice (natural melatonin), and magnesium. Remove caffeine from your day entirely during the worst nights."
+          ]
+        },
+        "exercise": {
+          "science": "Morning exercise improves sleep onset time and deep sleep quality. Evening intense exercise delays sleep onset by raising core temperature. Yoga nidra (yogic sleep) reduces time to fall asleep and increases sleep efficiency (RCT, yoga and insomnia).",
+          "versions": [
+            "Exercise timing matters for PMS insomnia. Move in the morning or early afternoon — aerobic exercise before 2pm improves sleep quality that night. Avoid intense exercise within 4 hours of bedtime (it raises core temp and cortisol). Evening yoga or gentle stretching is fine and actually helps.",
+            "If sleep is broken, shift your workout to morning. Morning aerobic exercise (even a brisk 30-minute walk) regulates circadian rhythm and deepens sleep that night. Evening yoga — specifically yin or restorative — has evidence for reducing time to fall asleep. Avoid HIIT after 5pm.",
+            "Yoga nidra (a guided lying-down relaxation practice) is clinically proven to improve sleep in insomnia. A 20-30 minute yoga nidra session before bed reduces cortisol and induces physiological rest states similar to early sleep. Look for a guided track on YouTube or an app."
+          ]
+        },
+        "selfcare": {
+          "science": "Sleep hygiene practices: consistent bedtime, dark room, cool temperature (65-68°F), blue light reduction are all evidence-based for insomnia. 4-7-8 breathing reduces time to sleep onset. Magnesium glycinate is the most evidence-backed supplement for PMS-related insomnia.",
+          "versions": [
+            "PMS insomnia needs a stack: cool dark room (65-68°F), no screens 1 hour before bed (blue light suppresses melatonin), consistent sleep time (regulates circadian rhythm), magnesium glycinate 200-400mg before bed, and 4-7-8 breathing if you can't fall asleep. Each of these has independent evidence — together they're powerful.",
+            "Try the 4-7-8 breathing method for sleep onset: inhale through nose for 4 counts, hold for 7, exhale through mouth for 8. Repeat 4 times. This activates the parasympathetic nervous system and significantly reduces time to fall asleep. Pair with a cool, dark room and magnesium glycinate.",
+            "Wind-down is non-negotiable when PMS insomnia hits. Start 60-90 minutes before bed: dim lights (activates melatonin), step away from your phone, take a warm bath (the post-bath temperature drop signals your brain to sleep), and do 5 minutes of gentle stretching. This routine cues sleep more effectively than any supplement."
+          ]
+        }
+      }
+    }
+  ]
+}

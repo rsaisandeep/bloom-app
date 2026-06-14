@@ -1,0 +1,163 @@
+{
+  "phase": "follicular",
+  "days": "6-13",
+  "description": "Estrogen rises as follicles develop in the ovaries. Energy, focus, and strength increase. Best phase for new habits, social plans, and challenging workouts.",
+  "hormone_profile": "Estrogen ↑↑, FSH ↑, Progesterone ↓, Testosterone ↑ (gradually)",
+
+  "default": {
+    "food": {
+      "science": "Rising estrogen improves insulin sensitivity and increases metabolic efficiency. Phytoestrogens (flaxseeds, soy) support estrogen metabolism. Liver detoxifies used estrogen — cruciferous vegetables support this pathway (Cleveland Clinic).",
+      "versions": [
+        "Your estrogen is rising and your metabolism is at its most efficient. This is the time for clean, energizing food: lean protein, complex carbs, and lots of colorful vegetables. Flaxseeds and fermented soy support healthy estrogen metabolism.",
+        "The follicular phase is your metabolic sweet spot — your body uses nutrients efficiently and blood sugar is more stable. Lean into whole foods: chicken, fish, quinoa, leafy greens, and berries. Cruciferous veggies (broccoli, cauliflower) help your liver process rising estrogen cleanly.",
+        "Estrogen rising means your body is primed for building. Prioritize protein (chicken, eggs, Greek yogurt) for muscle support, complex carbs for sustained energy, and cruciferous vegetables to help your liver metabolize the estrogen surge cleanly."
+      ]
+    },
+    "exercise": {
+      "science": "Estrogen increases strength, endurance, and pain tolerance. Early follicular phase may have slightly more muscle soreness; late follicular phase is optimal for high-intensity training (Harvard AWHS study; systematic review 2020).",
+      "versions": [
+        "Your energy and strength are building this week. It's a great time to try new workouts, increase weights, or push cardio intensity. Estrogen improves pain tolerance and recovery speed — you'll bounce back faster than usual.",
+        "The follicular phase is nature's performance enhancer. Rising estrogen improves strength output and endurance. Try HIIT, weight training, or a longer run. Your body is primed for effort — use it.",
+        "You're entering your power phase. Estrogen is climbing and with it your athletic capacity. Challenge yourself this week — a new class, heavier weights, longer distance. Your recovery will be faster and motivation naturally higher."
+      ]
+    },
+    "selfcare": {
+      "science": "Rising estrogen improves neuroplasticity and cognitive flexibility. This is the optimal window for learning new skills, social connection, and setting goals (Cleveland Clinic health review).",
+      "versions": [
+        "Your brain is sharp and social this week — estrogen boosts mood, communication skills, and creativity. It's a great time to have difficult conversations, make plans, start new projects, or try something you've been putting off.",
+        "This is your 'new beginning' phase. Energy, optimism, and mental clarity all rise with estrogen. Make the most of it: schedule important meetings, social events, creative work, or any task that requires focus and enthusiasm.",
+        "Lean into this week's natural energy. Your body and mind are in a building mode — ideal for starting habits, trying new things, and connecting with others. Whatever felt too hard last week will feel easier now."
+      ]
+    }
+  },
+
+  "rules": [
+    {
+      "id": "follicular_high_energy_happy",
+      "priority": 10,
+      "conditions": { "energy": ["high"], "mood": ["happy", "energetic"] },
+      "recommendations": {
+        "food": {
+          "science": "Peak estrogen phase allows maximum carbohydrate utilization. Complex carbs fuel high-intensity training. Zinc supports FSH and LH hormone synthesis needed for follicle development (PMC nutritional review).",
+          "versions": [
+            "You're in your peak energy phase — fuel it well. Complex carbs (sweet potato, oats, quinoa) give you sustained energy for intense workouts. Add zinc-rich foods (pumpkin seeds, beef, chickpeas) to support the follicle development happening right now.",
+            "With this energy level, your body can handle more demanding fuel. Increase complex carbs before workouts, prioritize lean protein for recovery, and load up on colorful vegetables for micronutrients. This is not the time to under-eat.",
+            "Your metabolism is firing. Match your high energy with nutrient-dense eating: protein at every meal, complex carbs timed around workouts, and omega-3s (salmon, walnuts) to reduce inflammation from harder training sessions."
+          ]
+        },
+        "exercise": {
+          "science": "Late follicular phase (days 10-13) shows highest strength output in studies. Testosterone begins rising alongside estrogen, improving muscle recruitment and power (sex differences in sports performance, PMC 2021).",
+          "versions": [
+            "This is your strongest week of the month. Go after personal records, try the hardest class, or add weight to your lifts. Estrogen and rising testosterone together create peak athletic conditions. You'll recover faster too.",
+            "Maximum performance window is open. If there's any workout you've been wanting to push — HIIT, heavy lifts, long runs — now is the time. Your body is hormonally primed for power and endurance simultaneously.",
+            "Your muscles are at their most responsive right now. High-intensity interval training, strength circuits, dance cardio — whatever excites you. The combination of high estrogen and rising testosterone means you can go hard and recover well."
+          ]
+        },
+        "selfcare": {
+          "science": "High estrogen increases dopamine sensitivity and social reward. Research shows increased risk-taking and social openness during follicular phase. Optimal time for goal setting and habit formation (neuroplasticity peaks with estrogen).",
+          "versions": [
+            "Use this energy intentionally. Your dopamine system is firing at full capacity — new experiences feel more rewarding right now. Set your goals for the month, start that habit you keep delaying, or have the conversation you've been avoiding. Timing matters.",
+            "You're naturally more optimistic and social this week. Say yes to the things that light you up. Plan a dinner out, a creative project, or a challenging goal. The neural pathways for forming habits are most flexible when estrogen is high.",
+            "This is the week to invest in yourself. Schedule things that require effort and enthusiasm — job applications, difficult conversations, new classes. Your brain is at its most open and your resilience is highest. Momentum built now carries forward."
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "follicular_medium_energy_calm",
+      "priority": 8,
+      "conditions": { "energy": ["medium"], "mood": ["calm", "happy"] },
+      "recommendations": {
+        "food": {
+          "science": "Estrogen improves gut microbiome diversity. Fermented foods and prebiotic fiber support this. Protein synthesis improves — good time to increase protein intake for muscle building.",
+          "versions": [
+            "Medium energy in the follicular phase is still above your period baseline — your body is rebuilding. Focus on protein (building block of the energy to come) and add fermented foods like yogurt, kefir, or kimchi. Rising estrogen improves your gut's ability to absorb nutrients.",
+            "Steady, calm energy is perfect for consistent fueling. Balanced meals — protein + complex carb + healthy fat at each meal — keep blood sugar stable and support the estrogen rise that will continue through this week.",
+            "Your gut is particularly receptive to good food right now. Add probiotic-rich foods (Greek yogurt, miso, sauerkraut) — estrogen positively affects gut microbiome diversity. Eat a variety of colorful vegetables and lean proteins to build toward peak energy."
+          ]
+        },
+        "exercise": {
+          "science": "Moderate intensity exercise in early follicular phase builds fitness base without overloading. Strength training at this phase shows better muscle protein synthesis than luteal phase (Hormones and Behavior, 2019).",
+          "versions": [
+            "Calm energy is perfect for consistent, quality training. Moderate strength work, a steady jog, or a vinyasa yoga class — sustainable effort that builds fitness without depleting you. You're laying the foundation for your peak performance later this week.",
+            "Use this calm phase to build consistency. A 30-45 minute moderate workout — strength, cardio, or both — is ideal. Your muscle recovery is better than during your period, so you can train more frequently right now.",
+            "Steady-state exercise works well with your current energy. Cycling, swimming, hiking, or a barre class — anything that keeps you moving for 30-45 minutes. Your body is rebuilding its energy stores and exercise accelerates this."
+          ]
+        },
+        "selfcare": {
+          "science": "Calm states during follicular phase are ideal for reflective practices. Journaling, planning, and creative work benefit from the combination of good mood and cognitive clarity that estrogen provides.",
+          "versions": [
+            "This calm, clear-headed state is golden. Use it to plan, create, or reflect. Journaling about your goals, sketching out a project, or reading something that challenges you — your mind is absorbing and organizing information well right now.",
+            "Calm energy is a resource — invest it wisely. Plan your week, declutter a space, have a meaningful conversation, or start something creative. This isn't a high-drama phase — it's a productive one.",
+            "The quiet clarity of this phase is underrated. It's perfect for deep focus work, organizing your life, or creative exploration. Take advantage of the mental spaciousness before your energy peaks at ovulation."
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "follicular_low_energy_post_period",
+      "priority": 9,
+      "conditions": { "energy": ["low", "exhausted"] },
+      "recommendations": {
+        "food": {
+          "science": "Residual iron deficiency post-period causes continued fatigue in early follicular phase. B12, folate, and iron all support red blood cell recovery. Protein helps rebuild muscle tissue. (Nova Southeastern University nutrition study).",
+          "versions": [
+            "You may still be recovering from your period's iron loss. Keep prioritizing iron-rich foods (meat, legumes, fortified cereals) with vitamin C at every meal. Add B12 sources (eggs, dairy, meat) and folate (beans, leafy greens) — your red blood cells need both to recover.",
+            "Low energy in early follicular phase often means iron stores haven't recovered yet. Focus on rebuilding: red meat or lentils daily, leafy greens, eggs, and vitamin C at every meal. Avoid coffee and tea with meals — they block iron absorption.",
+            "Your body is still recovering from menstruation. Iron rebuilding takes 1-3 days into the follicular phase. Keep eating iron-dense foods with vitamin C, get adequate sleep, and be patient — energy will climb steadily as estrogen rises over the coming days."
+          ]
+        },
+        "exercise": {
+          "science": "Low intensity exercise in early follicular phase when hormones are still rebuilding is recommended. Over-training when iron-depleted worsens fatigue and delays recovery (sports medicine guidelines).",
+          "versions": [
+            "Give yourself one more gentle week. A slow walk, light stretching, or restorative yoga is enough. Pushing too hard when your iron stores are still recovering increases cortisol and delays the energy rise you're waiting for.",
+            "Listen to the low energy — it's real data. Easy movement only: a 20-minute walk, some gentle stretching, or a yin yoga class. The harder workouts will feel amazing once your estrogen climbs — that's coming soon.",
+            "You're in the recovery-to-rebuild gap. Light activity only. Your energy will naturally climb over the next few days as estrogen rises. Today, preserve it: easy walks, gentle movement, and prioritize sleep and iron-rich food."
+          ]
+        },
+        "selfcare": {
+          "science": "Sleep duration and quality in early follicular phase directly impact estrogen rise and energy recovery. Cortisol (from stress or over-training) suppresses estrogen production — prioritizing rest protects the hormonal shift.",
+          "versions": [
+            "Rest is a strategic investment right now. Cortisol from stress or overexertion suppresses estrogen — exactly what you need rising. Prioritize 8 hours of sleep, reduce commitments where possible, and let your body rebuild. The energy is coming.",
+            "The best thing you can do today is rest well. Deep sleep is when your body rebuilds iron stores and ramps up estrogen. Reduce screen time before bed, keep your room cool, and aim for 8 hours. You'll feel the difference within 2-3 days.",
+            "Honor the low energy rather than fighting it. Warm baths, cozy food, good sleep. Stress hormones compete with estrogen — a relaxed body rebuilds faster. The high-energy phase is close; let your body bridge to it."
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "follicular_anxious_irritable",
+      "priority": 7,
+      "conditions": { "mood": ["anxious", "irritable"] },
+      "recommendations": {
+        "food": {
+          "science": "Early follicular phase anxiety may be residual from luteal progesterone withdrawal. L-theanine (green tea) and magnesium reduce anxiety. Omega-3s reduce neuroinflammation associated with anxiety (nutritional psychiatry research).",
+          "versions": [
+            "Anxiety in the follicular phase often lingers from the progesterone withdrawal at period start. Green tea (contains L-theanine, which calms without sedating), magnesium-rich foods (dark chocolate, spinach, almonds), and omega-3s (salmon, walnuts) all have evidence for reducing anxiety.",
+            "Your nervous system may still be recalibrating from the hormonal shift. Reduce caffeine (it spikes cortisol, worsening anxiety) and increase magnesium foods: pumpkin seeds, dark chocolate, avocado. Add fermented foods — gut health is directly linked to anxiety levels.",
+            "Hormonal anxiety is real and temporary. Support your nervous system with foods that calm: magnesium-rich almonds and spinach, omega-3 rich walnuts and salmon, and L-theanine from green tea. Avoid sugar spikes — the crash that follows worsens anxiety significantly."
+          ]
+        },
+        "exercise": {
+          "science": "Aerobic exercise reduces anxiety more effectively than resistance training in the short term. A single 20-minute bout reduces state anxiety for 2-4 hours post-exercise (ADAA research).",
+          "versions": [
+            "Movement is one of the fastest anxiety relievers available. A brisk 20-minute walk or light jog reduces anxiety hormones for 2-4 hours after. Take it outside if you can — nature exposure amplifies the calming effect.",
+            "Aerobic movement is your best anxiety tool right now. A dance class, bike ride, swim, or even 20 minutes of walking — anything that raises your heart rate for 20+ minutes will cut anxiety measurably. The effect lasts hours, not minutes.",
+            "When you're anxious, your body is in fight-or-flight. Give it something physical to do: a fast walk, some jumping jacks, a swim. This burns off the adrenaline and signals safety to your nervous system. Even 15 minutes makes a difference."
+          ]
+        },
+        "selfcare": {
+          "science": "Diaphragmatic breathing activates parasympathetic nervous system within 90 seconds. 4-7-8 breathing reduces cortisol. Journaling externalizes anxious thoughts, reducing rumination (Pennebaker, expressive writing).",
+          "versions": [
+            "Box breathing is clinically effective for acute anxiety: inhale 4 counts, hold 4, exhale 4, hold 4. Repeat 4 times. This activates the vagus nerve and shifts your nervous system from fight-or-flight to rest-and-digest within minutes.",
+            "Write it out. Anxious thoughts loop because they're looking for resolution. Get them out of your head and onto paper — just 5 minutes of unfiltered writing. Research shows this reduces rumination and anxiety intensity significantly.",
+            "Your body needs a signal that it's safe. 4-7-8 breathing (inhale 4, hold 7, exhale 8) is the most effective breath pattern for calming the nervous system. Do it lying down if possible. Follow with a cup of chamomile or green tea."
+          ]
+        }
+      }
+    }
+  ]
+}

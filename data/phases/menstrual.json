@@ -1,0 +1,195 @@
+{
+  "phase": "menstrual",
+  "days": "1-5",
+  "description": "Uterine lining sheds. Estrogen and progesterone are at their lowest. Prostaglandins trigger contractions causing cramps.",
+  "hormone_profile": "Estrogen ↓, Progesterone ↓, Prostaglandins ↑",
+
+  "default": {
+    "food": {
+      "science": "During menstruation, the body loses iron through blood. Anti-inflammatory foods reduce prostaglandin-driven cramping (University of Queensland, 2024).",
+      "versions": [
+        "Focus on iron-rich foods like spinach, lentils, and lean red meat to replace what you lose during your period. Pair with vitamin C (orange juice, bell peppers) to boost absorption by up to 3x.",
+        "Your iron levels drop during your period. Lentil soup, tofu stir-fry, or a spinach salad with lemon dressing are simple ways to replenish — and adding vitamin C doubles absorption.",
+        "Iron loss is real this week. Dark leafy greens, legumes, and fortified cereals help. Always combine them with something citrusy — vitamin C is the key that unlocks iron absorption."
+      ]
+    },
+    "exercise": {
+      "science": "Light movement increases endorphins and reduces prostaglandin sensitivity. Intense exercise during low-hormone phase increases muscle soreness (systematic review, 78 studies, 2020).",
+      "versions": [
+        "Gentle movement is your friend today. A 20-minute walk or restorative yoga can release endorphins that naturally reduce pain — without taxing your body further.",
+        "Your body is working hard. Skip the high-intensity workouts and opt for yin yoga, stretching, or a slow walk. Movement boosts endorphins and eases cramps without exhausting you.",
+        "Low-impact is the goal. Swimming, walking, or gentle yoga support circulation and mood without the soreness risk that comes with intense training when estrogen is at its lowest."
+      ]
+    },
+    "selfcare": {
+      "science": "Heat therapy increases blood flow and reduces uterine muscle spasms. Studies show 38-40°C heat patches are as effective as ibuprofen for mild cramps (BMJ, 2001).",
+      "versions": [
+        "A heating pad on your lower abdomen is clinically backed — heat at 38-40°C relaxes uterine muscles as effectively as pain medication for mild cramps.",
+        "Warm baths and heat patches aren't just comfort — they're medicine. Heat dilates blood vessels, reduces spasms, and can work as well as ibuprofen for mild-to-moderate cramps.",
+        "Heat therapy works. Apply a warm pack to your lower belly for 20 minutes. Studies show it rivals ibuprofen for cramp relief by relaxing the uterine muscle directly."
+      ]
+    }
+  },
+
+  "rules": [
+    {
+      "id": "menstrual_severe_cramps",
+      "priority": 10,
+      "conditions": { "cramps": ["severe"] },
+      "recommendations": {
+        "food": {
+          "science": "Prostaglandins cause uterine contractions and cramps. Anti-inflammatory foods (omega-3s, magnesium, ginger) reduce prostaglandin production. Trans fats and refined sugar increase prostaglandins (Medical News Today, 2024).",
+          "versions": [
+            "Your cramps are driven by prostaglandins — hormone-like compounds that contract the uterus. Fight back with omega-3s (salmon, walnuts, flaxseeds), magnesium-rich dark chocolate, and ginger tea. Avoid processed foods and sugar — they actively raise prostaglandin levels.",
+            "Severe cramps need an anti-inflammatory plate. Fatty fish, chia seeds, turmeric milk, and leafy greens block the prostaglandins causing your pain. Cut out caffeine, trans fats, and alcohol — they tighten blood vessels and make cramps worse.",
+            "Science is clear: what you eat affects cramp intensity. Omega-3 rich foods (walnuts, sardines, hemp seeds) directly compete with inflammatory prostaglandins. Add ginger — it inhibits prostaglandin synthesis similarly to NSAIDs. Ditch processed meat and sugar today."
+          ]
+        },
+        "exercise": {
+          "science": "Gentle movement is still recommended during severe cramps — complete rest can increase stiffness. Child's pose and legs-up-wall reduce pelvic tension (Yoga Journal, evidence-based review).",
+          "versions": [
+            "Don't push through severe cramps with intense workouts — it can backfire. Instead, try child's pose, supine twists, or legs-up-the-wall for 10 minutes. These postures decompress the pelvis and ease cramping without strain.",
+            "Rest, but don't stay completely still. Gentle yoga specifically designed for cramps — child's pose, cat-cow, reclining bound angle — increases pelvic blood flow and reduces muscle spasm. Even 10 minutes makes a difference.",
+            "Your body needs gentleness today. Skip the gym. A slow 10-minute walk or yoga nidra (lying-down relaxation) activates the parasympathetic nervous system, reducing pain signals and calming the cramping."
+          ]
+        },
+        "selfcare": {
+          "science": "Heat at 38-40°C rivals ibuprofen for cramp relief. Magnesium supplements (200-400mg) reduce menstrual pain by inhibiting muscle contractions (Cochrane Review, 2023).",
+          "versions": [
+            "Heat pad directly on your lower abdomen — keep it there for 20 minutes. This rivals ibuprofen for mild-to-moderate cramps. If you have magnesium glycinate, take 200-400mg tonight — it relaxes smooth muscle and is backed by a 2023 Cochrane review.",
+            "The most evidence-backed cramp combo: heat + magnesium. A heating pad relaxes uterine muscle spasms. Magnesium glycinate (200-400mg) reduces the intensity of contractions. Together they can significantly cut down on the need for pain meds.",
+            "For severe cramps, stack your relief: heat therapy + hydration + position. Lie on your side with knees pulled to chest (fetal position reduces abdominal tension), apply heat, and sip ginger or chamomile tea. Chamomile's glycine compound has muscle-relaxing properties."
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "menstrual_exhausted_low_energy",
+      "priority": 9,
+      "conditions": { "energy": ["exhausted", "low"] },
+      "recommendations": {
+        "food": {
+          "science": "Iron loss during menstruation directly causes fatigue. Non-anemic iron deficiency still reduces work capacity. Vitamin C triples non-heme iron absorption. B12 and folate support red blood cell production (Nova Southeastern University study).",
+          "versions": [
+            "Fatigue during your period is often iron-driven — your body is losing iron with every drop of blood. Eat iron-rich foods: spinach, lentils, red meat, tofu. Critical: always pair them with vitamin C (squeeze lemon, eat a kiwi) — it triples your iron absorption.",
+            "Your exhaustion is real and physiological — iron drops as you bleed. Lentil dal, beef stir-fry, or a spinach-chickpea salad are your best friends right now. Add orange slices on the side — the vitamin C is what unlocks the iron into your bloodstream.",
+            "Low energy this week is your body talking. Iron is leaving with your period blood. Prioritize iron at every meal: fortified oats at breakfast, lentil soup at lunch, lean meat at dinner. Avoid black tea or coffee with meals — they block iron absorption by up to 60%."
+          ]
+        },
+        "exercise": {
+          "science": "Complete rest increases fatigue and stiffness over time. Short, low-intensity movement (10-20 min walks) boosts circulation and mitochondrial energy production without depleting reserves.",
+          "versions": [
+            "When you're exhausted, even 10 minutes of slow walking beats staying in bed all day. Movement boosts circulation, gets oxygen to your cells, and releases endorphins — the natural energy boost you need without depleting your already-low reserves.",
+            "You don't need the gym today — you need movement medicine. A 15-minute gentle walk, some light stretching, or a slow yoga flow is enough to improve circulation and reduce the heavy-limb feeling of period fatigue.",
+            "Honor your exhaustion — but don't be fully sedentary. A gentle 10-minute walk or 5 minutes of deep breathing exercises increases oxygen delivery to muscles and helps shake the fog. That's enough for today."
+          ]
+        },
+        "selfcare": {
+          "science": "Sleep quality drops pre-period due to low progesterone and pain disruption. Maintaining an 8-hour sleep window supports iron-synthesis pathways and reduces inflammatory markers.",
+          "versions": [
+            "Your body repairs and rebuilds during sleep — especially important when you're losing iron. Aim for 8+ hours tonight. Warm chamomile tea before bed promotes sleep by increasing glycine, a relaxing amino acid. Avoid screens an hour before.",
+            "Prioritize sleep above everything else today. Iron replenishment, immune function, and mood regulation all happen during rest. A warm bath before bed lowers core body temperature (triggering sleep signals) and soothes cramps simultaneously.",
+            "Rest is not laziness today — it's medicine. Your body is doing significant work. Sleep 8-9 hours if you can, and consider a 20-minute afternoon nap. Even short rest periods reduce inflammatory cortisol that worsens fatigue and cramps."
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "menstrual_mood_sad_low",
+      "priority": 8,
+      "conditions": { "mood": ["sad", "anxious"] },
+      "recommendations": {
+        "food": {
+          "science": "Low estrogen in menstrual phase reduces serotonin synthesis. Tryptophan (serotonin precursor) + complex carbs increase brain serotonin. Dark chocolate boosts endorphins and contains magnesium that supports mood regulation.",
+          "versions": [
+            "Low mood during your period is serotonin-related — estrogen drops pull serotonin down with it. Boost it naturally: eat tryptophan-rich foods (turkey, eggs, pumpkin seeds) with complex carbs (oats, brown rice) — carbs help tryptophan cross the blood-brain barrier.",
+            "Your brain chemistry shifts during your period — serotonin dips with estrogen. Counter it with tryptophan foods: eggs, seeds, nuts, salmon. Pair with complex carbs to shuttle tryptophan into your brain. A small square of dark chocolate also triggers endorphin release.",
+            "The sadness you feel is biochemical, not a character flaw. Estrogen fuels serotonin — and right now it's at its lowest. Foods high in tryptophan (the raw material for serotonin): eggs, turkey, tofu, pumpkin seeds. Eat them with oats or sweet potato for maximum effect."
+          ]
+        },
+        "exercise": {
+          "science": "Even 20 minutes of aerobic exercise increases BDNF (brain-derived neurotrophic factor) and serotonin. Studies show exercise is as effective as antidepressants for mild-moderate depression (Harvard Medical School).",
+          "versions": [
+            "Movement is a natural antidepressant — clinically proven. Even a 20-minute walk outside releases endorphins and serotonin. Natural light exposure also regulates your circadian rhythm, which directly impacts mood. Gentle and outdoors is the goal today.",
+            "When you're feeling low, exercise feels like the last thing you want — but it's the most powerful tool you have. 20 minutes of gentle movement (walk, swim, yoga) releases as much serotonin as a mild antidepressant. Start with just 5 minutes.",
+            "Your brain needs movement to make serotonin. A short walk, some slow dancing in your room, or a gentle yoga flow — any of these trigger neurochemical changes that lift mood within 20-30 minutes. Nature walks amplify the effect through light and open space."
+          ]
+        },
+        "selfcare": {
+          "science": "Social connection releases oxytocin, which counteracts cortisol and low serotonin. Journaling and emotional expression reduce rumination, a key driver of sadness (Pennebaker, expressive writing research).",
+          "versions": [
+            "Don't isolate when you're feeling low — connection is medicine. A 10-minute call with someone you care about releases oxytocin, which actively counteracts the sadness. Even texting counts. You don't have to explain why — just connect.",
+            "When your mood is low, protect yourself from negative spirals. Light a candle, play music you love, and write 3 things that are okay right now — not 'good', just okay. Expressive writing reduces rumination and is clinically shown to lift mood within days.",
+            "Treat yourself with the same gentleness you'd give a friend who's struggling. Wrap up in something warm, nourish yourself with food you love, and give yourself full permission to feel low without judgment. This phase passes within days."
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "menstrual_severe_bloating",
+      "priority": 7,
+      "conditions": { "bloating": ["severe"] },
+      "recommendations": {
+        "food": {
+          "science": "Prostaglandins cause water retention and gut slow-down during menstruation. High sodium increases osmotic water pull into tissues. Potassium counteracts sodium and promotes fluid excretion (Hello Clue, evidence review).",
+          "versions": [
+            "Period bloating is driven by water retention — your body is holding fluid in response to hormonal shifts. Cut sodium (skip processed foods, soy sauce, chips) and add potassium-rich foods: banana, avocado, sweet potato. Potassium flushes excess sodium and reduces puffiness.",
+            "Bloating now is mostly water retention, not fat. What helps: drink more water (counterintuitively, dehydration makes you retain more), eat potassium-rich foods (bananas, avocado), and cut salt. Avoid gas-producing foods: beans, broccoli, carbonated drinks.",
+            "Your gut slows down during your period due to prostaglandins — leading to gas and bloating. Avoid cruciferous vegetables (broccoli, cauliflower), carbonated drinks, and high-salt foods. Instead: cucumber, fennel tea, bananas, and plenty of water help move things along."
+          ]
+        },
+        "exercise": {
+          "science": "Gentle aerobic movement promotes lymphatic drainage and reduces fluid accumulation. 30 minutes of walking shown to improve PMS symptoms including bloating (Medical News Today, evidence review).",
+          "versions": [
+            "Movement is one of the best bloat busters. Even a 20-30 minute walk promotes lymphatic drainage — your body's system for moving excess fluid out of tissues. Skip the couch and take a slow stroll.",
+            "Bloating responds well to gentle cardio. Walking, light cycling, or swimming gets your lymphatic system moving, which reduces the fluid retention causing the bloat. Even 20 minutes makes a visible difference.",
+            "The worst thing for bloating is staying still. A slow 30-minute walk increases circulation, stimulates digestion, and helps your lymphatic system clear excess fluid. Bonus: the endorphins improve your mood too."
+          ]
+        },
+        "selfcare": {
+          "science": "Abdominal self-massage in clockwise direction (following colon direction) reduces gas and stimulates peristalsis. Peppermint and fennel teas relax intestinal muscles and reduce gas (evidence-based herbal review).",
+          "versions": [
+            "Try abdominal massage: lie on your back and use your fingertips to make gentle clockwise circles on your belly (following the direction of your colon). 5 minutes of this stimulates digestion and relieves gas buildup. Follow with fennel tea.",
+            "Peppermint and fennel tea are evidence-backed for bloating — they relax intestinal smooth muscle and reduce trapped gas. Sip slowly after meals. Avoid lying down immediately after eating — give yourself 20 minutes upright to let digestion start.",
+            "Wear comfortable clothing today — constriction makes bloating worse. Try a warm compress on your abdomen, drink 8+ glasses of water, and sip ginger tea with meals. Ginger speeds up gastric emptying, directly reducing that full, heavy feeling."
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "menstrual_heavy_flow_mild_cramps",
+      "priority": 6,
+      "conditions": { "cramps": ["mild", "moderate"], "energy": ["medium", "low"] },
+      "recommendations": {
+        "food": {
+          "science": "Heavy flow increases iron loss risk. Vitamin K supports clotting (leafy greens). Hydration replaces fluid volume lost. Omega-3s reduce inflammation without thinning blood excessively.",
+          "versions": [
+            "With heavier flow, iron replacement is the priority. Dark leafy greens (spinach, kale) give you both iron and vitamin K which supports healthy clotting. Stay hydrated — you're losing fluid volume too. Add a vitamin C source at every meal to maximize iron uptake.",
+            "Your body is working hard right now. Keep iron levels up with meat, legumes, or tofu, and support clotting with leafy greens. Drink water consistently — even mild dehydration thickens blood and worsens cramping.",
+            "Heavy days mean higher iron needs. Build your meals around iron: red meat or legumes as the base, leafy greens as a side, and something citrusy with every meal. Avoid black tea, coffee, and calcium-rich foods within an hour of iron-rich meals — they compete for absorption."
+          ]
+        },
+        "exercise": {
+          "science": "Moderate movement on heavy days is safe and beneficial. Avoid inversion poses (legs above head) during heavy flow. Low-impact cardio maintains circulation without increasing flow significantly.",
+          "versions": [
+            "You can still move on heavy days — but keep it low-impact. Walking, gentle cycling, or restorative yoga are ideal. Skip inversions (headstands, legs-up-the-wall) during peak flow days as they can temporarily increase bleeding.",
+            "Light movement is safe and helpful even on heavy days. A 20-minute flat walk or gentle stretching keeps circulation going and reduces cramping. Listen to your body — if something feels like too much, it is.",
+            "Heavy flow doesn't mean full stop. Gentle swimming, slow yoga, or walking are all fine — and actually reduce prostaglandin sensitivity. Avoid anything that increases intra-abdominal pressure (heavy lifting, intense core work)."
+          ]
+        },
+        "selfcare": {
+          "science": "Changing period products regularly (every 4-6 hours for tampons/cups) prevents bacterial growth. Iron-rich diet + rest is more effective than supplements alone for heavy bleeders.",
+          "versions": [
+            "On heavy days, comfort and practicality come first. Make sure you have reliable period protection, comfortable clothing, and easy access to warm food. A heating pad on standby for cramp spikes can prevent you from needing to take pain medication.",
+            "Give yourself grace on heavy days. Plan easier meals (batch-cooked iron-rich soup is perfect), reduce your schedule if possible, and keep warm. The more stress you're under, the more cortisol you produce — which worsens cramps.",
+            "Heavy flow days are a signal to slow down. Prioritize iron-rich food at each meal, stay hydrated, and use heat therapy proactively — before cramps peak, not after. A proactive approach reduces the need for pain medication."
+          ]
+        }
+      }
+    }
+  ]
+}

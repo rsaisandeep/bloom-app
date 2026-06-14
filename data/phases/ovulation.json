@@ -1,0 +1,163 @@
+{
+  "phase": "ovulation",
+  "days": "14-16",
+  "description": "LH surge triggers egg release. Estrogen peaks, testosterone spikes. Energy, confidence, libido, and social drive are at their highest. The body's performance peak.",
+  "hormone_profile": "Estrogen ↑↑ (peak), LH ↑↑ (surge), Testosterone ↑↑, Progesterone ↑ (begins rising)",
+
+  "default": {
+    "food": {
+      "science": "Estrogen and testosterone peaks increase metabolic demand. Antioxidant-rich foods protect the egg from oxidative stress. Zinc supports LH surge and healthy ovulation. Fiber supports estrogen clearance through the gut (Oova nutrition guide; BSW Health).",
+      "versions": [
+        "Your body is at peak performance — fuel it with antioxidant-rich, nutrient-dense food. Think colorful vegetables, zinc-rich foods (pumpkin seeds, oysters, beef), and plenty of fiber to support estrogen clearance. Lighter meals work better now — your digestion is efficient.",
+        "Ovulation is your body's big event this month. Support it with zinc (required for LH surge), antioxidants (berries, leafy greens, tomatoes), and adequate fiber. Avoid highly processed foods — your body is sensitive to toxins now as it tries to release a healthy egg.",
+        "Peak estrogen means your body handles food extremely well right now. Eat for performance: lean protein, vibrant vegetables, healthy fats (avocado, olive oil), and antioxidant-rich fruits. Zinc-rich foods (pumpkin seeds, chickpeas, shellfish) directly support the ovulation process."
+      ]
+    },
+    "exercise": {
+      "science": "Testosterone and estrogen peak together creates maximum athletic output. Research shows highest strength, endurance, and pain tolerance during ovulation window. HIIT and strength training yield best results (Your Fertility Australia; Cleveland Clinic).",
+      "versions": [
+        "You're physically at your peak. High-intensity workouts, personal records, and challenging new classes all feel achievable now. Testosterone + estrogen together give you maximum strength, endurance, and motivation. Make it count.",
+        "The ovulation window is your body's performance summit. HIIT, heavy lifting, long runs — whatever you love — do it now. Your pain tolerance is highest, recovery is fastest, and muscle recruitment is optimal. This window lasts 2-3 days.",
+        "Go all out today — your body is ready. Testosterone and estrogen together create the most powerful hormonal cocktail for athletic performance you'll have all month. Group fitness, competitions, or challenging solo sessions are all ideal."
+      ]
+    },
+    "selfcare": {
+      "science": "High testosterone and estrogen increase confidence, social reward, and communication quality. Studies show increased attractiveness ratings and vocal clarity during ovulation (evolutionary psychology research). Natural time for social investment.",
+      "versions": [
+        "You're naturally at your most social and charismatic right now. Hormones at peak levels increase your confidence and communication quality. It's the ideal time for presentations, first dates, networking, or any situation where you want to show up at your best.",
+        "This is your power window — use it wisely. Schedule the things that require confidence, presence, and energy. Important meetings, social plans, creative performances, physical challenges. The biology is working in your favor.",
+        "Lean into the natural outward energy of ovulation. Connect with people you care about, pursue goals that excite you, and invest in experiences that energize you. This high won't last — make it meaningful."
+      ]
+    }
+  },
+
+  "rules": [
+    {
+      "id": "ovulation_peak_energy_happy",
+      "priority": 10,
+      "conditions": { "energy": ["high"], "mood": ["happy", "energetic"] },
+      "recommendations": {
+        "food": {
+          "science": "High metabolic demand during ovulation. Increasing food intake by 100-200 calories, focused on antioxidants and zinc, supports peak performance and egg quality. Research shows energy intake naturally increases around ovulation (Oxford Nutrition Reviews meta-analysis).",
+          "versions": [
+            "Peak energy day — eat to match it. You can afford to eat a little more today (your metabolism is running hot). Prioritize antioxidant-rich foods (berries, tomatoes, dark chocolate), zinc for ovulation support (pumpkin seeds, shellfish), and quality protein for the workout you're about to crush.",
+            "Your body is burning more fuel today than at any other point this month. Eat generously and nutrient-densely: colorful salads, lean protein, healthy fats, and zinc-rich foods. Post-workout, get protein in within 45 minutes — you'll recover faster and feel stronger.",
+            "Highest energy + best metabolic efficiency = maximize today. Fuel for performance: complex carbs before activity, protein after. Add colorful antioxidants at every meal — they protect against the oxidative stress that comes with intense training."
+          ]
+        },
+        "exercise": {
+          "science": "Testosterone peaks during ovulation window, improving explosive power, muscle recruitment, and motivation. Studies show highest PRs and best athletic performance outcomes at ovulation (sports science research, 2021).",
+          "versions": [
+            "This is the day to attempt your personal best. Testosterone is at its monthly peak, improving explosive power and muscle recruitment. Hit the weights hard, go for a fast run, or try a class you've been intimidated by. Your body is peak capable right now.",
+            "Athletic performance is objectively highest during ovulation. Plan your most challenging workout for today or tomorrow. HIIT, heavy squats, sprint intervals, long endurance — whatever your goal, this is the window where results are maximized.",
+            "You're operating at maximum capacity. Physically, mentally, and hormonally. Use this rare alignment: challenge yourself physically today. The combination of peak estrogen and testosterone won't repeat for another 28 days."
+          ]
+        },
+        "selfcare": {
+          "science": "Positive social experiences during high-estrogen states reinforce dopamine pathways and increase long-term well-being. Using energy peaks for meaningful connection has lasting mood benefits beyond the phase itself.",
+          "versions": [
+            "You're radiating energy today — direct it toward what matters most. Invest in relationships, experiences, or goals that feel meaningful. The high you feel now isn't just hormonal; positive actions taken during this window have disproportionately positive outcomes.",
+            "Use your peak energy to do something that matters to you. A meaningful workout, a creative project, quality time with someone you love, or pursuing a goal you care about. This is one of the best days of your hormonal month.",
+            "Everything feels more possible today and that's not just in your head — your brain chemistry is genuinely optimal. Make plans, have fun, push boundaries, say yes to things that excite you. Let yourself enjoy this phase fully."
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "ovulation_medium_energy_calm",
+      "priority": 8,
+      "conditions": { "energy": ["medium"], "mood": ["calm"] },
+      "recommendations": {
+        "food": {
+          "science": "Some people experience mid-cycle mittelschmerz (ovulation pain) or bloating from the LH surge. Anti-inflammatory foods and adequate hydration reduce these transient symptoms.",
+          "versions": [
+            "Steady, calm energy during ovulation is common — not everyone hits the dramatic peak. Eat clean and anti-inflammatory: olive oil, fatty fish, leafy greens, berries. If you feel any mid-cycle cramping (mittelschmerz), ginger tea and hydration help.",
+            "Balanced eating supports your calm energy today. Focus on nutrient density: varied vegetables, quality protein, healthy fats. Stay hydrated — the LH surge can cause mild bloating in some people, and water helps regulate this.",
+            "Moderate intake of high-quality food is perfect for this calm ovulation day. Include zinc (egg quality support), antioxidants (cell protection), and omega-3s (inflammation reduction). No need to overeat — your body is efficient right now."
+          ]
+        },
+        "exercise": {
+          "science": "Moderate exercise during ovulation still benefits from elevated hormones even without peak energy. Studies show improved mood and body confidence from exercise during ovulation, with lower perceived exertion for same output.",
+          "versions": [
+            "Even moderate energy during ovulation means you're stronger than baseline. A steady run, swimming laps, a power yoga class — you'll likely feel better and stronger than expected once you start. The hormones are doing quiet work in the background.",
+            "A calm ovulation day is still an above-average day for training. Try a moderately challenging workout — hiking, cycling, strength circuits — and notice how your body responds. You may surprise yourself with what feels easy.",
+            "Moderate intensity is perfect for today. A balanced workout — some strength, some cardio — will feel good and yield real results. Your body is in an anabolic state right now, meaning muscle gains from training are higher than any other phase."
+          ]
+        },
+        "selfcare": {
+          "science": "Calm states during peak hormone phases allow for deep focus and creative insight. Research in positive psychology shows that calm-positive affect (vs. excited-positive) produces higher quality creative output and decision-making.",
+          "versions": [
+            "Calm clarity during ovulation is a gift — it's rarer than the high-energy version and often more useful. Deep work, creative projects, thoughtful conversations. Your hormones support focus and insight even if the energy isn't dramatic today.",
+            "Use this calm, centered energy for your most important thinking. Ovulation's peak estrogen supports cognitive clarity and problem-solving. A perfect day for strategy, creative work, or decisions you've been putting off.",
+            "Some of the best work happens in calm peaks. You have the hormonal support without the overstimulation. Write, plan, create, or connect — quietly and deeply. This is a quality day, even if it doesn't feel dramatic."
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "ovulation_low_energy_unexpected",
+      "priority": 9,
+      "conditions": { "energy": ["low", "exhausted"] },
+      "recommendations": {
+        "food": {
+          "science": "Low energy during ovulation may indicate thyroid issues, iron deficiency, or high cortisol suppressing LH surge. Iodine supports thyroid and ovulation. Iron and B12 for energy. Adaptogenic foods reduce cortisol (functional nutrition research).",
+          "versions": [
+            "Low energy at ovulation is worth paying attention to — it's not typical. Make sure you're eating enough iron and B12 (meat, eggs, dairy). Check if you've been under a lot of stress — cortisol suppresses the LH surge needed for ovulation. Ashwagandha and magnesium can help regulate cortisol.",
+            "If you're exhausted at ovulation, your body may be under-fueled or over-stressed. Prioritize iron-rich food, adequate calories (don't under-eat — your body needs fuel to ovulate), and stress reduction. Iodine-rich foods (seaweed, fish) support thyroid function which drives energy.",
+            "Low energy during what should be your peak week is a signal. Eat warming, nourishing food: bone broth, iron-rich stew, leafy greens, eggs. Avoid calorie restriction right now — your body needs sufficient fuel to complete ovulation. Reduce intense exercise and stress."
+          ]
+        },
+        "exercise": {
+          "science": "Overtraining syndrome and underfueling both suppress ovulation. Low energy at ovulation may indicate exercise-induced amenorrhea risk or high cortisol. Reducing intensity protects hormonal health (sports medicine and female athlete research).",
+          "versions": [
+            "Honor the low energy even though this 'should' be your peak week. Gentle movement only — walking, light yoga, swimming. If you've been training hard or eating at a deficit, this is your body asking for recovery. Pushing through may worsen hormonal suppression.",
+            "Low energy at ovulation is a signal to rest, not push. Your body may be under stress — physical or emotional. Take it easy: a slow walk, some stretching, maybe a short yoga class. Restoration now protects your cycle going forward.",
+            "Skip the intense workout today. Unexpectedly low ovulation energy often means cortisol is elevated — hard exercise will raise it further and suppress your hormones more. A 20-minute gentle walk is the maximum today. Focus on rest and nourishment."
+          ]
+        },
+        "selfcare": {
+          "science": "Stress, sleep deprivation, and under-eating are the most common causes of low energy at ovulation. Cortisol suppresses GnRH, which suppresses FSH and LH. Sleep and stress reduction are the most effective interventions.",
+          "versions": [
+            "Something is draining your energy that shouldn't be — take stock. Are you sleeping enough? Eating enough? Under a lot of stress? Cortisol from any of these sources can suppress your ovulation hormones, causing the fatigue you feel. Rest and nourish first.",
+            "Be gentle with yourself today. Low energy at ovulation often means your body has been running on empty somewhere. Prioritize 8-9 hours of sleep tonight, eat warm nourishing food, and reduce demands where possible. Your body is asking for restoration.",
+            "Rest is the prescription today. An Epsom salt bath, early bedtime, and a nourishing meal are more valuable than any workout. Check in with your stress levels — chronic stress is the number one hormonal disruptor in women of reproductive age."
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "ovulation_mid_cycle_cramps",
+      "priority": 7,
+      "conditions": { "cramps": ["mild", "moderate"] },
+      "recommendations": {
+        "food": {
+          "science": "Mittelschmerz (mid-cycle pain) occurs when the follicle ruptures and releases fluid. It typically lasts 12-24 hours. Anti-inflammatory foods and hydration reduce associated discomfort. Magnesium relaxes smooth muscle.",
+          "versions": [
+            "Mid-cycle cramps (called mittelschmerz) are completely normal — it's the follicle releasing the egg. They should pass within 12-24 hours. Ginger tea reduces inflammation, magnesium-rich foods (dark chocolate, almonds) relax smooth muscle, and staying hydrated helps.",
+            "What you're feeling is your egg being released — a sign your cycle is working. These cramps are brief. Soothe them with anti-inflammatory food and drink: ginger tea, turmeric milk, magnesium-rich snacks. Avoid caffeine and alcohol today — they worsen the sensation.",
+            "Ovulation cramps are your body doing its job. Stay hydrated, eat light anti-inflammatory food (leafy greens, berries, fatty fish), and avoid foods that increase inflammation (processed meat, refined sugar, fried food). This typically passes within a day."
+          ]
+        },
+        "exercise": {
+          "science": "Light to moderate exercise reduces mittelschmerz by increasing circulation and reducing pelvic tension. Intense exercise may temporarily worsen the discomfort due to increased intra-abdominal pressure.",
+          "versions": [
+            "Mid-cycle cramps usually respond well to gentle movement. A 20-30 minute walk or light yoga improves pelvic circulation and reduces cramping. Avoid very intense workouts today — the abdominal pressure can amplify the discomfort. Tomorrow you'll likely feel great.",
+            "Gentle movement helps ovulation cramps more than rest. A slow walk, some hip-opening yoga poses (pigeon pose, bound angle), or a light swim eases pelvic tension. Hold off on HIIT or core-intense workouts until the cramps pass.",
+            "Give your body a little grace today. Light activity — walking, gentle yoga, or stretching — helps without aggravating mid-cycle pain. The cramps are brief, and tomorrow's workout will benefit from today's rest."
+          ]
+        },
+        "selfcare": {
+          "science": "Mittelschmerz pain is typically one-sided and lasts minutes to hours. A warm compress and over-the-counter NSAIDs are the most effective interventions. Tracking which side the pain occurs on helps confirm ovulation.",
+          "versions": [
+            "A warm heating pad on the side where you feel the cramps is the fastest relief. If it's bothering you significantly, a regular dose of ibuprofen works well for mittelschmerz. Note which side the pain is on — it tells you which ovary released an egg this month.",
+            "Ovulation cramps are brief and respond well to heat. Rest for an hour with a heating pad and a cup of ginger tea. If you track your cycle, this cramp is one of the most reliable physical signs of ovulation — make a note in your log.",
+            "Take it easy for a few hours. Warm tea, a cozy position, and a heat pad on your lower abdomen are the most effective comfort measures. The cramps should ease significantly within a few hours of onset."
+          ]
+        }
+      }
+    }
+  ]
+}
