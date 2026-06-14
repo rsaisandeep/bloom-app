@@ -1,8 +1,8 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { loadData, saveData } from '@/lib/cycle';
-import { syncToSheet } from '@/lib/sync';
+import { loadData } from '@/lib/cycle';
+import { saveToSheet } from '@/lib/data';
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -12,7 +12,7 @@ export default function OnboardingPage() {
   const [periodLen, setPeriodLen] = useState('5');
   const [error, setError] = useState('');
 
-  function handleContinue() {
+  async function handleContinue() {
     if (!lastPeriod) { setError('Please enter when your last period started.'); return; }
     const data = loadData();
     const pLen = parseInt(periodLen) || 5;
@@ -22,8 +22,7 @@ export default function OnboardingPage() {
     data.cycles = [{ startDate: lastPeriod, endDate: endDate.toISOString().slice(0, 10) }];
     localStorage.setItem('bloom_cycle_length', cycleLen);
     localStorage.setItem('bloom_period_length', periodLen);
-    saveData(data);
-    syncToSheet();
+    await saveToSheet(data); // saves to local cache + sheet
     router.push('/');
   }
 

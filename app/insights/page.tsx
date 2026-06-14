@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { loadData, getCurrentPhase, PHASE_META } from "@/lib/cycle";
+import { getCurrentPhase, PHASE_META } from "@/lib/cycle";
+import { fetchFromSheet } from "@/lib/data";
 import type { Recommendations } from "@/lib/matcher";
 import Link from "next/link";
 
@@ -19,15 +20,16 @@ export default function InsightsPage() {
   const [noLog, setNoLog] = useState(false);
 
   useEffect(() => {
-    const data = loadData();
-    const { phase: p } = getCurrentPhase(data.cycles);
-    setPhase(p);
-    const todayLog = data.logs.find((l) => l.date === new Date().toISOString().split("T")[0]);
-    if (!todayLog) setNoLog(true);
-    fetch("/api/recommendations", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phase: p, log: todayLog ?? {} }),
-    }).then((r) => r.json()).then(setRecs);
+    fetchFromSheet().then((data) => {
+      const { phase: p } = getCurrentPhase(data.cycles);
+      setPhase(p);
+      const todayLog = data.logs.find((l) => l.date === new Date().toISOString().split("T")[0]);
+      if (!todayLog) setNoLog(true);
+      fetch("/api/recommendations", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phase: p, log: todayLog ?? {} }),
+      }).then((r) => r.json()).then(setRecs);
+    });
   }, []);
 
   const meta = PHASE_META[phase as keyof typeof PHASE_META];

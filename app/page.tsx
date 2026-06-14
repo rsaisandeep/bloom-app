@@ -5,6 +5,7 @@ import {
   loadData, getCurrentPhase, getPredictions, getAverageCycleLength,
   PHASE_META, type Phase, type BloomData,
 } from '@/lib/cycle';
+import { fetchFromSheet } from '@/lib/data';
 
 const RING_COLORS: Record<Phase, [string, string]> = {
   menstrual:  ['#f87171', '#fca5a5'],
@@ -23,7 +24,8 @@ export default function HomePage() {
   useEffect(() => {
     const raw = localStorage.getItem('bloom_session');
     if (raw) { try { const { username: u } = JSON.parse(raw); setUsername(u || ''); } catch {} }
-    setData(loadData());
+    setData(loadData()); // show local cache instantly
+    fetchFromSheet().then(setData); // then refresh from sheet
   }, []);
 
   const today = new Date();

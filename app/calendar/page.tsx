@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import { loadData, getCurrentPhase, getPredictions, PHASE_META, type BloomData } from "@/lib/cycle";
+import { loadData, getPredictions, PHASE_META, type BloomData } from "@/lib/cycle";
+import { fetchFromSheet } from "@/lib/data";
 
 const PHASE_COLORS: Record<string, string> = {
   menstrual: "#fca5a5", follicular: "#c4b5fd", ovulation: "#fde68a", luteal: "#a5b4fc",
@@ -14,8 +15,8 @@ function getDayPhase(d: number) {
 }
 
 export default function CalendarPage() {
-  const [data, setData] = useState<BloomData>({ cycles: [], logs: [] });
-  useEffect(() => { setData(loadData()); }, []);
+  const [data, setData] = useState<BloomData>(() => loadData()); // instant from cache
+  useEffect(() => { fetchFromSheet().then(setData); }, []); // then sync from sheet
 
   const today = new Date();
   const year = today.getFullYear(), month = today.getMonth();

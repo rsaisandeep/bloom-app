@@ -4,8 +4,6 @@ import { useRouter } from 'next/navigation';
 import { apiLogin, apiRegister, apiLoadData } from '@/lib/api';
 import { saveData } from '@/lib/cycle';
 
-const API_CONFIGURED = !!process.env.NEXT_PUBLIC_BLOOM_API_URL;
-
 export default function LoginPage() {
   const router = useRouter();
   const [mode, setMode] = useState<'login' | 'register'>('login');
@@ -26,41 +24,23 @@ export default function LoginPage() {
     const u = username.trim().toLowerCase();
 
     try {
-      if (API_CONFIGURED) {
-        // Google Sheets backend
-        const fn = mode === 'register' ? apiRegister : apiLogin;
-        const r = await fn(u, password);
-        if (!r.ok) {
-          setMsg({ text: r.error, err: true });
-          setLoading(false);
-          return;
-        }
-        if (mode === 'login') {
-          const dataRes = await apiLoadData(u, password);
-          if (dataRes.ok && dataRes.data) saveData(dataRes.data);
-        }
-        localStorage.setItem('bloom_session', JSON.stringify({ username: u, password }));
-        router.push(mode === 'register' ? '/onboarding' : '/');
-      } else {
-        // localStorage fallback (no API URL set)
-        await new Promise(r => setTimeout(r, 400));
-        if (mode === 'register') {
-          if (localStorage.getItem(`bloom_user_${u}`)) {
-            setMsg({ text: 'Username already taken.', err: true });
-            setLoading(false);
-            return;
-          }
-          localStorage.setItem(`bloom_user_${u}`, JSON.stringify({ username: u, password }));
-        } else {
-          const stored = localStorage.getItem(`bloom_user_${u}`);
-          if (!stored) { setMsg({ text: 'Account not found.', err: true }); setLoading(false); return; }
-          if (JSON.parse(stored).password !== password) { setMsg({ text: 'Incorrect password.', err: true }); setLoading(false); return; }
-        }
-        localStorage.setItem('bloom_session', JSON.stringify({ username: u, password }));
-        router.push(mode === 'register' ? '/onboarding' : '/');
+      // Always authenticate against Google Sheets
+      const fn = mode === 'register' ? apiRegister : apiLogin;
+      const r = await fn(u, password);
+      if (!r.ok) {
+        setMsg({ text: r.error, err: true });
+        setLoading(false);
+        return;
       }
+      // On login: pull latest data from sheet into local cache
+      if (mode === 'login') {
+        const dataRes = await apiLoadData(u, password);
+        if (dataRes.ok && dataRes.data) saveData(dataRes.data);
+      }
+      localStorage.setItem('bloom_session', JSON.stringify({ username: u, password }));
+      router.push(mode === 'register' ? '/onboarding' : '/');
     } catch {
-      setMsg({ text: 'Network error. Try again.', err: true });
+      setMsg({ text: 'Network error. Check your connection and try again.', err: true });
       setLoading(false);
     }
   }

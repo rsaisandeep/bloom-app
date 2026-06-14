@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { loadData, saveLog, startPeriod, type DayLog } from "@/lib/cycle";
+import { fetchFromSheet, saveToSheet } from "@/lib/data";
 
 type Option = { value: string; label: string; emoji: string };
 const FIELDS: { key: keyof DayLog; label: string; options: Option[] }[] = [
@@ -19,12 +20,18 @@ export default function LogPage() {
   const router = useRouter();
   const today = new Date().toISOString().split("T")[0];
   const [form, setForm] = useState<Partial<DayLog>>(DEFAULTS);
+  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    const data = loadData();
-    const existing = data.logs.find((l) => l.date === today);
-    if (existing) setForm(existing);
+    // Always load from sheet; fall back to local cache while loading
+    const cached = loadData();
+    const cachedLog = cached.logs.find((l) => l.date === today);
+    if (cachedLog) setForm(cachedLog);
+    fetchFromSheet().then((data) => {
+      const existing = data.logs.find((l) => l.date === today);
+      if (existing) setForm(existing);
+    });
   }, [today]);
 
   function select(key: keyof DayLog, value: string) {
@@ -36,10 +43,13 @@ export default function LogPage() {
     }
   }
 
-  function handleSave() {
-    saveLog({ ...DEFAULTS, ...form, date: today } as DayLog);
+  async function handleSave() {
+    setSaving(true);
+    const log = { ...DEFAULTS, ...form, date: today } as DayLog;
+    saveLog(log); // update local cache immediately
+    await saveToSheet(loadData()); // persist to sheet
     setSaved(true);
-    setTimeout(() => router.push("/insights"), 700);
+    setTimeout(() => router.push("/insights"), 500);
   }
 
   return (
@@ -99,12 +109,12 @@ export default function LogPage() {
       <button onClick={handleSave} style={{
         width: "100%", marginTop: 16, padding: "14px", border: 0,
         borderRadius: 16, fontWeight: 800, fontSize: "1rem", color: "#fff",
-        background: saved ? "linear-gradient(135deg,#22c55e,#16a34a)" : "linear-gradient(135deg,#6E3482,#49225B)",
+        background: saved ? "linear-gradient(135deg,#22c55e,#16a34a)" : saving ? "rgba(110,52,130,0.5)" : "linear-gradient(135deg,#6E3482,#49225B)",
         boxShadow: saved ? "0 8px 24px rgba(34,197,94,0.35)" : "0 8px 24px rgba(110,52,130,0.35), inset 0 1px 0 rgba(255,255,255,0.2)",
-        cursor: "pointer", transition: "all .2s cubic-bezier(.22,.61,.36,1)",
+        cursor: saving ? "default" : "pointer", transition: "all .2s cubic-bezier(.22,.61,.36,1)",
         fontFamily: "inherit",
       }}>
-        {saved ? "✓ Saved! Loading insights..." : "Get My Recommendations →"}
+        {saved ? "✓ Saved!" : saving ? "Saving to your journal…" : "Get My Recommendations →"}
       </button>
     </div>
   );
