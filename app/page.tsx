@@ -190,6 +190,37 @@ export default function HomePage() {
         </div>
       </div>
 
+      {/* ── No-log nudge banner ── */}
+      {!todayLog && (
+        <Link href="/log" style={{ textDecoration: 'none', display: 'block' }}>
+          <div className="glass-card anim-float shimmer-host" style={{
+            padding: '14px 16px', marginBottom: 14,
+            display: 'flex', alignItems: 'center', gap: 12,
+            background: 'linear-gradient(135deg, rgba(165,106,189,0.18), rgba(110,52,130,0.10))',
+            borderColor: 'rgba(165,106,189,0.4)',
+          }}>
+            <div style={{
+              width: 40, height: 40, borderRadius: 14, flexShrink: 0,
+              background: 'linear-gradient(135deg,#6E3482,#A56ABD)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
+              boxShadow: '0 6px 16px rgba(110,52,130,0.35)',
+            }}>📝</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#1C0B2E' }}>No log entered today</p>
+              <p style={{ margin: '2px 0 0', fontSize: 12, color: '#6E3482', lineHeight: 1.4 }}>
+                Log how you feel to get tasks tailored to your symptoms.
+              </p>
+            </div>
+            <span style={{
+              fontSize: 12, fontWeight: 800, color: '#fff', flexShrink: 0,
+              padding: '8px 14px', borderRadius: 999,
+              background: 'linear-gradient(135deg,#6E3482,#49225B)',
+              boxShadow: '0 4px 12px rgba(110,52,130,0.3)',
+            }}>Log →</span>
+          </div>
+        </Link>
+      )}
+
       {/* ── Today's focus — checkable reminders ── */}
       <div className="anim-rise" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '6px 2px 10px' }}>
         <div>
