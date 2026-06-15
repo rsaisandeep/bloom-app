@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { loadData, getPredictions, PHASE_META, type BloomData } from "@/lib/cycle";
 import { fetchFromSheet } from "@/lib/data";
+import { localDateStr } from "@/lib/day";
 
 const PHASE_COLORS: Record<string, string> = {
   menstrual: "#fca5a5", follicular: "#c4b5fd", ovulation: "#fde68a", luteal: "#a5b4fc",
@@ -30,7 +31,7 @@ export default function CalendarPage() {
     if (!lastStart) return { phase: null, hasLog: false, isToday: false };
     const diff = Math.floor((date.getTime() - lastStart.getTime()) / 86400000);
     const phase = getDayPhase(diff + 1);
-    const dateStr = date.toISOString().split("T")[0];
+    const dateStr = localDateStr(date);
     return { phase, hasLog: data.logs.some((l) => l.date === dateStr), isToday: day === today.getDate() };
   }
 

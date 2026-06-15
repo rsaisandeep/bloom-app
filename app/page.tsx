@@ -8,6 +8,7 @@ import {
 } from '@/lib/cycle';
 import { getActionItems } from '@/lib/actions';
 import { fetchFromSheet } from '@/lib/data';
+import { appDayKey, localDateStr } from '@/lib/day';
 import Hamburger from '@/components/Hamburger';
 
 const RING_COLORS: Record<Phase, [string, string]> = {
@@ -33,7 +34,7 @@ export default function HomePage() {
   const [username, setUsername] = useState('');
   const [done, setDone] = useState<number[]>([]);
 
-  const todayKey = new Date().toISOString().split('T')[0];
+  const todayKey = appDayKey(); // logical day (rolls over at 5 AM)
 
   useEffect(() => {
     const raw = localStorage.getItem('bloom_session');
@@ -55,7 +56,7 @@ export default function HomePage() {
   }
 
   const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
+  const todayStr = todayKey; // today's log keyed to the logical day
   const { phase, dayOfCycle } = getCurrentPhase(data.cycles);
   const avgLen = getAverageCycleLength(data.cycles);
   const predictions = getPredictions(data.cycles);
@@ -111,7 +112,7 @@ export default function HomePage() {
         {weekDays.map((d, i) => {
           const isToday = d.toDateString() === today.toDateString();
           const isPast = d < today && !isToday;
-          const dStr = d.toISOString().split('T')[0];
+          const dStr = localDateStr(d);
           const hasLog = data.logs.some(l => l.date === dStr);
           return (
             <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, flex: 1 }}>

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { getCurrentPhase, getPredictions, getAverageCycleLength, PHASE_META } from '@/lib/cycle';
 import type { Recommendations } from '@/lib/matcher';
 import { fetchFromSheet } from '@/lib/data';
+import { appDayKey } from '@/lib/day';
 
 const REC_CARDS = [
   { key: 'food', emoji: '🥗', label: 'Food & Nutrition', tint: 'rgba(232,248,238,0.82)', border: 'rgba(100,200,130,0.3)', color: '#166534' },
@@ -24,7 +25,7 @@ export default function ReportsPage() {
 
   useEffect(() => {
     fetchFromSheet().then((data) => {
-      const todayStr = new Date().toISOString().split('T')[0];
+      const todayStr = appDayKey();
       const todayLog = data.logs.find((l) => l.date === todayStr);
 
       // Rule 5: no log yet → open the check-in first

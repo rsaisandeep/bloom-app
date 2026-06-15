@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { loadData, saveLog, startPeriod, type DayLog } from "@/lib/cycle";
+import { appDayKey } from "@/lib/day";
 import { fetchFromSheet, saveToSheet } from "@/lib/data";
 
 type Option = { value: string; label: string; emoji: string };
@@ -18,7 +19,7 @@ const DEFAULTS: Partial<DayLog> = { cramps:"none",energy:"medium",mood:"calm",bl
 
 export default function LogPage() {
   const router = useRouter();
-  const today = new Date().toISOString().split("T")[0];
+  const today = appDayKey();
   const [form, setForm] = useState<Partial<DayLog>>(DEFAULTS);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
