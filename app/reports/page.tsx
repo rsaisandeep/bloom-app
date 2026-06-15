@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { getCurrentPhase, getPredictions, getAverageCycleLength, PHASE_META } from '@/lib/cycle';
+import { loadData, getCurrentPhase, getPredictions, getAverageCycleLength, PHASE_META, type BloomData, type DayLog } from '@/lib/cycle';
 import type { Recommendations } from '@/lib/matcher';
 import { fetchFromSheet } from '@/lib/data';
 import { appDayKey } from '@/lib/day';
@@ -13,6 +13,32 @@ const REC_CARDS = [
   { key: 'exercise', emoji: '🏃', label: 'Movement',         tint: 'rgba(237,233,255,0.85)', border: 'rgba(165,106,189,0.3)', color: '#4c1d95' },
   { key: 'selfcare', emoji: '💆', label: 'Self-care',        tint: 'rgba(252,232,240,0.85)', border: 'rgba(200,100,140,0.3)', color: '#9d174d' },
 ];
+
+function IOSSpinner({ color = '#6E3482', size = 36 }: { color?: string; size?: number }) {
+  const n = 12;
+  const lineW = Math.max(2, Math.round(size * 0.085));
+  const lineH = Math.round(size * 0.28);
+  const topOffset = Math.round(size * 0.12);
+  const pivotY = Math.round(size * 0.5 - topOffset);
+  return (
+    <div style={{ position: 'relative', width: size, height: size }}>
+      {Array.from({ length: n }, (_, i) => (
+        <div key={i} style={{
+          position: 'absolute',
+          width: lineW, height: lineH,
+          borderRadius: lineW,
+          background: color,
+          top: topOffset,
+          left: '50%',
+          marginLeft: -lineW / 2,
+          transformOrigin: `${lineW / 2}px ${pivotY}px`,
+          transform: `rotate(${i * (360 / n)}deg)`,
+          animation: `iosSpinner 1s ${-((n - i) / n).toFixed(3)}s linear infinite`,
+        }} />
+      ))}
+    </div>
+  );
+}
 
 export default function ReportsPage() {
   const [recs, setRecs] = useState<Recommendations | null>(null);
@@ -26,49 +52,65 @@ export default function ReportsPage() {
   const [showLog, setShowLog] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
+  async function loadRecs(data: BloomData, log: DayLog) {
+    const { phase: p, dayOfCycle: d } = getCurrentPhase(data);
+    setPhase(p); setDayOfCycle(d);
+    setAvgLen(getAverageCycleLength(data));
+    setCycleHistory(data.cycles.filter((c) => c.cycleLength).map((c) => c.cycleLength!).slice(-6));
+    const rec = await fetch('/api/recommendations', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phase: p, log }),
+    }).then((r) => r.json());
+    setRecs(rec);
+    setLoading(false);
+  }
+
   useEffect(() => {
-    setLoading(true);
+    const todayStr = appDayKey();
+
+    // Check local cache first — no network wait
+    const cached = loadData();
+    const cachedLog = cached.logs.find((l) => l.date === todayStr);
+
+    if (!cachedLog) {
+      // Show empty state immediately, then quietly verify with sheet
+      setHasLog(false);
+      setLoading(false);
+      fetchFromSheet().then((data) => {
+        const sheetLog = data.logs.find((l) => l.date === todayStr);
+        if (sheetLog) {
+          setHasLog(true);
+          setLoading(true);
+          loadRecs(data, sheetLog);
+        }
+      });
+      return;
+    }
+
+    // Have a local log — show spinner, fetch fresh data + recs
+    setHasLog(true);
     setRecs(null);
     fetchFromSheet().then((data) => {
-      const todayStr = appDayKey();
-      const todayLog = data.logs.find((l) => l.date === todayStr);
-
-      if (!todayLog) {
-        setHasLog(false);
-        setLoading(false);
-        return;
-      }
-
-      setHasLog(true);
-      const { phase: p, dayOfCycle: d } = getCurrentPhase(data);
-      setPhase(p); setDayOfCycle(d);
-      setAvgLen(getAverageCycleLength(data));
-      const lengths = data.cycles.filter((c) => c.cycleLength).map((c) => c.cycleLength!);
-      setCycleHistory(lengths.slice(-6));
-
-      fetch('/api/recommendations', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phase: p, log: todayLog }),
-      }).then((r) => r.json()).then((rec) => { setRecs(rec); setLoading(false); });
+      const log = data.logs.find((l) => l.date === todayStr) ?? cachedLog;
+      loadRecs(data, log);
     });
-  }, [refreshKey]);
+  }, [refreshKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const meta = PHASE_META[phase as keyof typeof PHASE_META];
+  const maxBar = Math.max(avgLen, ...cycleHistory, 1);
 
-  // Loading spinner
   if (loading) return (
     <>
       <TopBar title="Reports" />
       <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '2.5rem', animation: 'breathe 1.4s ease-in-out infinite' }}>🌸</div>
-          <p style={{ marginTop: 12, fontSize: 13, fontWeight: 600, color: '#8A6A9A' }}>Building your report…</p>
+          <IOSSpinner size={44} />
+          <p style={{ marginTop: 14, fontSize: 13, fontWeight: 600, color: '#8A6A9A' }}>Building your report…</p>
         </div>
       </div>
     </>
   );
 
-  // No log today — empty state
   if (!hasLog) return (
     <>
       <TopBar title="Reports" />
@@ -85,21 +127,14 @@ export default function ReportsPage() {
           boxShadow: '0 8px 24px rgba(110,52,130,0.35)',
         }}>Log now →</button>
       </div>
-      <LogSheet
-        open={showLog}
-        onClose={() => setShowLog(false)}
-        onSaved={() => setRefreshKey((k) => k + 1)}
-      />
+      <LogSheet open={showLog} onClose={() => setShowLog(false)} onSaved={() => { setShowLog(false); setRefreshKey((k) => k + 1); }} />
     </>
   );
-
-  const maxBar = Math.max(avgLen, ...cycleHistory, 1);
 
   return (
     <>
       <TopBar title="Reports" />
       <div style={{ padding: '8px 16px 24px' }}>
-        {/* Phase subtitle */}
         <div className="anim-rise" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
           <p style={{ margin: 0, fontSize: 13, color: '#8A6A9A' }}>Insights for {meta.label} · Day {dayOfCycle}</p>
           <span style={{ fontSize: 28 }}>{meta.emoji}</span>

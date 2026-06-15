@@ -296,12 +296,14 @@ export default function HomePage() {
         <div>
           <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#1C0B2E' }}>Today&apos;s focus</p>
           <p style={{ margin: '1px 0 0', fontSize: 12, color: '#8A6A9A' }}>
-            {done.length}/{actions.length} done · {meta.label} phase
+            {todayLog ? `${done.length}/${actions.length} done · ${meta.label} phase` : 'Log to get personalized tasks'}
           </p>
         </div>
-        <Link href={todayLog ? '/reports' : '/log?from=cycle'} style={{ fontSize: 12, fontWeight: 700, color: '#A56ABD', textDecoration: 'none' }}>
-          {todayLog ? 'See report ›' : 'Log to refine ›'}
-        </Link>
+        {todayLog && (
+          <Link href="/reports" style={{ fontSize: 12, fontWeight: 700, color: '#A56ABD', textDecoration: 'none' }}>
+            See report ›
+          </Link>
+        )}
       </div>
 
       <div className="glass-card stagger" style={{ padding: '6px 8px', marginBottom: 14 }}>
