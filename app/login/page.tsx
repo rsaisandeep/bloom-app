@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { apiLogin, apiRegister, apiLoadData } from '@/lib/api';
+import { apiLogin, apiRegister, apiLoadAll } from '@/lib/api';
 import { saveData } from '@/lib/cycle';
 
 export default function LoginPage() {
@@ -34,8 +34,10 @@ export default function LoginPage() {
       }
       // On login: pull latest data from sheet into local cache
       if (mode === 'login') {
-        const dataRes = await apiLoadData(u, password);
-        if (dataRes.ok && dataRes.data) saveData(dataRes.data);
+        const dataRes = await apiLoadAll(u, password);
+        if (dataRes.ok && dataRes.data) {
+          saveData({ cycles: dataRes.data.cycles ?? [], logs: dataRes.data.logs ?? [], settings: dataRes.data.settings ?? {} });
+        }
       }
       localStorage.setItem('bloom_session', JSON.stringify({ username: u, password }));
       router.push(mode === 'register' ? '/onboarding' : '/');

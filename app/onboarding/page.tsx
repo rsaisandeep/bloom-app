@@ -16,13 +16,21 @@ export default function OnboardingPage() {
     if (!lastPeriod) { setError('Please enter when your last period started.'); return; }
     const data = loadData();
     const pLen = parseInt(periodLen) || 5;
-    const startDate = new Date(lastPeriod);
-    const endDate = new Date(startDate);
-    endDate.setDate(startDate.getDate() + pLen - 1);
-    data.cycles = [{ startDate: lastPeriod, endDate: endDate.toISOString().slice(0, 10) }];
-    localStorage.setItem('bloom_cycle_length', cycleLen);
-    localStorage.setItem('bloom_period_length', periodLen);
-    await saveToSheet(data); // saves to local cache + sheet
+    const cLen = parseInt(cycleLen) || 28;
+    const session = (() => { try { return JSON.parse(localStorage.getItem('bloom_session') || '{}'); } catch { return {}; } })();
+    const uname = session.username || 'me';
+    const endDate = new Date(lastPeriod);
+    endDate.setDate(endDate.getDate() + pLen - 1);
+
+    data.cycles = [{
+      id: `${uname}_${lastPeriod}`,
+      startDate: lastPeriod,
+      periodEndDate: endDate.toISOString().slice(0, 10),
+      periodLength: pLen,
+    }];
+    data.settings = { ...data.settings, defaultCycleLength: cLen, defaultPeriodLength: pLen };
+
+    await saveToSheet(data); // local cache + sheet
     router.push('/');
   }
 

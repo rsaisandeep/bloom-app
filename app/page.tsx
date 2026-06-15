@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  loadData, getCurrentPhase, getPredictions, getPredictionWindow, getAverageCycleLength,
+  loadData, emptyData, getCurrentPhase, getPredictions, getPredictionWindow, getAverageCycleLength,
   PHASE_META, type Phase, type BloomData,
 } from '@/lib/cycle';
 import { getActionItems } from '@/lib/actions';
@@ -31,7 +31,7 @@ function greeting() {
 
 export default function HomePage() {
   const router = useRouter();
-  const [data, setData] = useState<BloomData>({ cycles: [], logs: [] });
+  const [data, setData] = useState<BloomData>(emptyData);
   const [username, setUsername] = useState('');
   const [done, setDone] = useState<number[]>([]);
 
@@ -63,11 +63,11 @@ export default function HomePage() {
 
   const today = new Date();
   const todayStr = todayKey; // today's log keyed to the logical day
-  const { phase, dayOfCycle } = getCurrentPhase(data.cycles);
-  const avgLen = getAverageCycleLength(data.cycles);
-  const predictions = getPredictions(data.cycles);
+  const { phase, dayOfCycle } = getCurrentPhase(data);
+  const avgLen = getAverageCycleLength(data);
+  const predictions = getPredictions(data);
   const pcosMode = !!data.settings?.pcosMode;
-  const predWindow = pcosMode ? getPredictionWindow(data.cycles) : null;
+  const predWindow = pcosMode ? getPredictionWindow(data) : null;
   const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   const meta = PHASE_META[phase];
   const todayLog = data.logs.find(l => l.date === todayStr);

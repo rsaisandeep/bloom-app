@@ -14,15 +14,12 @@ async function post(payload: Record<string, unknown>) {
 export async function apiRegister(username: string, password: string) {
   return post({ action: 'register', username, password });
 }
-
 export async function apiLogin(username: string, password: string) {
   return post({ action: 'login', username, password });
 }
-
-export async function apiSaveData(username: string, password: string, data: BloomData) {
-  return post({ action: 'saveData', username, password, data });
+export async function apiLoadAll(username: string, password: string) {
+  return post({ action: 'loadAll', username, password });
 }
-
-export async function apiLoadData(username: string, password: string) {
-  return post({ action: 'loadData', username, password });
+export async function apiSaveAll(username: string, password: string, data: BloomData) {
+  return post({ action: 'saveAll', username, password, data });
 }

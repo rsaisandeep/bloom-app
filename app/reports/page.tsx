@@ -31,9 +31,9 @@ export default function ReportsPage() {
       // Rule 5: no log yet → open the check-in first
       if (!todayLog) { router.replace('/log'); return; }
 
-      const { phase: p, dayOfCycle: d } = getCurrentPhase(data.cycles);
+      const { phase: p, dayOfCycle: d } = getCurrentPhase(data);
       setPhase(p); setDayOfCycle(d);
-      setAvgLen(getAverageCycleLength(data.cycles));
+      setAvgLen(getAverageCycleLength(data));
       const lengths = data.cycles.filter((c) => c.cycleLength).map((c) => c.cycleLength!);
       setCycleHistory(lengths.slice(-6));
 

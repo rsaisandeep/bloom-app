@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { loadData, saveLog, startPeriod, type DayLog } from "@/lib/cycle";
+import { loadData, saveLog, startPeriod, isNewPeriodStart, type DayLog } from "@/lib/cycle";
 import { appDayKey } from "@/lib/day";
 import { fetchFromSheet, saveToSheet } from "@/lib/data";
 
@@ -39,8 +39,10 @@ export default function LogPage() {
     setForm((f) => ({ ...f, [key]: value }));
     if (key === "flow" && value !== "none") {
       const data = loadData();
-      const hasOpen = data.cycles.length > 0 && !data.cycles[data.cycles.length-1].endDate;
-      if (!hasOpen) startPeriod(today);
+      if (isNewPeriodStart(data, today)) {
+        const session = (() => { try { return JSON.parse(localStorage.getItem("bloom_session") || "{}"); } catch { return {}; } })();
+        startPeriod(today, session.username || "me");
+      }
     }
   }
 

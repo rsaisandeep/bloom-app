@@ -1,4 +1,4 @@
-import { apiSaveData } from './api';
+import { apiSaveAll } from './api';
 import { loadData } from './cycle';
 
 // Fire-and-forget sync to Google Sheets after any data mutation.
@@ -13,7 +13,7 @@ export function syncToSheet() {
   try {
     const { username, password } = JSON.parse(raw);
     const data = loadData();
-    apiSaveData(username, password, data).catch(() => {
+    apiSaveAll(username, password, data).catch(() => {
       // Silent failure — localStorage is source of truth
     });
   } catch {

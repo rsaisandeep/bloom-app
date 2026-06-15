@@ -23,9 +23,9 @@ export default function CalendarPage() {
   const year = today.getFullYear(), month = today.getMonth();
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const predictions = getPredictions(data.cycles);
+  const predictions = getPredictions(data);
   const pcosMode = !!data.settings?.pcosMode;
-  const predWindow = pcosMode ? getPredictionWindow(data.cycles) : null;
+  const predWindow = pcosMode ? getPredictionWindow(data) : null;
   const fmtD = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   const lastStart = data.cycles.length > 0 ? new Date(data.cycles[data.cycles.length-1].startDate) : null;
 

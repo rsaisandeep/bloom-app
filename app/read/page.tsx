@@ -17,7 +17,7 @@ export default function ReadPage() {
 
   useEffect(() => {
     fetchFromSheet().then((data) => {
-      const { phase } = getCurrentPhase(data.cycles);
+      const { phase } = getCurrentPhase(data);
       setCurrentSlug(PHASE_SLUG[phase]);
     });
   }, []);
