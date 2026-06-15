@@ -4,13 +4,14 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   loadData, emptyData, getCurrentPhase, getPredictions, getPredictionWindow, getAverageCycleLength,
-  PHASE_META, type Phase, type BloomData,
+  getLateInfo, PHASE_META, type Phase, type BloomData,
 } from '@/lib/cycle';
 import { getActionItems } from '@/lib/actions';
 import { fetchFromSheet } from '@/lib/data';
 import { localDateStr } from '@/lib/day';
 import { useAppDay } from '@/lib/useAppDay';
 import Hamburger from '@/components/Hamburger';
+import PeriodStartModal from '@/components/PeriodStartModal';
 
 const RING_COLORS: Record<Phase, [string, string]> = {
   menstrual:  ['#f87171', '#fca5a5'],
@@ -63,15 +64,16 @@ export default function HomePage() {
 
   const today = new Date();
   const todayStr = todayKey; // today's log keyed to the logical day
+  const hasCycles = data.cycles.length > 0;
+  const todayLog = data.logs.find(l => l.date === todayStr);
   const { phase, dayOfCycle } = getCurrentPhase(data);
   const avgLen = getAverageCycleLength(data);
   const predictions = getPredictions(data);
   const pcosMode = !!data.settings?.pcosMode;
   const predWindow = pcosMode ? getPredictionWindow(data) : null;
+  const lateInfo = hasCycles ? getLateInfo(data) : null;
   const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   const meta = PHASE_META[phase];
-  const todayLog = data.logs.find(l => l.date === todayStr);
-  const hasCycles = data.cycles.length > 0;
 
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(today); d.setDate(today.getDate() - 3 + i); return d;
@@ -89,6 +91,8 @@ export default function HomePage() {
     localStorage.removeItem('bloom_session');
     router.replace('/login');
   }
+
+  function refresh() { setData(loadData()); fetchFromSheet().then(setData); }
 
   return (
     <div style={{ minHeight: '100vh', padding: '0 16px' }}>
@@ -195,6 +199,32 @@ export default function HomePage() {
         </div>
       </div>
 
+      {/* ── Late-period reminder ── */}
+      {lateInfo && (
+        <div className="glass-card anim-float shimmer-host" style={{
+          padding: '14px 16px', marginBottom: 14,
+          display: 'flex', alignItems: 'center', gap: 12,
+          background: 'linear-gradient(135deg, rgba(220,38,38,0.14), rgba(157,23,77,0.08))',
+          borderColor: 'rgba(220,38,38,0.35)',
+        }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: 14, flexShrink: 0,
+            background: 'linear-gradient(135deg,#dc2626,#9d174d)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
+            boxShadow: '0 6px 16px rgba(220,38,38,0.3)',
+          }}>🩸</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#1C0B2E' }}>
+              Period {lateInfo.daysLate} {lateInfo.daysLate === 1 ? 'day' : 'days'} late
+            </p>
+            <p style={{ margin: '2px 0 0', fontSize: 12, color: '#9d174d', lineHeight: 1.4 }}>
+              {pcosMode ? 'Normal with PCOS — log it once it starts.' : 'Tap when it starts so predictions stay accurate.'}
+            </p>
+          </div>
+          <PeriodStartModal variant="banner-cta" onDone={refresh} />
+        </div>
+      )}
+
       {/* ── No-log nudge banner ── */}
       {!todayLog && (
         <Link href="/log" style={{ textDecoration: 'none', display: 'block' }}>
@@ -294,6 +324,11 @@ export default function HomePage() {
           </div>
         </div>
       </Link>
+
+      {/* ── Log / back-date period start ── */}
+      <div style={{ marginBottom: 12 }}>
+        <PeriodStartModal label="My period started" onDone={refresh} />
+      </div>
     </div>
   );
 }

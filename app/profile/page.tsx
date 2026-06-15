@@ -2,19 +2,25 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getSettings, setPcosMode } from '@/lib/cycle';
+import { getSettings, setPcosMode, loadData, deleteCycle, isLikelySkipped, type Cycle } from '@/lib/cycle';
 import { fetchFromSheet } from '@/lib/data';
 
 export default function ProfilePage() {
   const router = useRouter();
   const [username, setUsername] = useState('');
   const [pcos, setPcos] = useState(false);
+  const [cycles, setCycles] = useState<Cycle[]>([]);
+
+  function syncLocal() {
+    setPcos(!!getSettings().pcosMode);
+    setCycles([...loadData().cycles].reverse()); // newest first
+  }
 
   useEffect(() => {
     const raw = localStorage.getItem('bloom_session');
     if (raw) { const { username: u } = JSON.parse(raw); setUsername(u || ''); }
-    setPcos(!!getSettings().pcosMode);              // instant from cache
-    fetchFromSheet().then(() => setPcos(!!getSettings().pcosMode)); // then sheet truth
+    syncLocal();                          // instant from cache
+    fetchFromSheet().then(syncLocal);     // then sheet truth
   }, []);
 
   function togglePcos() {
@@ -22,6 +28,13 @@ export default function ProfilePage() {
     setPcos(next);
     setPcosMode(next); // persists to cache + syncs to sheet
   }
+
+  function removeCycle(id: string) {
+    deleteCycle(id);
+    syncLocal();
+  }
+
+  const fmt = (s?: string) => s ? new Date(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
 
   function logout() {
     localStorage.removeItem('bloom_session');
@@ -102,6 +115,40 @@ export default function ProfilePage() {
           <span style={{ color: '#A56ABD', fontSize: 16 }}>→</span>
         </div>
       </Link>
+
+      {/* Cycle history */}
+      {cycles.length > 0 && (
+        <div className="glass-card" style={{ padding: '14px 18px', marginBottom: 12 }}>
+          <p style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 800, color: '#1C0B2E' }}>Cycle history</p>
+          {cycles.map((c, i) => (
+            <div key={c.id} style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '10px 0', borderBottom: i < cycles.length - 1 ? '1px solid rgba(165,106,189,0.12)' : 'none',
+            }}>
+              <div>
+                <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#1C0B2E' }}>
+                  {fmt(c.startDate)}
+                  {i === 0 && <span style={{ fontSize: 11, fontWeight: 700, color: '#6E3482', marginLeft: 8 }}>current</span>}
+                  {isLikelySkipped(c.cycleLength) && <span style={{ fontSize: 11, fontWeight: 700, color: '#d97706', marginLeft: 8 }}>⚠ skipped?</span>}
+                </p>
+                <p style={{ margin: '1px 0 0', fontSize: 12, color: '#8A6A9A' }}>
+                  {c.cycleLength ? `${c.cycleLength}-day cycle` : 'in progress'}
+                  {c.periodLength ? ` · ${c.periodLength}-day period` : ''}
+                </p>
+              </div>
+              <button onClick={() => removeCycle(c.id)} aria-label="Delete cycle" style={{
+                width: 32, height: 32, borderRadius: 10, flexShrink: 0, cursor: 'pointer',
+                border: '1px solid rgba(220,38,38,0.2)', background: 'rgba(252,232,232,0.5)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                  <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m2 0v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6" stroke="#dc2626" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* App info */}
       <div className="glass-card" style={{ padding: '4px 18px', marginBottom: 12 }}>

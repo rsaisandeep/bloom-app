@@ -99,25 +99,43 @@ export function isNewPeriodStart(data: BloomData, date: string): boolean {
   return daysBetween(last.startDate, date) > 12;
 }
 
-export function startPeriod(date: string, username = "me") {
-  const data = loadData();
-  if (data.cycles.length > 0) {
-    const last = data.cycles[data.cycles.length - 1];
-    if (daysBetween(last.startDate, date) > 0) {
-      last.cycleLength = daysBetween(last.startDate, date);
-      last.periodLength = last.periodLength ?? derivePeriodLength(last, data.logs);
-    }
+// Recompute cycle lengths (and fill missing period lengths) after any insert/delete.
+function recomputeCycles(data: BloomData) {
+  data.cycles.sort((a, b) => (a.startDate < b.startDate ? -1 : 1));
+  const cs = data.cycles;
+  for (let i = 0; i < cs.length; i++) {
+    cs[i].cycleLength = i < cs.length - 1 ? daysBetween(cs[i].startDate, cs[i + 1].startDate) : undefined;
+    if (!cs[i].periodLength) cs[i].periodLength = derivePeriodLength(cs[i], data.logs);
   }
+}
+
+// Insert a period start at any date (today or back-dated). Chronologically
+// correct and idempotent — ignores a duplicate within a day of an existing one.
+export function addPeriodStart(date: string, username = "me") {
+  const data = loadData();
+  if (data.cycles.some((c) => Math.abs(daysBetween(c.startDate, date)) <= 1)) return;
   data.cycles.push({ id: `${username}_${date}`, startDate: date });
+  recomputeCycles(data);
   saveData(data);
   syncAfterSave();
 }
 
+// Back-compat alias used by the flow auto-detect path.
+export const startPeriod = addPeriodStart;
+
 export function deleteCycle(id: string) {
   const data = loadData();
   data.cycles = data.cycles.filter((c) => c.id !== id);
+  recomputeCycles(data);
   saveData(data);
   syncAfterSave();
+}
+
+// Cycle lengths outside this range are treated as skipped/forgotten periods.
+const MIN_PLAUSIBLE = 15;
+const MAX_PLAUSIBLE = 60;
+export function isLikelySkipped(cycleLength?: number): boolean {
+  return !!cycleLength && cycleLength > MAX_PLAUSIBLE;
 }
 
 // ── Settings ──
@@ -157,7 +175,8 @@ export function getDefaultPeriodLength(data: BloomData): number {
 }
 
 export function getAverageCycleLength(data: BloomData): number {
-  const done = data.cycles.filter((c) => c.cycleLength && c.cycleLength > 0);
+  // Exclude implausible lengths (skipped/forgotten periods) so they don't skew predictions.
+  const done = data.cycles.filter((c) => c.cycleLength && c.cycleLength >= MIN_PLAUSIBLE && c.cycleLength <= MAX_PLAUSIBLE);
   if (done.length === 0) return getDefaultCycleLength(data);
   const recent = done.slice(-6);
   return Math.round(recent.reduce((s, c) => s + (c.cycleLength as number), 0) / recent.length);
@@ -222,6 +241,24 @@ export function getPredictionWindow(data: BloomData) {
   const early = new Date(pred.nextPeriod); early.setDate(early.getDate() - spread);
   const late = new Date(pred.nextPeriod); late.setDate(late.getDate() + spread);
   return { ...pred, early, late, spread };
+}
+
+// How many days past the expected period we are (uses the PCOS window edge
+// when PCOS mode is on, otherwise the point prediction). null if not late.
+export function getLateInfo(data: BloomData): { daysLate: number } | null {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  let threshold: Date | null = null;
+  if (data.settings.pcosMode) {
+    const w = getPredictionWindow(data);
+    threshold = w ? new Date(w.late) : null;
+  } else {
+    const p = getPredictions(data);
+    threshold = p ? new Date(p.nextPeriod) : null;
+  }
+  if (!threshold) return null;
+  threshold.setHours(0, 0, 0, 0);
+  const daysLate = Math.floor((today.getTime() - threshold.getTime()) / MS_DAY);
+  return daysLate > 0 ? { daysLate } : null;
 }
 
 export const PHASE_META: Record<Phase, { label: string; color: string; bg: string; emoji: string; description: string }> = {
