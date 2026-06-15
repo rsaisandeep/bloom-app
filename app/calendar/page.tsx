@@ -4,6 +4,7 @@ import Link from "next/link";
 import { loadData, getPredictions, getPredictionWindow, PHASE_META, type BloomData } from "@/lib/cycle";
 import { fetchFromSheet } from "@/lib/data";
 import { localDateStr } from "@/lib/day";
+import TopBar from "@/components/TopBar";
 
 const PHASE_COLORS: Record<string, string> = {
   menstrual: "#fca5a5", follicular: "#c4b5fd", ovulation: "#fde68a", luteal: "#a5b4fc",
@@ -40,7 +41,8 @@ export default function CalendarPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", padding: "20px 16px 24px" }}>
+    <><TopBar />
+    <div style={{ minHeight: "100vh", padding: "4px 16px 24px" }}>
       <h1 style={{ margin: "0 0 2px", fontSize: "1.75rem", fontWeight: 800, color: "#1C0B2E", letterSpacing: "-.02em" }}>Calendar</h1>
       <p style={{ margin: "0 0 16px", fontSize: ".78rem", fontWeight: 600, color: "#8A6A9A" }}>
         {today.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
@@ -114,5 +116,6 @@ export default function CalendarPage() {
         </>
       )}
     </div>
+    </>
   );
 }

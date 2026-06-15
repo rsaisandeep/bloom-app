@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ARTICLES, getArticle } from '@/lib/articles';
 import { getCurrentPhase } from '@/lib/cycle';
 import { fetchFromSheet } from '@/lib/data';
+import TopBar from '@/components/TopBar';
 
 const PHASE_SLUG: Record<string, string> = {
   menstrual: 'menstrual-phase',
@@ -69,7 +70,8 @@ export default function ReadPage() {
   const rest = ARTICLES.filter((a) => a.slug !== currentSlug);
 
   return (
-    <div style={{ minHeight: '100vh', padding: '20px 16px 24px' }}>
+    <><TopBar />
+    <div style={{ minHeight: '100vh', padding: '4px 16px 24px' }}>
       <div className="anim-rise" style={{ marginBottom: 18 }}>
         <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: '#1C0B2E', letterSpacing: -0.5 }}>Read</h1>
         <p style={{ margin: '2px 0 0', fontSize: 13, color: '#8A6A9A' }}>Curated guides on your cycle</p>
@@ -116,5 +118,6 @@ export default function ReadPage() {
         ))}
       </div>
     </div>
+    </>
   );
 }

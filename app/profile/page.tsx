@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getSettings, setPcosMode, setPaused, loadData, deleteCycle, isLikelySkipped, type Cycle } from '@/lib/cycle';
 import { fetchFromSheet } from '@/lib/data';
+import TopBar from '@/components/TopBar';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -52,7 +53,8 @@ export default function ProfilePage() {
   const initial = username ? username[0].toUpperCase() : '🌸';
 
   return (
-    <div style={{ minHeight: '100vh', padding: '32px 20px 20px' }}>
+    <><TopBar />
+    <div style={{ minHeight: '100vh', padding: '8px 20px 20px' }}>
       <h1 style={{ margin: '0 0 24px', fontSize: 26, fontWeight: 800, color: '#1C0B2E', letterSpacing: -0.5 }}>
         Profile
       </h1>
@@ -216,5 +218,6 @@ export default function ProfilePage() {
         Log out
       </button>
     </div>
+    </>
   );
 }

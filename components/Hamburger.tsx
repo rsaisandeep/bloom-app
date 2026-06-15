@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import PeriodStartModal from '@/components/PeriodStartModal';
 
 export default function Hamburger({ username }: { username: string }) {
   const router = useRouter();
@@ -66,6 +67,7 @@ export default function Hamburger({ username }: { username: string }) {
 
             {/* Items */}
             <div className="stagger" style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
+              <PeriodStartModal variant="menu" onDone={() => setOpen(false)} />
               {items.map((it) => (
                 <button key={it.label} onClick={it.onClick} className="liquid-pill" style={{
                   display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left',

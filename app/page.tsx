@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import {
   loadData, emptyData, getCurrentPhase, getPredictions, getPredictionWindow, getAverageCycleLength,
   getLateInfo, isPaused, setPaused, PHASE_META, type Phase, type BloomData,
@@ -11,6 +10,7 @@ import { fetchFromSheet } from '@/lib/data';
 import { localDateStr } from '@/lib/day';
 import { useAppDay } from '@/lib/useAppDay';
 import Hamburger from '@/components/Hamburger';
+import InfoModal from '@/components/InfoModal';
 import PeriodStartModal from '@/components/PeriodStartModal';
 
 const RING_COLORS: Record<Phase, [string, string]> = {
@@ -31,7 +31,6 @@ function greeting() {
 }
 
 export default function HomePage() {
-  const router = useRouter();
   const [data, setData] = useState<BloomData>(emptyData);
   const [username, setUsername] = useState('');
   const [done, setDone] = useState<number[]>([]);
@@ -88,11 +87,6 @@ export default function HomePage() {
   // Predefined reminder-style action items based on phase + today's symptoms
   const actions = getActionItems(phase, todayLog);
 
-  function logout() {
-    localStorage.removeItem('bloom_session');
-    router.replace('/login');
-  }
-
   function refresh() { setData(loadData()); fetchFromSheet().then(setData); }
 
   return (
@@ -107,15 +101,8 @@ export default function HomePage() {
           <p style={{ margin: '1px 0 0', fontSize: 17, fontWeight: 800, color: '#1C0B2E' }}>{cap(username) || 'there'} 🌸</p>
         </div>
 
-        {/* Logout top-right */}
-        <button onClick={logout} aria-label="Log out" className="liquid-pill" style={{
-          width: 38, height: 38, borderRadius: '50%',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-        }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="#6E3482" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
+        {/* Info top-right */}
+        <InfoModal />
       </div>
 
       {/* ── Month + week strip ── */}
@@ -256,7 +243,7 @@ export default function HomePage() {
 
       {/* ── No-log nudge banner ── */}
       {!paused && !todayLog && (
-        <Link href="/log" style={{ textDecoration: 'none', display: 'block' }}>
+        <Link href="/log?from=cycle" style={{ textDecoration: 'none', display: 'block' }}>
           <div className="glass-card anim-float shimmer-host" style={{
             padding: '14px 16px', marginBottom: 14,
             display: 'flex', alignItems: 'center', gap: 12,
@@ -285,6 +272,20 @@ export default function HomePage() {
         </Link>
       )}
 
+      {/* ── Update today's log (when already logged) ── */}
+      {!paused && todayLog && (
+        <Link href="/log?from=cycle" style={{ textDecoration: 'none', display: 'block', marginBottom: 12 }}>
+          <div className="glass-card anim-rise" style={{ padding: '13px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontSize: 20 }}>✏️</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#1C0B2E' }}>Update today&apos;s log</p>
+              <p style={{ margin: '1px 0 0', fontSize: 12, color: '#8A6A9A' }}>Your tasks below refresh as you update.</p>
+            </div>
+            <span style={{ fontSize: 16, color: '#A56ABD' }}>›</span>
+          </div>
+        </Link>
+      )}
+
       {/* ── Today's focus — checkable reminders ── */}
       {!paused && (<>
       <div className="anim-rise" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '6px 2px 10px' }}>
@@ -294,7 +295,7 @@ export default function HomePage() {
             {done.length}/{actions.length} done · {meta.label} phase
           </p>
         </div>
-        <Link href={todayLog ? '/reports' : '/log'} style={{ fontSize: 12, fontWeight: 700, color: '#A56ABD', textDecoration: 'none' }}>
+        <Link href={todayLog ? '/reports' : '/log?from=cycle'} style={{ fontSize: 12, fontWeight: 700, color: '#A56ABD', textDecoration: 'none' }}>
           {todayLog ? 'See report ›' : 'Log to refine ›'}
         </Link>
       </div>
@@ -339,27 +340,6 @@ export default function HomePage() {
         })}
       </div>
       </>)}
-
-      {/* ── Log Today card ── */}
-      <Link href="/log" style={{ textDecoration: 'none', display: 'block', marginBottom: 12 }}>
-        <div className="glass-card anim-rise" style={{ padding: '16px 18px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 20 }}>📝</span>
-              <div>
-                <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#1C0B2E' }}>{todayLog ? "Update today's log" : 'Log today'}</p>
-                <p style={{ margin: '1px 0 0', fontSize: 12, color: '#8A6A9A' }}>{todayLog ? 'Logged ✓ — tap to edit' : 'How are you feeling?'}</p>
-              </div>
-            </div>
-            <span style={{ fontSize: 16, color: '#A56ABD' }}>›</span>
-          </div>
-        </div>
-      </Link>
-
-      {/* ── Log / back-date period start ── */}
-      <div style={{ marginBottom: 12 }}>
-        <PeriodStartModal label="My period started" onDone={refresh} />
-      </div>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { loadData, saveLog, startPeriod, isNewPeriodStart, type DayLog } from "@/lib/cycle";
 import { appDayKey } from "@/lib/day";
 import { fetchFromSheet, saveToSheet } from "@/lib/data";
+import TopBar from "@/components/TopBar";
 
 type Option = { value: string; label: string; emoji: string };
 const FIELDS: { key: keyof DayLog; label: string; options: Option[] }[] = [
@@ -22,6 +23,7 @@ export default function LogPage() {
   const today = appDayKey();
   // Target date can be overridden via ?date= (e.g. tapping a past day on the calendar).
   const [date, setDate] = useState(today);
+  const [from, setFrom] = useState<"reports" | "cycle">("cycle");
   const [form, setForm] = useState<Partial<DayLog>>(DEFAULTS);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -29,8 +31,10 @@ export default function LogPage() {
   const isToday = date === today;
 
   useEffect(() => {
-    const q = new URLSearchParams(window.location.search).get("date");
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get("date");
     if (q && q <= today) setDate(q);
+    if (params.get("from") === "reports") setFrom("reports");
   }, [today]);
 
   useEffect(() => {
@@ -59,11 +63,13 @@ export default function LogPage() {
     saveLog(log); // update local cache immediately
     await saveToSheet(loadData()); // persist to sheet
     setSaved(true);
-    setTimeout(() => router.push(isToday ? "/reports" : "/calendar"), 500);
+    const dest = !isToday ? "/calendar" : from === "reports" ? "/reports" : "/";
+    setTimeout(() => router.push(dest), 500);
   }
 
   return (
-    <div style={{ minHeight: "100vh", padding: "20px 16px 24px" }}>
+    <><TopBar />
+    <div style={{ minHeight: "100vh", padding: "4px 16px 24px" }}>
       {/* Back button */}
       <button onClick={() => router.back()} style={{
         display: "flex", alignItems: "center", gap: 6, background: "none", border: "none",
@@ -141,8 +147,9 @@ export default function LogPage() {
         cursor: saving ? "default" : "pointer", transition: "all .2s cubic-bezier(.22,.61,.36,1)",
         fontFamily: "inherit",
       }}>
-        {saved ? "✓ Saved!" : saving ? "Saving to your journal…" : isToday ? "Get My Recommendations →" : "Save changes →"}
+        {saved ? "✓ Saved!" : saving ? "Saving to your journal…" : !isToday ? "Save changes →" : from === "reports" ? "Get my reports →" : "Get my actions →"}
       </button>
     </div>
+    </>
   );
 }

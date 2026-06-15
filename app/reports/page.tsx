@@ -6,6 +6,7 @@ import { getCurrentPhase, getPredictions, getAverageCycleLength, PHASE_META } fr
 import type { Recommendations } from '@/lib/matcher';
 import { fetchFromSheet } from '@/lib/data';
 import { appDayKey } from '@/lib/day';
+import TopBar from '@/components/TopBar';
 
 const REC_CARDS = [
   { key: 'food', emoji: '🥗', label: 'Food & Nutrition', tint: 'rgba(232,248,238,0.82)', border: 'rgba(100,200,130,0.3)', color: '#166534' },
@@ -29,7 +30,7 @@ export default function ReportsPage() {
       const todayLog = data.logs.find((l) => l.date === todayStr);
 
       // Rule 5: no log yet → open the check-in first
-      if (!todayLog) { router.replace('/log'); return; }
+      if (!todayLog) { router.replace('/log?from=reports'); return; }
 
       const { phase: p, dayOfCycle: d } = getCurrentPhase(data);
       setPhase(p); setDayOfCycle(d);
@@ -58,7 +59,8 @@ export default function ReportsPage() {
   const maxBar = Math.max(avgLen, ...cycleHistory, 1);
 
   return (
-    <div style={{ minHeight: '100vh', padding: '20px 16px 24px' }}>
+    <><TopBar />
+    <div style={{ minHeight: '100vh', padding: '4px 16px 24px' }}>
       <div className="anim-rise" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: '#1C0B2E', letterSpacing: -0.5 }}>Reports</h1>
@@ -144,5 +146,6 @@ export default function ReportsPage() {
         </div>
       </Link>
     </div>
+    </>
   );
 }

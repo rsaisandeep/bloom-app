@@ -125,6 +125,26 @@ export function addPeriodStart(date: string, username = "me") {
 // Back-compat alias used by the flow auto-detect path.
 export const startPeriod = addPeriodStart;
 
+// Change an existing period's start date.
+export function editPeriodStart(id: string, newDate: string, username = "me") {
+  const data = loadData();
+  const c = data.cycles.find((x) => x.id === id);
+  if (!c) return;
+  c.startDate = newDate;
+  c.id = `${username}_${newDate}`;
+  recomputeCycles(data);
+  saveData(data);
+  syncAfterSave();
+}
+
+// The currently-active period (started within the last ~10 days), if any.
+export function getActivePeriodCycle(data: BloomData): Cycle | null {
+  if (data.cycles.length === 0) return null;
+  const last = data.cycles[data.cycles.length - 1];
+  const days = daysBetween(last.startDate, todayLocal());
+  return days >= 0 && days <= 10 ? last : null;
+}
+
 export function deleteCycle(id: string) {
   const data = loadData();
   data.cycles = data.cycles.filter((c) => c.id !== id);
