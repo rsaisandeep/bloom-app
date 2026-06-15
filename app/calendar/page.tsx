@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { loadData, getPredictions, PHASE_META, type BloomData } from "@/lib/cycle";
+import { loadData, getPredictions, getPredictionWindow, PHASE_META, type BloomData } from "@/lib/cycle";
 import { fetchFromSheet } from "@/lib/data";
 import { localDateStr } from "@/lib/day";
 
@@ -24,6 +24,9 @@ export default function CalendarPage() {
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const predictions = getPredictions(data.cycles);
+  const pcosMode = !!data.settings?.pcosMode;
+  const predWindow = pcosMode ? getPredictionWindow(data.cycles) : null;
+  const fmtD = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   const lastStart = data.cycles.length > 0 ? new Date(data.cycles[data.cycles.length-1].startDate) : null;
 
   function getDayInfo(day: number) {
@@ -86,9 +89,11 @@ export default function CalendarPage() {
           <h2 style={{ margin: "0 0 10px", fontSize: "1rem", fontWeight: 800, color: "#1C0B2E" }}>Upcoming</h2>
           <div className="glass-card" style={{ padding: "14px 16px" }}>
             {[
-              { dot: "#fca5a5", label: "Next period",      value: predictions.nextPeriod.toLocaleDateString("en-US",{month:"short",day:"numeric"}),  vc: "#dc2626" },
-              { dot: "#fde68a", label: "Fertile window",   value: `${predictions.fertileStart.toLocaleDateString("en-US",{month:"short",day:"numeric"})} – ${predictions.fertileEnd.toLocaleDateString("en-US",{month:"short",day:"numeric"})}`, vc: "#d97706" },
-              { dot: "#c4b5fd", label: "Avg cycle length", value: `${predictions.avgLength} days`, vc: "#6E3482" },
+              pcosMode && predWindow
+                ? { dot: "#fca5a5", label: "Period likely",  value: `${fmtD(predWindow.early)} – ${fmtD(predWindow.late)}`, vc: "#dc2626" }
+                : { dot: "#fca5a5", label: "Next period",     value: fmtD(predictions.nextPeriod), vc: "#dc2626" },
+              { dot: "#fde68a", label: "Fertile window",   value: `${fmtD(predictions.fertileStart)} – ${fmtD(predictions.fertileEnd)}`, vc: "#d97706" },
+              { dot: "#c4b5fd", label: pcosMode ? "Typical cycle" : "Avg cycle length", value: `${predictions.avgLength} days`, vc: "#6E3482" },
             ].map((item, i) => (
               <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: i < 2 ? "1px solid rgba(165,106,189,0.15)" : "none" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

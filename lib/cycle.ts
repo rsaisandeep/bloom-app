@@ -18,9 +18,14 @@ export interface DayLog {
   notes?: string;
 }
 
+export interface BloomSettings {
+  pcosMode?: boolean;
+}
+
 export interface BloomData {
   cycles: CycleEntry[];
   logs: DayLog[];
+  settings?: BloomSettings;
 }
 
 const STORAGE_KEY = "bloom_data";
@@ -123,6 +128,34 @@ export function getPredictions(cycles: CycleEntry[]) {
   const daysUntilPeriod = Math.ceil((nextPeriod.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
   return { nextPeriod, ovulation, fertileStart, fertileEnd, daysUntilPeriod, avgLength };
+}
+
+// ── Settings ──
+export function getSettings(): BloomSettings {
+  return loadData().settings ?? {};
+}
+
+export function setPcosMode(on: boolean) {
+  const data = loadData();
+  data.settings = { ...data.settings, pcosMode: on };
+  saveData(data);
+  syncAfterSave();
+}
+
+// PCOS cycles are irregular, so a single-date prediction is misleading.
+// Returns a window around the predicted period sized by observed variability.
+export function getPredictionWindow(cycles: CycleEntry[]) {
+  const pred = getPredictions(cycles);
+  if (!pred) return null;
+  const lengths = cycles.filter((c) => c.cycleLength && c.cycleLength > 0).map((c) => c.cycleLength as number);
+  let spread = 7; // default uncertainty when we don't have history yet
+  if (lengths.length >= 2) {
+    const min = Math.min(...lengths), max = Math.max(...lengths);
+    spread = Math.min(14, Math.max(4, Math.ceil((max - min) / 2)));
+  }
+  const early = new Date(pred.nextPeriod); early.setDate(early.getDate() - spread);
+  const late = new Date(pred.nextPeriod); late.setDate(late.getDate() + spread);
+  return { ...pred, early, late, spread };
 }
 
 export const PHASE_META: Record<Phase, { label: string; color: string; bg: string; emoji: string; description: string }> = {

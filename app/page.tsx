@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  loadData, getCurrentPhase, getPredictions, getAverageCycleLength,
+  loadData, getCurrentPhase, getPredictions, getPredictionWindow, getAverageCycleLength,
   PHASE_META, type Phase, type BloomData,
 } from '@/lib/cycle';
 import { getActionItems } from '@/lib/actions';
@@ -66,6 +66,9 @@ export default function HomePage() {
   const { phase, dayOfCycle } = getCurrentPhase(data.cycles);
   const avgLen = getAverageCycleLength(data.cycles);
   const predictions = getPredictions(data.cycles);
+  const pcosMode = !!data.settings?.pcosMode;
+  const predWindow = pcosMode ? getPredictionWindow(data.cycles) : null;
+  const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   const meta = PHASE_META[phase];
   const todayLog = data.logs.find(l => l.date === todayStr);
   const hasCycles = data.cycles.length > 0;
@@ -175,10 +178,12 @@ export default function HomePage() {
               {hasCycles ? meta.description : 'Add your last period date to unlock predictions.'}
             </p>
             {hasCycles && predictions ? (
-              <div className="pill" style={{ background: 'rgba(255,255,255,0.14)', padding: '7px 14px', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <div className="pill" style={{ background: 'rgba(255,255,255,0.14)', padding: '7px 14px', display: 'inline-flex', alignItems: 'center', gap: 6, maxWidth: '100%' }}>
                 <span style={{ fontSize: 12 }}>🗓</span>
                 <span style={{ fontSize: 12, color: '#fff', fontWeight: 600 }}>
-                  {predictions.daysUntilPeriod > 0 ? `Next period in ${predictions.daysUntilPeriod}d` : 'Period may be due'}
+                  {pcosMode && predWindow
+                    ? `Period likely ${fmt(predWindow.early)} – ${fmt(predWindow.late)}`
+                    : predictions.daysUntilPeriod > 0 ? `Next period in ${predictions.daysUntilPeriod}d` : 'Period may be due'}
                 </span>
               </div>
             ) : !hasCycles ? (
