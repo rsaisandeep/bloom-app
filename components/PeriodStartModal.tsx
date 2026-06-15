@@ -1,16 +1,15 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { addPeriodStart, editPeriodStart, getActivePeriodCycle, loadData } from '@/lib/cycle';
+import { addPeriodStart, editPeriodStart, setPeriodEnd, getActivePeriodCycle, loadData } from '@/lib/cycle';
+import { saveToSheet } from '@/lib/data';
 
 function session() {
   try { return JSON.parse(localStorage.getItem('bloom_session') || '{}'); } catch { return {}; }
 }
 
-// Logs (or back-dates) a period start. If a period is already active, shows it
-// with an Edit affordance instead of adding a duplicate.
 export default function PeriodStartModal({
-  label = 'Log period start',
+  label = 'Log period',
   variant = 'card',
   onDone,
 }: {
@@ -19,28 +18,49 @@ export default function PeriodStartModal({
   onDone?: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState(false);
-  const [active, setActive] = useState<{ id: string; startDate: string } | null>(null);
+  const [mounted, setMounted] = useState(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [saving, setSaving] = useState(false);
   const today = new Date().toISOString().slice(0, 10);
-  const [date, setDate] = useState(today);
+
+  useEffect(() => { setMounted(true); }, []);
 
   function launch() {
-    const a = getActivePeriodCycle(loadData());
-    setActive(a ? { id: a.id, startDate: a.startDate } : null);
-    setEditing(!a);                       // no active period → go straight to add
-    setDate(a ? a.startDate : today);
+    const data = loadData();
+    const active = getActivePeriodCycle(data);
+    if (active) {
+      setActiveId(active.id);
+      setStartDate(active.startDate);
+      setEndDate(active.periodEndDate ?? '');
+    } else {
+      setActiveId(null);
+      setStartDate(today);
+      setEndDate('');
+    }
     setOpen(true);
   }
 
-  function confirm() {
+  async function confirm() {
+    setSaving(true);
     const uname = session().username || 'me';
-    if (active && editing) editPeriodStart(active.id, date, uname);
-    else addPeriodStart(date, uname);
+    if (activeId) {
+      editPeriodStart(activeId, startDate, uname);
+    } else {
+      addPeriodStart(startDate, uname);
+    }
+    if (endDate && endDate >= startDate) {
+      setPeriodEnd(endDate);
+    }
+    await saveToSheet(loadData());
+    setSaving(false);
     setOpen(false);
     onDone?.();
   }
 
-  const fmt = (s: string) => new Date(s).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const fmt = (s: string) =>
+    new Date(s + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
   const trigger =
     variant === 'banner-cta' ? (
@@ -57,7 +77,7 @@ export default function PeriodStartModal({
         <span style={{ fontSize: 20 }}>🩸</span>
         <span>
           <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: '#1C0B2E' }}>Log period</span>
-          <span style={{ display: 'block', fontSize: 11, color: '#8A6A9A' }}>Started today or earlier</span>
+          <span style={{ display: 'block', fontSize: 11, color: '#8A6A9A' }}>Start and end dates</span>
         </span>
       </span>
     ) : (
@@ -66,7 +86,7 @@ export default function PeriodStartModal({
           <span style={{ fontSize: 18 }}>🩸</span>
           <span>
             <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: '#1C0B2E' }}>{label}</span>
-            <span style={{ display: 'block', fontSize: 12, color: '#8A6A9A' }}>Today or a past date</span>
+            <span style={{ display: 'block', fontSize: 12, color: '#8A6A9A' }}>Log start and end dates</span>
           </span>
         </span>
         <span style={{ color: '#A56ABD', fontSize: 16 }}>›</span>
@@ -82,7 +102,7 @@ export default function PeriodStartModal({
         {trigger}
       </button>
 
-      {open && typeof document !== 'undefined' && createPortal(
+      {open && mounted && createPortal(
         <div onClick={() => setOpen(false)} style={{
           position: 'fixed', inset: 0, zIndex: 500, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
           background: 'rgba(28,11,46,0.4)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
@@ -96,53 +116,63 @@ export default function PeriodStartModal({
           }}>
             <div style={{ width: 40, height: 4, borderRadius: 2, background: 'rgba(165,106,189,0.3)', margin: '0 auto 18px' }} />
 
-            {active && !editing ? (
-              // Already logged → show it with Edit
-              <>
-                <div style={{ fontSize: 34, marginBottom: 8 }}>🩸</div>
-                <p style={{ margin: '0 0 4px', fontSize: 18, fontWeight: 800, color: '#1C0B2E' }}>Period already logged</p>
-                <p style={{ margin: '0 0 18px', fontSize: 14, color: '#6E3482', fontWeight: 600 }}>
-                  Started {fmt(active.startDate)}.
-                </p>
-                <div style={{ display: 'flex', gap: 10 }}>
-                  <button onClick={() => setOpen(false)} style={{
-                    flex: 1, padding: '13px', borderRadius: 14, border: '1px solid rgba(165,106,189,0.3)',
-                    background: 'transparent', color: '#6E3482', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-outfit)',
-                  }}>Close</button>
-                  <button onClick={() => setEditing(true)} style={{
-                    flex: 2, padding: '13px', borderRadius: 14, border: 'none',
-                    background: 'linear-gradient(135deg,#6E3482,#A56ABD)', color: '#fff',
-                    fontSize: 15, fontWeight: 800, cursor: 'pointer', fontFamily: 'var(--font-outfit)',
-                    boxShadow: '0 6px 20px rgba(110,52,130,0.35)',
-                  }}>Edit date</button>
-                </div>
-              </>
-            ) : (
-              // Add or edit a start date
-              <>
-                <p style={{ margin: '0 0 4px', fontSize: 18, fontWeight: 800, color: '#1C0B2E' }}>
-                  {active ? 'Edit period start' : 'When did your period start?'}
-                </p>
-                <p style={{ margin: '0 0 16px', fontSize: 13, color: '#8A6A9A' }}>Pick today, or back-date if it started earlier.</p>
-                <input type="date" max={today} value={date} onChange={(e) => setDate(e.target.value)} style={{
-                  width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.6)',
-                  border: '1px solid rgba(165,106,189,0.3)', borderRadius: 14, padding: '14px 16px',
-                  fontSize: 16, color: '#1C0B2E', fontFamily: 'var(--font-outfit)', outline: 'none',
-                }} />
-                <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
-                  <button onClick={() => setOpen(false)} style={{
-                    flex: 1, padding: '13px', borderRadius: 14, border: '1px solid rgba(165,106,189,0.3)',
-                    background: 'transparent', color: '#6E3482', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-outfit)',
-                  }}>Cancel</button>
-                  <button onClick={confirm} style={{
-                    flex: 2, padding: '13px', borderRadius: 14, border: 'none',
-                    background: 'linear-gradient(135deg,#6E3482,#A56ABD)', color: '#fff',
-                    fontSize: 15, fontWeight: 800, cursor: 'pointer', fontFamily: 'var(--font-outfit)',
-                    boxShadow: '0 6px 20px rgba(110,52,130,0.35)',
-                  }}>Confirm</button>
-                </div>
-              </>
-            )}
+            <p style={{ margin: '0 0 4px', fontSize: 18, fontWeight: 800, color: '#1C0B2E' }}>
+              {activeId ? 'Update period dates' : 'Log your period'}
+            </p>
+            <p style={{ margin: '0 0 20px', fontSize: 13, color: '#8A6A9A' }}>
+              {activeId
+                ? `Started ${fmt(startDate)}. Update dates below.`
+                : 'Pick the start date. End date is optional.'}
+            </p>
+
+            {/* Start date */}
+            <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 800, color: '#6E3482', letterSpacing: 0.5, textTransform: 'uppercase' }}>
+              Period start
+            </p>
+            <input
+              type="date"
+              max={today}
+              value={startDate}
+              onChange={(e) => {
+                setStartDate(e.target.value);
+                if (endDate && e.target.value > endDate) setEndDate('');
+              }}
+              style={{
+                width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.6)',
+                border: '1px solid rgba(165,106,189,0.3)', borderRadius: 14, padding: '14px 16px',
+                fontSize: 16, color: '#1C0B2E', fontFamily: 'var(--font-outfit)', outline: 'none', marginBottom: 16,
+              }}
+            />
+
+            {/* End date */}
+            <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 800, color: '#6E3482', letterSpacing: 0.5, textTransform: 'uppercase' }}>
+              Period end <span style={{ fontWeight: 500, color: '#A99BB5', textTransform: 'none', letterSpacing: 0 }}>(optional)</span>
+            </p>
+            <input
+              type="date"
+              min={startDate}
+              max={today}
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              style={{
+                width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.6)',
+                border: '1px solid rgba(165,106,189,0.3)', borderRadius: 14, padding: '14px 16px',
+                fontSize: 16, color: endDate ? '#1C0B2E' : '#A99BB5', fontFamily: 'var(--font-outfit)', outline: 'none', marginBottom: 22,
+              }}
+            />
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setOpen(false)} style={{
+                flex: 1, padding: '13px', borderRadius: 14, border: '1px solid rgba(165,106,189,0.3)',
+                background: 'transparent', color: '#6E3482', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-outfit)',
+              }}>Cancel</button>
+              <button onClick={confirm} disabled={saving} style={{
+                flex: 2, padding: '13px', borderRadius: 14, border: 'none',
+                background: 'linear-gradient(135deg,#6E3482,#A56ABD)', color: '#fff',
+                fontSize: 15, fontWeight: 800, cursor: saving ? 'default' : 'pointer', fontFamily: 'var(--font-outfit)',
+                boxShadow: '0 6px 20px rgba(110,52,130,0.35)', opacity: saving ? 0.7 : 1,
+              }}>{saving ? 'Saving…' : 'Confirm'}</button>
+            </div>
           </div>
         </div>,
         document.body

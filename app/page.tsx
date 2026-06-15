@@ -12,7 +12,6 @@ import { useAppDay } from '@/lib/useAppDay';
 import Hamburger from '@/components/Hamburger';
 import InfoModal from '@/components/InfoModal';
 import PeriodStartModal from '@/components/PeriodStartModal';
-import PeriodEndModal from '@/components/PeriodEndModal';
 import LogSheet from '@/components/LogSheet';
 
 const RING_COLORS: Record<Phase, [string, string]> = {
@@ -212,7 +211,7 @@ export default function HomePage() {
       )}
 
       {/* ── Period end / Period started prompts ── */}
-      {showPeriodEnd && <div className="anim-float" style={{ marginBottom: 14 }}><PeriodEndModal variant="card" onDone={refresh} /></div>}
+      {showPeriodEnd && <div className="anim-float" style={{ marginBottom: 14 }}><PeriodStartModal variant="card" label="Log period end" onDone={refresh} /></div>}
       {showPeriodStart && <div className="anim-float" style={{ marginBottom: 14 }}><PeriodStartModal variant="card" label="Period started?" onDone={refresh} /></div>}
 
       {/* ── Late-period reminder ── */}
