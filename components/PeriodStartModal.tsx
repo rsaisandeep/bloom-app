@@ -1,8 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { addPeriodStart, editPeriodStart, setPeriodEnd, getActivePeriodCycle, loadData } from '@/lib/cycle';
-import { saveToSheet } from '@/lib/data';
+import { addPeriodStart, editPeriodStart, setPeriodEnd, loadData } from '@/lib/cycle';
+import { fetchFromSheet, saveToSheet } from '@/lib/data';
 
 function session() {
   try { return JSON.parse(localStorage.getItem('bloom_session') || '{}'); } catch { return {}; }
@@ -27,19 +27,26 @@ export default function PeriodStartModal({
 
   useEffect(() => { setMounted(true); }, []);
 
-  function launch() {
-    const data = loadData();
-    const active = getActivePeriodCycle(data);
-    if (active) {
-      setActiveId(active.id);
-      setStartDate(active.startDate);
-      setEndDate(active.periodEndDate ?? '');
+  function applyData(cycles: { id: string; startDate: string; periodEndDate?: string }[]) {
+    if (cycles.length > 0) {
+      const last = cycles[cycles.length - 1];
+      setActiveId(last.id);
+      setStartDate(last.startDate);
+      setEndDate(last.periodEndDate ?? '');
     } else {
       setActiveId(null);
       setStartDate(today);
       setEndDate('');
     }
+  }
+
+  function launch() {
+    // Pre-fill immediately from local cache
+    const cached = loadData();
+    applyData(cached.cycles);
     setOpen(true);
+    // Then refresh from sheet in the background
+    fetchFromSheet().then((fresh) => applyData(fresh.cycles));
   }
 
   async function confirm() {
