@@ -1,11 +1,14 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import PeriodStartModal from '@/components/PeriodStartModal';
 
 export default function Hamburger({ username }: { username: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   function logout() {
     localStorage.removeItem('bloom_session');
@@ -30,10 +33,10 @@ export default function Hamburger({ username }: { username: string }) {
         ))}
       </button>
 
-      {/* Overlay */}
-      {open && (
+      {/* Overlay — portalled to document.body to escape TopBar's stacking context */}
+      {open && mounted && createPortal(
         <div onClick={() => setOpen(false)} style={{
-          position: 'fixed', inset: 0, zIndex: 300,
+          position: 'fixed', inset: 0, zIndex: 500,
           background: 'rgba(28,11,46,0.34)',
           backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
           animation: 'rise .2s ease both',
@@ -97,7 +100,8 @@ export default function Hamburger({ username }: { username: string }) {
               Log out
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
