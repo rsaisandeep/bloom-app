@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   loadData, emptyData, getCurrentPhase, getPredictions, getPredictionWindow, getAverageCycleLength,
-  getLateInfo, PHASE_META, type Phase, type BloomData,
+  getLateInfo, isPaused, setPaused, PHASE_META, type Phase, type BloomData,
 } from '@/lib/cycle';
 import { getActionItems } from '@/lib/actions';
 import { fetchFromSheet } from '@/lib/data';
@@ -71,6 +71,7 @@ export default function HomePage() {
   const predictions = getPredictions(data);
   const pcosMode = !!data.settings?.pcosMode;
   const predWindow = pcosMode ? getPredictionWindow(data) : null;
+  const paused = isPaused(data);
   const lateInfo = hasCycles ? getLateInfo(data) : null;
   const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   const meta = PHASE_META[phase];
@@ -151,7 +152,25 @@ export default function HomePage() {
         })}
       </div>
 
+      {/* ── Paused state ── */}
+      {paused && (
+        <div className="glass-card anim-float" style={{ padding: 22, marginBottom: 14, textAlign: 'center' }}>
+          <div style={{ fontSize: 38, marginBottom: 8 }}>⏸️</div>
+          <p style={{ margin: '0 0 4px', fontSize: 18, fontWeight: 800, color: '#1C0B2E' }}>Tracking paused</p>
+          <p style={{ margin: '0 0 16px', fontSize: 13, color: '#8A6A9A', lineHeight: 1.55 }}>
+            Predictions and reminders are off. Log a period anytime, or resume to pick tracking back up.
+          </p>
+          <button onClick={() => { setPaused(false); refresh(); }} style={{
+            padding: '11px 22px', borderRadius: 999, border: 'none', cursor: 'pointer',
+            background: 'linear-gradient(135deg,#6E3482,#A56ABD)', color: '#fff',
+            fontSize: 14, fontWeight: 800, fontFamily: 'var(--font-outfit)',
+            boxShadow: '0 6px 20px rgba(110,52,130,0.35)',
+          }}>Resume tracking</button>
+        </div>
+      )}
+
       {/* ── Cycle status card ── */}
+      {!paused && (
       <div className="anim-float shimmer-host" style={{
         borderRadius: 26, padding: 20, marginBottom: 14,
         background: 'linear-gradient(135deg,#6E3482 0%,#49225B 60%,#2D0F3D 100%)',
@@ -198,6 +217,7 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+      )}
 
       {/* ── Late-period reminder ── */}
       {lateInfo && (
@@ -218,15 +238,24 @@ export default function HomePage() {
               Period {lateInfo.daysLate} {lateInfo.daysLate === 1 ? 'day' : 'days'} late
             </p>
             <p style={{ margin: '2px 0 0', fontSize: 12, color: '#9d174d', lineHeight: 1.4 }}>
-              {pcosMode ? 'Normal with PCOS — log it once it starts.' : 'Tap when it starts so predictions stay accurate.'}
+              {lateInfo.suggestPause
+                ? 'Very overdue. Pause tracking if pregnant or on a break.'
+                : pcosMode ? 'Normal with PCOS — log it once it starts.' : 'Tap when it starts so predictions stay accurate.'}
             </p>
+            {lateInfo.suggestPause && (
+              <button onClick={() => { setPaused(true); refresh(); }} style={{
+                marginTop: 6, background: 'rgba(217,119,6,0.14)', border: 'none', borderRadius: 999,
+                padding: '5px 12px', fontSize: 11, fontWeight: 800, color: '#b45309', cursor: 'pointer',
+                fontFamily: 'var(--font-outfit)',
+              }}>⏸️ Pause tracking</button>
+            )}
           </div>
           <PeriodStartModal variant="banner-cta" onDone={refresh} />
         </div>
       )}
 
       {/* ── No-log nudge banner ── */}
-      {!todayLog && (
+      {!paused && !todayLog && (
         <Link href="/log" style={{ textDecoration: 'none', display: 'block' }}>
           <div className="glass-card anim-float shimmer-host" style={{
             padding: '14px 16px', marginBottom: 14,
@@ -257,6 +286,7 @@ export default function HomePage() {
       )}
 
       {/* ── Today's focus — checkable reminders ── */}
+      {!paused && (<>
       <div className="anim-rise" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '6px 2px 10px' }}>
         <div>
           <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#1C0B2E' }}>Today&apos;s focus</p>
@@ -308,6 +338,7 @@ export default function HomePage() {
           );
         })}
       </div>
+      </>)}
 
       {/* ── Log Today card ── */}
       <Link href="/log" style={{ textDecoration: 'none', display: 'block', marginBottom: 12 }}>

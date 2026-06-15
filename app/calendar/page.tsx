@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { loadData, getPredictions, getPredictionWindow, PHASE_META, type BloomData } from "@/lib/cycle";
 import { fetchFromSheet } from "@/lib/data";
 import { localDateStr } from "@/lib/day";
@@ -66,19 +67,25 @@ export default function CalendarPage() {
           {Array(firstDay).fill(null).map((_,i) => <div key={`b${i}`} />)}
           {Array.from({length: daysInMonth}, (_,i) => i+1).map((day) => {
             const { phase, hasLog, isToday } = getDayInfo(day);
-            return (
-              <div key={day} style={{
+            const cellStr = localDateStr(new Date(year, month, day));
+            const isFuture = cellStr > localDateStr(today);
+            const cell = (
+              <div style={{
                 aspectRatio: "1", display: "flex", flexDirection: "column",
                 alignItems: "center", justifyContent: "center",
                 borderRadius: 12, fontSize: ".78rem", fontWeight: 800,
                 background: phase ? PHASE_COLORS[phase] : "rgba(255,255,255,0.35)",
                 outline: isToday ? "2.5px solid #6E3482" : "none", outlineOffset: 1,
-                color: "#1C0B2E", position: "relative",
+                color: "#1C0B2E", position: "relative", opacity: isFuture ? 0.4 : 1,
+                cursor: isFuture ? "default" : "pointer",
               }}>
                 {day}
                 {hasLog && <div style={{ position: "absolute", bottom: 2, width: 4, height: 4, borderRadius: "50%", background: "#6E3482" }} />}
               </div>
             );
+            return isFuture
+              ? <div key={day}>{cell}</div>
+              : <Link key={day} href={`/log?date=${cellStr}`} style={{ textDecoration: "none" }}>{cell}</Link>;
           })}
         </div>
       </div>

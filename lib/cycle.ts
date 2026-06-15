@@ -24,6 +24,7 @@ export interface DayLog {
 
 export interface BloomSettings {
   pcosMode?: boolean;
+  paused?: boolean;             // pregnancy / break — stops predictions & reminders
   defaultCycleLength?: number;  // from onboarding
   defaultPeriodLength?: number; // from onboarding
 }
@@ -116,6 +117,7 @@ export function addPeriodStart(date: string, username = "me") {
   if (data.cycles.some((c) => Math.abs(daysBetween(c.startDate, date)) <= 1)) return;
   data.cycles.push({ id: `${username}_${date}`, startDate: date });
   recomputeCycles(data);
+  if (data.settings.paused) data.settings = { ...data.settings, paused: false }; // logging a period resumes tracking
   saveData(data);
   syncAfterSave();
 }
@@ -150,6 +152,9 @@ export function updateSettings(patch: Partial<BloomSettings>) {
 }
 export function setPcosMode(on: boolean) {
   updateSettings({ pcosMode: on });
+}
+export function setPaused(on: boolean) {
+  updateSettings({ paused: on });
 }
 
 // ── Derivations ──
@@ -245,7 +250,8 @@ export function getPredictionWindow(data: BloomData) {
 
 // How many days past the expected period we are (uses the PCOS window edge
 // when PCOS mode is on, otherwise the point prediction). null if not late.
-export function getLateInfo(data: BloomData): { daysLate: number } | null {
+export function getLateInfo(data: BloomData): { daysLate: number; suggestPause: boolean } | null {
+  if (data.settings.paused) return null;
   const today = new Date(); today.setHours(0, 0, 0, 0);
   let threshold: Date | null = null;
   if (data.settings.pcosMode) {
@@ -258,7 +264,12 @@ export function getLateInfo(data: BloomData): { daysLate: number } | null {
   if (!threshold) return null;
   threshold.setHours(0, 0, 0, 0);
   const daysLate = Math.floor((today.getTime() - threshold.getTime()) / MS_DAY);
-  return daysLate > 0 ? { daysLate } : null;
+  // Beyond ~45 days overdue, nagging is unhelpful — suggest pausing instead.
+  return daysLate > 0 ? { daysLate, suggestPause: daysLate > 45 } : null;
+}
+
+export function isPaused(data: BloomData): boolean {
+  return !!data.settings.paused;
 }
 
 export const PHASE_META: Record<Phase, { label: string; color: string; bg: string; emoji: string; description: string }> = {

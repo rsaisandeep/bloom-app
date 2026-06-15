@@ -20,39 +20,46 @@ const DEFAULTS: Partial<DayLog> = { cramps:"none",energy:"medium",mood:"calm",bl
 export default function LogPage() {
   const router = useRouter();
   const today = appDayKey();
+  // Target date can be overridden via ?date= (e.g. tapping a past day on the calendar).
+  const [date, setDate] = useState(today);
   const [form, setForm] = useState<Partial<DayLog>>(DEFAULTS);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  const isToday = date === today;
+
   useEffect(() => {
-    // Always load from sheet; fall back to local cache while loading
-    const cached = loadData();
-    const cachedLog = cached.logs.find((l) => l.date === today);
-    if (cachedLog) setForm(cachedLog);
+    const q = new URLSearchParams(window.location.search).get("date");
+    if (q && q <= today) setDate(q);
+  }, [today]);
+
+  useEffect(() => {
+    const cachedLog = loadData().logs.find((l) => l.date === date);
+    setForm(cachedLog ?? DEFAULTS);
     fetchFromSheet().then((data) => {
-      const existing = data.logs.find((l) => l.date === today);
+      const existing = data.logs.find((l) => l.date === date);
       if (existing) setForm(existing);
     });
-  }, [today]);
+  }, [date]);
 
   function select(key: keyof DayLog, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
     if (key === "flow" && value !== "none") {
       const data = loadData();
-      if (isNewPeriodStart(data, today)) {
+      if (isNewPeriodStart(data, date)) {
         const session = (() => { try { return JSON.parse(localStorage.getItem("bloom_session") || "{}"); } catch { return {}; } })();
-        startPeriod(today, session.username || "me");
+        startPeriod(date, session.username || "me");
       }
     }
   }
 
   async function handleSave() {
     setSaving(true);
-    const log = { ...DEFAULTS, ...form, date: today } as DayLog;
+    const log = { ...DEFAULTS, ...form, date } as DayLog;
     saveLog(log); // update local cache immediately
     await saveToSheet(loadData()); // persist to sheet
     setSaved(true);
-    setTimeout(() => router.push("/reports"), 500);
+    setTimeout(() => router.push(isToday ? "/reports" : "/calendar"), 500);
   }
 
   return (
@@ -68,12 +75,29 @@ export default function LogPage() {
         </svg>
         Back
       </button>
-      <h1 style={{ margin: "0 0 2px", fontSize: "1.75rem", fontWeight: 800, color: "#1C0B2E", letterSpacing: "-.02em" }}>
-        Today's Check-in
+      <h1 style={{ margin: "0 0 8px", fontSize: "1.75rem", fontWeight: 800, color: "#1C0B2E", letterSpacing: "-.02em" }}>
+        {isToday ? "Today's Check-in" : "Edit Log"}
       </h1>
-      <p style={{ margin: "0 0 20px", fontSize: ".78rem", fontWeight: 600, color: "#8A6A9A" }}>
-        {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
-      </p>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+        <input
+          type="date"
+          max={today}
+          value={date}
+          onChange={(e) => { if (e.target.value) setDate(e.target.value); }}
+          style={{
+            background: "rgba(255,255,255,0.6)", border: "1px solid rgba(165,106,189,0.3)",
+            borderRadius: 12, padding: "8px 12px", fontSize: ".85rem", fontWeight: 600,
+            color: "#6E3482", fontFamily: "inherit", outline: "none",
+          }}
+        />
+        {!isToday && (
+          <button onClick={() => setDate(today)} style={{
+            background: "rgba(165,106,189,0.12)", border: "none", borderRadius: 999,
+            padding: "7px 12px", fontSize: ".72rem", fontWeight: 700, color: "#6E3482",
+            cursor: "pointer", fontFamily: "inherit",
+          }}>Jump to today</button>
+        )}
+      </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {FIELDS.map((field) => (
@@ -117,7 +141,7 @@ export default function LogPage() {
         cursor: saving ? "default" : "pointer", transition: "all .2s cubic-bezier(.22,.61,.36,1)",
         fontFamily: "inherit",
       }}>
-        {saved ? "✓ Saved!" : saving ? "Saving to your journal…" : "Get My Recommendations →"}
+        {saved ? "✓ Saved!" : saving ? "Saving to your journal…" : isToday ? "Get My Recommendations →" : "Save changes →"}
       </button>
     </div>
   );

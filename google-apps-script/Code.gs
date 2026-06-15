@@ -10,7 +10,7 @@ const HEADERS = {
   [T_USERS]:    ['username', 'password', 'created_at'],
   [T_CYCLES]:   ['cycle_id', 'username', 'start_date', 'period_end_date', 'cycle_length', 'period_length', 'created_at'],
   [T_LOGS]:     ['log_id', 'username', 'date', 'flow', 'cramps', 'energy', 'mood', 'bloating', 'sleep', 'cravings', 'notes', 'updated_at'],
-  [T_SETTINGS]: ['username', 'pcos_mode', 'default_cycle_length', 'default_period_length', 'updated_at'],
+  [T_SETTINGS]: ['username', 'pcos_mode', 'paused', 'default_cycle_length', 'default_period_length', 'updated_at'],
 };
 
 function doPost(e) {
@@ -81,8 +81,9 @@ function loadAll(p) {
   const sRow = findRow(getSheet(T_SETTINGS), 0, u);
   const settings = sRow ? {
     pcosMode: String(sRow[1]) === 'true' || sRow[1] === true,
-    defaultCycleLength: numOrUndef(sRow[2]),
-    defaultPeriodLength: numOrUndef(sRow[3]),
+    paused: String(sRow[2]) === 'true' || sRow[2] === true,
+    defaultCycleLength: numOrUndef(sRow[3]),
+    defaultPeriodLength: numOrUndef(sRow[4]),
   } : {};
 
   return { ok: true, data: { cycles: cycles, logs: logs, settings: settings } };
@@ -104,7 +105,7 @@ function saveAll(p) {
   }));
 
   const s = data.settings || {};
-  upsertRow(T_SETTINGS, u, [u, !!s.pcosMode, blankNum(s.defaultCycleLength), blankNum(s.defaultPeriodLength), now]);
+  upsertRow(T_SETTINGS, u, [u, !!s.pcosMode, !!s.paused, blankNum(s.defaultCycleLength), blankNum(s.defaultPeriodLength), now]);
 
   return { ok: true };
 }

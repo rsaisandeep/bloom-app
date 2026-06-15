@@ -2,17 +2,19 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getSettings, setPcosMode, loadData, deleteCycle, isLikelySkipped, type Cycle } from '@/lib/cycle';
+import { getSettings, setPcosMode, setPaused, loadData, deleteCycle, isLikelySkipped, type Cycle } from '@/lib/cycle';
 import { fetchFromSheet } from '@/lib/data';
 
 export default function ProfilePage() {
   const router = useRouter();
   const [username, setUsername] = useState('');
   const [pcos, setPcos] = useState(false);
+  const [paused, setPausedState] = useState(false);
   const [cycles, setCycles] = useState<Cycle[]>([]);
 
   function syncLocal() {
     setPcos(!!getSettings().pcosMode);
+    setPausedState(!!getSettings().paused);
     setCycles([...loadData().cycles].reverse()); // newest first
   }
 
@@ -27,6 +29,12 @@ export default function ProfilePage() {
     const next = !pcos;
     setPcos(next);
     setPcosMode(next); // persists to cache + syncs to sheet
+  }
+
+  function togglePaused() {
+    const next = !paused;
+    setPausedState(next);
+    setPaused(next);
   }
 
   function removeCycle(id: string) {
@@ -100,6 +108,35 @@ export default function ProfilePage() {
             }}>📖 Read our PCOS guides for food & tracking tips ›</p>
           </Link>
         )}
+      </div>
+
+      {/* Pause tracking toggle */}
+      <div className="glass-card" style={{ padding: '16px 18px', marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, flex: 1 }}>
+            <span style={{ fontSize: 18, marginTop: 1 }}>⏸️</span>
+            <div>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#1C0B2E' }}>Pause tracking</p>
+              <p style={{ margin: '2px 0 0', fontSize: 12, color: '#8A6A9A', lineHeight: 1.45 }}>
+                For pregnancy or a break — stops predictions & reminders. Logging a period resumes it.
+              </p>
+            </div>
+          </div>
+          <button onClick={togglePaused} role="switch" aria-checked={paused} aria-label="Pause tracking" style={{
+            width: 50, height: 30, borderRadius: 999, border: 'none', cursor: 'pointer',
+            padding: 3, flexShrink: 0, position: 'relative',
+            background: paused ? 'linear-gradient(135deg,#d97706,#f59e0b)' : 'rgba(165,106,189,0.25)',
+            transition: 'background .25s cubic-bezier(.34,1.4,.64,1)',
+            boxShadow: paused ? '0 4px 12px rgba(217,119,6,0.3)' : 'none',
+          }}>
+            <span style={{
+              display: 'block', width: 24, height: 24, borderRadius: '50%', background: '#fff',
+              transform: paused ? 'translateX(20px)' : 'translateX(0)',
+              transition: 'transform .25s cubic-bezier(.34,1.56,.64,1)',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+            }} />
+          </button>
+        </div>
       </div>
 
       {/* Re-setup cycle */}
