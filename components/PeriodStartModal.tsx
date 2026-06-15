@@ -23,30 +23,28 @@ export default function PeriodStartModal({
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [saving, setSaving] = useState(false);
+  const [fetching, setFetching] = useState(false);
   const today = new Date().toISOString().slice(0, 10);
 
   useEffect(() => { setMounted(true); }, []);
 
-  function applyData(cycles: { id: string; startDate: string; periodEndDate?: string }[]) {
-    if (cycles.length > 0) {
-      const last = cycles[cycles.length - 1];
-      setActiveId(last.id);
-      setStartDate(last.startDate);
-      setEndDate(last.periodEndDate ?? '');
-    } else {
-      setActiveId(null);
-      setStartDate(today);
-      setEndDate('');
-    }
-  }
-
   function launch() {
-    // Pre-fill immediately from local cache
-    const cached = loadData();
-    applyData(cached.cycles);
+    setFetching(true);
+    setStartDate('');
+    setEndDate('');
+    setActiveId(null);
     setOpen(true);
-    // Then refresh from sheet in the background
-    fetchFromSheet().then((fresh) => applyData(fresh.cycles));
+    fetchFromSheet().then((fresh) => {
+      if (fresh.cycles.length > 0) {
+        const last = fresh.cycles[fresh.cycles.length - 1];
+        setActiveId(last.id);
+        setStartDate(last.startDate);
+        setEndDate(last.periodEndDate ?? '');
+      } else {
+        setStartDate(today);
+      }
+      setFetching(false);
+    });
   }
 
   async function confirm() {
@@ -127,7 +125,7 @@ export default function PeriodStartModal({
               {activeId ? 'Update period dates' : 'Log your period'}
             </p>
             <p style={{ margin: '0 0 20px', fontSize: 13, color: '#8A6A9A' }}>
-              {activeId
+              {fetching ? 'Loading your period data…' : activeId
                 ? `Started ${fmt(startDate)}. Update dates below.`
                 : 'Pick the start date. End date is optional.'}
             </p>
@@ -173,11 +171,11 @@ export default function PeriodStartModal({
                 flex: 1, padding: '13px', borderRadius: 14, border: '1px solid rgba(165,106,189,0.3)',
                 background: 'transparent', color: '#6E3482', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-outfit)',
               }}>Cancel</button>
-              <button onClick={confirm} disabled={saving} style={{
+              <button onClick={confirm} disabled={saving || fetching} style={{
                 flex: 2, padding: '13px', borderRadius: 14, border: 'none',
                 background: 'linear-gradient(135deg,#6E3482,#A56ABD)', color: '#fff',
-                fontSize: 15, fontWeight: 800, cursor: saving ? 'default' : 'pointer', fontFamily: 'var(--font-outfit)',
-                boxShadow: '0 6px 20px rgba(110,52,130,0.35)', opacity: saving ? 0.7 : 1,
+                fontSize: 15, fontWeight: 800, cursor: (saving || fetching) ? 'default' : 'pointer', fontFamily: 'var(--font-outfit)',
+                boxShadow: '0 6px 20px rgba(110,52,130,0.35)', opacity: (saving || fetching) ? 0.6 : 1,
               }}>{saving ? 'Saving…' : 'Confirm'}</button>
             </div>
           </div>
