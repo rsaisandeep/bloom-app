@@ -8,7 +8,8 @@ import {
 } from '@/lib/cycle';
 import { getActionItems } from '@/lib/actions';
 import { fetchFromSheet } from '@/lib/data';
-import { appDayKey, localDateStr } from '@/lib/day';
+import { localDateStr } from '@/lib/day';
+import { useAppDay } from '@/lib/useAppDay';
 import Hamburger from '@/components/Hamburger';
 
 const RING_COLORS: Record<Phase, [string, string]> = {
@@ -34,17 +35,22 @@ export default function HomePage() {
   const [username, setUsername] = useState('');
   const [done, setDone] = useState<number[]>([]);
 
-  const todayKey = appDayKey(); // logical day (rolls over at 5 AM)
+  const todayKey = useAppDay(); // logical day, live-updates at 5 AM
 
+  // Load session + data once on mount.
   useEffect(() => {
     const raw = localStorage.getItem('bloom_session');
     if (raw) { try { const { username: u } = JSON.parse(raw); setUsername(u || ''); } catch {} }
     setData(loadData());
     fetchFromSheet().then(setData);
+  }, []);
+
+  // Reset the focus checklist whenever the logical day changes (incl. live 5 AM rollover).
+  useEffect(() => {
     try {
       const saved = localStorage.getItem(`bloom_actions_${todayKey}`);
-      if (saved) setDone(JSON.parse(saved));
-    } catch {}
+      setDone(saved ? JSON.parse(saved) : []);
+    } catch { setDone([]); }
   }, [todayKey]);
 
   function toggleDone(i: number) {
