@@ -106,6 +106,17 @@ export function setPeriodEnd(endDate: string) {
   syncAfterSave();
 }
 
+// Remove the period end date from the most recent cycle.
+export function clearPeriodEnd() {
+  const data = loadData();
+  if (data.cycles.length === 0) return;
+  const last = data.cycles[data.cycles.length - 1];
+  delete last.periodEndDate;
+  delete last.periodLength;
+  saveData(data);
+  syncAfterSave();
+}
+
 // Whether the most recent cycle has no manually confirmed end date yet.
 export function needsPeriodEnd(data: BloomData): boolean {
   if (data.cycles.length === 0) return false;

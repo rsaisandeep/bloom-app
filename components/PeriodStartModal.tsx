@@ -1,11 +1,26 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { addPeriodStart, editPeriodStart, setPeriodEnd, loadData } from '@/lib/cycle';
+import { addPeriodStart, editPeriodStart, setPeriodEnd, clearPeriodEnd, deleteCycle, loadData } from '@/lib/cycle';
 import { fetchFromSheet, saveToSheet } from '@/lib/data';
 
 function session() {
   try { return JSON.parse(localStorage.getItem('bloom_session') || '{}'); } catch { return {}; }
+}
+
+function XBtn({ onClear }: { onClear: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClear}
+      style={{
+        position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+        background: 'rgba(165,106,189,0.15)', border: 'none', borderRadius: '50%',
+        width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        cursor: 'pointer', color: '#6E3482', fontSize: 13, fontFamily: 'inherit', flexShrink: 0,
+      }}
+    >✕</button>
+  );
 }
 
 export default function PeriodStartModal({
@@ -38,7 +53,7 @@ export default function PeriodStartModal({
       if (fresh.cycles.length > 0) {
         const last = fresh.cycles[fresh.cycles.length - 1];
         setActiveId(last.id);
-        setStartDate(last.startDate);
+        setStartDate(last.startDate ?? '');
         setEndDate(last.periodEndDate ?? '');
       } else {
         setStartDate(today);
@@ -50,14 +65,23 @@ export default function PeriodStartModal({
   async function confirm() {
     setSaving(true);
     const uname = session().username || 'me';
-    if (activeId) {
-      editPeriodStart(activeId, startDate, uname);
-    } else {
-      addPeriodStart(startDate, uname);
+
+    if (startDate) {
+      if (activeId) {
+        editPeriodStart(activeId, startDate, uname);
+      } else {
+        addPeriodStart(startDate, uname);
+      }
+      if (endDate && endDate >= startDate) {
+        setPeriodEnd(endDate);
+      } else {
+        clearPeriodEnd(); // clears any previously saved end date
+      }
+    } else if (activeId) {
+      // start date was explicitly deleted — remove the whole cycle
+      deleteCycle(activeId);
     }
-    if (endDate && endDate >= startDate) {
-      setPeriodEnd(endDate);
-    }
+
     await saveToSheet(loadData());
     setSaving(false);
     setOpen(false);
@@ -65,7 +89,15 @@ export default function PeriodStartModal({
   }
 
   const fmt = (s: string) =>
-    new Date(s + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    s ? new Date(s + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) : '';
+
+  const inputStyle = {
+    width: '100%', boxSizing: 'border-box' as const,
+    background: 'rgba(255,255,255,0.6)',
+    border: '1px solid rgba(165,106,189,0.3)', borderRadius: 14,
+    padding: '14px 44px 14px 16px',
+    fontSize: 16, fontFamily: 'var(--font-outfit)', outline: 'none',
+  };
 
   const trigger =
     variant === 'banner-cta' ? (
@@ -122,59 +154,64 @@ export default function PeriodStartModal({
             <div style={{ width: 40, height: 4, borderRadius: 2, background: 'rgba(165,106,189,0.3)', margin: '0 auto 18px' }} />
 
             <p style={{ margin: '0 0 4px', fontSize: 18, fontWeight: 800, color: '#1C0B2E' }}>
-              {activeId ? 'Update period dates' : 'Log your period'}
+              {fetching ? 'Log your period' : activeId ? 'Update period dates' : 'Log your period'}
             </p>
             <p style={{ margin: '0 0 20px', fontSize: 13, color: '#8A6A9A' }}>
-              {fetching ? 'Loading your period data…' : activeId
-                ? `Started ${fmt(startDate)}. Update dates below.`
-                : 'Pick the start date. End date is optional.'}
+              {fetching
+                ? 'Loading your period data…'
+                : activeId && startDate
+                  ? `Started ${fmt(startDate)}. Update dates below.`
+                  : 'Pick the start date. End date is optional.'}
             </p>
 
-            {/* Start date */}
+            {/* Period start */}
             <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 800, color: '#6E3482', letterSpacing: 0.5, textTransform: 'uppercase' }}>
               Period start
             </p>
-            <input
-              type="date"
-              max={today}
-              value={startDate}
-              onChange={(e) => {
-                setStartDate(e.target.value);
-                if (endDate && e.target.value > endDate) setEndDate('');
-              }}
-              style={{
-                width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.6)',
-                border: '1px solid rgba(165,106,189,0.3)', borderRadius: 14, padding: '14px 16px',
-                fontSize: 16, color: '#1C0B2E', fontFamily: 'var(--font-outfit)', outline: 'none', marginBottom: 16,
-              }}
-            />
+            <div style={{ position: 'relative', marginBottom: 16 }}>
+              <input
+                type="date"
+                max={today}
+                value={startDate}
+                disabled={fetching}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  if (endDate && e.target.value > endDate) setEndDate('');
+                }}
+                style={{ ...inputStyle, color: startDate ? '#1C0B2E' : '#A99BB5', opacity: fetching ? 0.5 : 1 }}
+              />
+              {startDate && !fetching && <XBtn onClear={() => { setStartDate(''); setEndDate(''); }} />}
+            </div>
 
-            {/* End date */}
+            {/* Period end */}
             <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 800, color: '#6E3482', letterSpacing: 0.5, textTransform: 'uppercase' }}>
-              Period end <span style={{ fontWeight: 500, color: '#A99BB5', textTransform: 'none', letterSpacing: 0 }}>(optional)</span>
+              Period end{' '}
+              <span style={{ fontWeight: 500, color: '#A99BB5', textTransform: 'none', letterSpacing: 0 }}>(optional)</span>
             </p>
-            <input
-              type="date"
-              min={startDate}
-              max={today}
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              style={{
-                width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.6)',
-                border: '1px solid rgba(165,106,189,0.3)', borderRadius: 14, padding: '14px 16px',
-                fontSize: 16, color: endDate ? '#1C0B2E' : '#A99BB5', fontFamily: 'var(--font-outfit)', outline: 'none', marginBottom: 22,
-              }}
-            />
+            <div style={{ position: 'relative', marginBottom: 22 }}>
+              <input
+                type="date"
+                min={startDate || undefined}
+                max={today}
+                value={endDate}
+                disabled={fetching || !startDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                style={{ ...inputStyle, color: endDate ? '#1C0B2E' : '#A99BB5', opacity: (fetching || !startDate) ? 0.5 : 1 }}
+              />
+              {endDate && !fetching && <XBtn onClear={() => setEndDate('')} />}
+            </div>
 
             <div style={{ display: 'flex', gap: 10 }}>
               <button onClick={() => setOpen(false)} style={{
                 flex: 1, padding: '13px', borderRadius: 14, border: '1px solid rgba(165,106,189,0.3)',
-                background: 'transparent', color: '#6E3482', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-outfit)',
+                background: 'transparent', color: '#6E3482', fontSize: 15, fontWeight: 700,
+                cursor: 'pointer', fontFamily: 'var(--font-outfit)',
               }}>Cancel</button>
               <button onClick={confirm} disabled={saving || fetching} style={{
                 flex: 2, padding: '13px', borderRadius: 14, border: 'none',
                 background: 'linear-gradient(135deg,#6E3482,#A56ABD)', color: '#fff',
-                fontSize: 15, fontWeight: 800, cursor: (saving || fetching) ? 'default' : 'pointer', fontFamily: 'var(--font-outfit)',
+                fontSize: 15, fontWeight: 800,
+                cursor: (saving || fetching) ? 'default' : 'pointer', fontFamily: 'var(--font-outfit)',
                 boxShadow: '0 6px 20px rgba(110,52,130,0.35)', opacity: (saving || fetching) ? 0.6 : 1,
               }}>{saving ? 'Saving…' : 'Confirm'}</button>
             </div>
