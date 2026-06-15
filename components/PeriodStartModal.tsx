@@ -88,8 +88,11 @@ export default function PeriodStartModal({
     onDone?.();
   }
 
-  const fmt = (s: string) =>
-    s ? new Date(s + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) : '';
+  const fmt = (s: string) => {
+    if (!s) return '';
+    const dateOnly = s.includes('T') ? s.slice(0, 10) : s; // strip time if sheet returned ISO datetime
+    return new Date(dateOnly + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  };
 
   const inputStyle = {
     width: '100%', boxSizing: 'border-box' as const,

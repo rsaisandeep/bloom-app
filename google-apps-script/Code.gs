@@ -62,10 +62,11 @@ function loadAll(p) {
   const auth = login(p); if (!auth.ok) return auth;
   const u = auth.username;
 
+  const tz = Session.getScriptTimeZone();
   const cycles = rowsFor(T_CYCLES, u).map(function (r) {
     return {
-      id: r[0], startDate: r[2],
-      periodEndDate: r[3] || undefined,
+      id: r[0], startDate: fmtDate(r[2], tz),
+      periodEndDate: r[3] ? fmtDate(r[3], tz) : undefined,
       cycleLength: numOrUndef(r[4]),
       periodLength: numOrUndef(r[5]),
     };
@@ -73,7 +74,7 @@ function loadAll(p) {
 
   const logs = rowsFor(T_LOGS, u).map(function (r) {
     return {
-      date: r[2], flow: r[3] || undefined, cramps: r[4], energy: r[5],
+      date: fmtDate(r[2], tz), flow: r[3] || undefined, cramps: r[4], energy: r[5],
       mood: r[6], bloating: r[7], sleep: r[8], cravings: r[9], notes: r[10] || undefined,
     };
   });
@@ -163,6 +164,11 @@ function upsertRow(name, key, row) {
 
 function numOrUndef(v) { return (v === '' || v === null || v === undefined) ? undefined : Number(v); }
 function blankNum(v)   { return (v === null || v === undefined) ? '' : v; }
+// Sheets auto-converts date strings to Date objects; format them back to YYYY-MM-DD.
+function fmtDate(v, tz) {
+  if (!v || v === '') return '';
+  try { return Utilities.formatDate(new Date(v), tz, 'yyyy-MM-dd'); } catch (e) { return String(v); }
+}
 
 function respond(data) {
   return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
