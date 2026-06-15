@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   loadData, emptyData, getCurrentPhase, getPredictions, getPredictionWindow, getAverageCycleLength,
-  getLateInfo, isPaused, setPaused, PHASE_META, type Phase, type BloomData,
+  getLateInfo, isPaused, setPaused, needsPeriodEnd, PHASE_META, type Phase, type BloomData,
 } from '@/lib/cycle';
 import { getActionItems } from '@/lib/actions';
 import { fetchFromSheet } from '@/lib/data';
@@ -12,6 +12,7 @@ import { useAppDay } from '@/lib/useAppDay';
 import Hamburger from '@/components/Hamburger';
 import InfoModal from '@/components/InfoModal';
 import PeriodStartModal from '@/components/PeriodStartModal';
+import PeriodEndModal from '@/components/PeriodEndModal';
 import LogSheet from '@/components/LogSheet';
 
 const RING_COLORS: Record<Phase, [string, string]> = {
@@ -74,6 +75,8 @@ export default function HomePage() {
   const predWindow = pcosMode ? getPredictionWindow(data) : null;
   const paused = isPaused(data);
   const lateInfo = hasCycles ? getLateInfo(data) : null;
+  const showPeriodEnd = phase === 'menstrual' && needsPeriodEnd(data) && !paused;
+  const showPeriodStart = phase === 'luteal' && dayOfCycle >= 25 && !paused;
   const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   const meta = PHASE_META[phase];
 
@@ -207,6 +210,10 @@ export default function HomePage() {
         </div>
       </div>
       )}
+
+      {/* ── Period end / Period started prompts ── */}
+      {showPeriodEnd && <div className="anim-float" style={{ marginBottom: 14 }}><PeriodEndModal variant="card" onDone={refresh} /></div>}
+      {showPeriodStart && <div className="anim-float" style={{ marginBottom: 14 }}><PeriodStartModal variant="card" label="Period started?" onDone={refresh} /></div>}
 
       {/* ── Late-period reminder ── */}
       {lateInfo && (

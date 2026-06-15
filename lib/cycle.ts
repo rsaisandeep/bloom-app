@@ -81,15 +81,36 @@ export function saveLog(log: DayLog) {
   if (idx >= 0) data.logs[idx] = log;
   else data.logs.push(log);
 
-  // Keep the current cycle's derived period length fresh.
+  // Only derive period length from flow logs when user hasn't manually set an end date.
   if (data.cycles.length) {
     const cur = data.cycles[data.cycles.length - 1];
-    const pl = derivePeriodLength(cur, data.logs);
-    if (pl) { cur.periodLength = pl; cur.periodEndDate = addDaysStr(cur.startDate, pl - 1); }
+    if (!cur.periodEndDate) {
+      const pl = derivePeriodLength(cur, data.logs);
+      if (pl) { cur.periodLength = pl; cur.periodEndDate = addDaysStr(cur.startDate, pl - 1); }
+    }
   }
 
   saveData(data);
   syncAfterSave();
+}
+
+// Explicitly set the period end date for the most recent cycle.
+export function setPeriodEnd(endDate: string) {
+  const data = loadData();
+  if (data.cycles.length === 0) return;
+  const last = data.cycles[data.cycles.length - 1];
+  if (endDate < last.startDate) return;
+  last.periodEndDate = endDate;
+  last.periodLength = daysBetween(last.startDate, endDate) + 1;
+  saveData(data);
+  syncAfterSave();
+}
+
+// Whether the most recent cycle has no manually confirmed end date yet.
+export function needsPeriodEnd(data: BloomData): boolean {
+  if (data.cycles.length === 0) return false;
+  const last = data.cycles[data.cycles.length - 1];
+  return !last.periodEndDate;
 }
 
 // A flow log only starts a NEW cycle if the last period began long enough ago

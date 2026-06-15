@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import PeriodStartModal from '@/components/PeriodStartModal';
+import PeriodEndModal from '@/components/PeriodEndModal';
 
 export default function Hamburger({ username }: { username: string }) {
   const router = useRouter();
@@ -16,9 +17,9 @@ export default function Hamburger({ username }: { username: string }) {
   }
 
   const items = [
-    { emoji: '👤', label: 'Profile', sub: 'Your account', onClick: () => { setOpen(false); router.push('/profile'); } },
     { emoji: '🗓', label: 'Cycle setup', sub: 'Update period & length', onClick: () => { setOpen(false); router.push('/onboarding'); } },
     { emoji: '📖', label: 'Read', sub: 'Articles & guides', onClick: () => { setOpen(false); router.push('/read'); } },
+    { emoji: '👤', label: 'Profile', sub: 'Your account', onClick: () => { setOpen(false); router.push('/profile'); } },
   ];
 
   return (
@@ -71,6 +72,7 @@ export default function Hamburger({ username }: { username: string }) {
             {/* Items */}
             <div className="stagger" style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
               <PeriodStartModal variant="menu" onDone={() => setOpen(false)} />
+              <PeriodEndModal variant="menu" onDone={() => setOpen(false)} />
               {items.map((it) => (
                 <button key={it.label} onClick={it.onClick} className="liquid-pill" style={{
                   display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left',

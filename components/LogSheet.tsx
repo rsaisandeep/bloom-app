@@ -20,10 +20,14 @@ interface LogSheetProps {
   open: boolean;
   onClose: () => void;
   onSaved?: () => void;
+  /** Specific date to log (e.g. from calendar). Defaults to today. */
+  date?: string;
 }
 
-export default function LogSheet({ open, onClose, onSaved }: LogSheetProps) {
+export default function LogSheet({ open, onClose, onSaved, date: dateProp }: LogSheetProps) {
   const today = appDayKey();
+  const date = dateProp ?? today;
+  const isToday = date === today;
   const [form, setForm] = useState<Partial<DayLog>>(DEFAULTS);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -32,13 +36,13 @@ export default function LogSheet({ open, onClose, onSaved }: LogSheetProps) {
     if (!open) return;
     setSaved(false);
     setSaving(false);
-    const cached = loadData().logs.find((l) => l.date === today);
+    const cached = loadData().logs.find((l) => l.date === date);
     setForm(cached ?? DEFAULTS);
     fetchFromSheet().then((data) => {
-      const existing = data.logs.find((l) => l.date === today);
+      const existing = data.logs.find((l) => l.date === date);
       if (existing) setForm(existing);
     });
-  }, [open, today]);
+  }, [open, date]);
 
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : '';
@@ -49,16 +53,16 @@ export default function LogSheet({ open, onClose, onSaved }: LogSheetProps) {
     setForm((f) => ({ ...f, [key]: value }));
     if (key === 'flow' && value !== 'none') {
       const data = loadData();
-      if (isNewPeriodStart(data, today)) {
+      if (isNewPeriodStart(data, date)) {
         const session = (() => { try { return JSON.parse(localStorage.getItem('bloom_session') || '{}'); } catch { return {}; } })();
-        startPeriod(today, session.username || 'me');
+        startPeriod(date, session.username || 'me');
       }
     }
   }
 
   async function handleSave() {
     setSaving(true);
-    const log = { ...DEFAULTS, ...form, date: today } as DayLog;
+    const log = { ...DEFAULTS, ...form, date } as DayLog;
     saveLog(log);
     await saveToSheet(loadData());
     setSaved(true);
@@ -92,7 +96,16 @@ export default function LogSheet({ open, onClose, onSaved }: LogSheetProps) {
         }}>
           <div style={{ width: 40, height: 4, borderRadius: 999, background: 'rgba(110,52,130,0.2)', margin: '0 auto 12px' }} />
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#1C0B2E' }}>Today&apos;s Check-in</h2>
+            <div>
+              <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#1C0B2E' }}>
+                {isToday ? "Today's Check-in" : 'Edit Log'}
+              </h2>
+              {!isToday && (
+                <p style={{ margin: '2px 0 0', fontSize: 12, color: '#8A6A9A' }}>
+                  {new Date(date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                </p>
+              )}
+            </div>
             <button onClick={onClose} style={{
               background: 'rgba(165,106,189,0.15)', border: 'none', borderRadius: 999,
               width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -139,7 +152,7 @@ export default function LogSheet({ open, onClose, onSaved }: LogSheetProps) {
             cursor: saving ? 'default' : 'pointer', transition: 'all .2s cubic-bezier(.22,.61,.36,1)',
             fontFamily: 'inherit',
           }}>
-            {saved ? '✓ Saved!' : saving ? 'Saving…' : 'Save check-in →'}
+            {saved ? '✓ Saved!' : saving ? 'Saving…' : isToday ? 'Save check-in →' : 'Save changes →'}
           </button>
         </div>
       </div>

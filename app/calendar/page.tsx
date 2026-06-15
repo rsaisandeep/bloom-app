@@ -1,10 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { loadData, getPredictions, getPredictionWindow, PHASE_META, type BloomData } from "@/lib/cycle";
 import { fetchFromSheet } from "@/lib/data";
 import { localDateStr } from "@/lib/day";
 import TopBar from "@/components/TopBar";
+import LogSheet from "@/components/LogSheet";
 
 const PHASE_COLORS: Record<string, string> = {
   menstrual: "#fca5a5", follicular: "#c4b5fd", ovulation: "#fde68a", luteal: "#a5b4fc",
@@ -18,8 +18,9 @@ function getDayPhase(d: number) {
 }
 
 export default function CalendarPage() {
-  const [data, setData] = useState<BloomData>(() => loadData()); // instant from cache
-  useEffect(() => { fetchFromSheet().then(setData); }, []); // then sync from sheet
+  const [data, setData] = useState<BloomData>(() => loadData());
+  const [logDate, setLogDate] = useState<string | null>(null);
+  useEffect(() => { fetchFromSheet().then(setData); }, []);
 
   const today = new Date();
   const year = today.getFullYear(), month = today.getMonth();
@@ -86,10 +87,17 @@ export default function CalendarPage() {
             );
             return isFuture
               ? <div key={day}>{cell}</div>
-              : <Link key={day} href={`/log?date=${cellStr}`} style={{ textDecoration: "none" }}>{cell}</Link>;
+              : <button key={day} onClick={() => setLogDate(cellStr)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'block', width: '100%' }}>{cell}</button>;
           })}
         </div>
       </div>
+
+      <LogSheet
+        open={!!logDate}
+        date={logDate ?? undefined}
+        onClose={() => setLogDate(null)}
+        onSaved={() => { setLogDate(null); fetchFromSheet().then(setData); }}
+      />
 
       {/* Predictions */}
       {predictions && (
