@@ -12,6 +12,7 @@ import { useAppDay } from '@/lib/useAppDay';
 import Hamburger from '@/components/Hamburger';
 import InfoModal from '@/components/InfoModal';
 import PeriodStartModal from '@/components/PeriodStartModal';
+import LogSheet from '@/components/LogSheet';
 
 const RING_COLORS: Record<Phase, [string, string]> = {
   menstrual:  ['#f87171', '#fca5a5'],
@@ -34,6 +35,7 @@ export default function HomePage() {
   const [data, setData] = useState<BloomData>(emptyData);
   const [username, setUsername] = useState('');
   const [done, setDone] = useState<number[]>([]);
+  const [showLog, setShowLog] = useState(false);
 
   const todayKey = useAppDay(); // logical day, live-updates at 5 AM
 
@@ -243,9 +245,9 @@ export default function HomePage() {
 
       {/* ── No-log nudge banner ── */}
       {!paused && !todayLog && (
-        <Link href="/log?from=cycle" style={{ textDecoration: 'none', display: 'block' }}>
+        <button onClick={() => setShowLog(true)} style={{ width: '100%', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', display: 'block', marginBottom: 14 }}>
           <div className="glass-card anim-float shimmer-host" style={{
-            padding: '14px 16px', marginBottom: 14,
+            padding: '14px 16px',
             display: 'flex', alignItems: 'center', gap: 12,
             background: 'linear-gradient(135deg, rgba(165,106,189,0.18), rgba(110,52,130,0.10))',
             borderColor: 'rgba(165,106,189,0.4)',
@@ -269,12 +271,12 @@ export default function HomePage() {
               boxShadow: '0 4px 12px rgba(110,52,130,0.3)',
             }}>Log →</span>
           </div>
-        </Link>
+        </button>
       )}
 
       {/* ── Update today's log (when already logged) ── */}
       {!paused && todayLog && (
-        <Link href="/log?from=cycle" style={{ textDecoration: 'none', display: 'block', marginBottom: 12 }}>
+        <button onClick={() => setShowLog(true)} style={{ width: '100%', background: 'none', border: 'none', padding: '0 0 12px', cursor: 'pointer', textAlign: 'left' }}>
           <div className="glass-card anim-rise" style={{ padding: '13px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ fontSize: 20 }}>✏️</span>
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -283,8 +285,10 @@ export default function HomePage() {
             </div>
             <span style={{ fontSize: 16, color: '#A56ABD' }}>›</span>
           </div>
-        </Link>
+        </button>
       )}
+
+      <LogSheet open={showLog} onClose={() => setShowLog(false)} onSaved={refresh} />
 
       {/* ── Today's focus — checkable reminders ── */}
       {!paused && (<>

@@ -3,15 +3,28 @@ import { useEffect, useState } from 'react';
 import Hamburger from '@/components/Hamburger';
 import InfoModal from '@/components/InfoModal';
 
-// Shared top bar: hamburger (left) + info (right). Used on every page.
-export default function TopBar() {
+export default function TopBar({ title }: { title?: string }) {
   const [username, setUsername] = useState('');
   useEffect(() => {
     try { const s = JSON.parse(localStorage.getItem('bloom_session') || '{}'); setUsername(s.username || ''); } catch {}
   }, []);
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px 2px' }}>
+    <div style={{
+      position: 'sticky', top: 0, zIndex: 100,
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '14px 16px 10px',
+      background: 'rgba(238,232,245,0.88)',
+      backdropFilter: 'blur(20px) saturate(150%)',
+      WebkitBackdropFilter: 'blur(20px) saturate(150%)',
+    }}>
       <Hamburger username={username} />
+      {title && (
+        <span style={{
+          position: 'absolute', left: '50%', transform: 'translateX(-50%)',
+          fontSize: 17, fontWeight: 800, color: '#1C0B2E', letterSpacing: -0.3,
+          whiteSpace: 'nowrap', pointerEvents: 'none',
+        }}>{title}</span>
+      )}
       <InfoModal />
     </div>
   );

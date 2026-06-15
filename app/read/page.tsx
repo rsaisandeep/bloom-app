@@ -70,12 +70,9 @@ export default function ReadPage() {
   const rest = ARTICLES.filter((a) => a.slug !== currentSlug);
 
   return (
-    <><TopBar />
+    <><TopBar title="Read" />
     <div style={{ minHeight: '100vh', padding: '4px 16px 24px' }}>
-      <div className="anim-rise" style={{ marginBottom: 18 }}>
-        <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: '#1C0B2E', letterSpacing: -0.5 }}>Read</h1>
-        <p style={{ margin: '2px 0 0', fontSize: 13, color: '#8A6A9A' }}>Curated guides on your cycle</p>
-      </div>
+      <p className="anim-rise" style={{ margin: '0 0 14px', fontSize: 13, color: '#8A6A9A' }}>Curated guides on your cycle</p>
 
       {recommended.length > 0 && (
         <>

@@ -41,10 +41,9 @@ export default function CalendarPage() {
   }
 
   return (
-    <><TopBar />
+    <><TopBar title="Calendar" />
     <div style={{ minHeight: "100vh", padding: "4px 16px 24px" }}>
-      <h1 style={{ margin: "0 0 2px", fontSize: "1.75rem", fontWeight: 800, color: "#1C0B2E", letterSpacing: "-.02em" }}>Calendar</h1>
-      <p style={{ margin: "0 0 16px", fontSize: ".78rem", fontWeight: 600, color: "#8A6A9A" }}>
+      <p style={{ margin: "0 0 14px", fontSize: ".78rem", fontWeight: 600, color: "#8A6A9A" }}>
         {today.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
       </p>
 
