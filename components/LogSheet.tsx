@@ -34,8 +34,13 @@ const SYMPTOM_OPTIONS: Option[] = [
   {value:'tender_breasts',label:'Tender breasts',emoji:'💗'},
   {value:'nausea',label:'Nausea',emoji:'🤢'},
   {value:'fatigue',label:'Fatigue',emoji:'🥱'},
+  {value:'dizziness',label:'Dizziness',emoji:'😵‍💫'},
+  {value:'hot_flashes',label:'Hot flashes',emoji:'🥵'},
+  {value:'chills',label:'Chills',emoji:'🥶'},
+  {value:'diarrhea',label:'Diarrhea',emoji:'💩'},
+  {value:'constipation',label:'Constipation',emoji:'🧱'},
+  {value:'joint_pain',label:'Joint pain',emoji:'🦴'},
 ];
-const PRESET_SYMPTOMS = new Set(SYMPTOM_OPTIONS.map((o) => o.value));
 const DEFAULTS: Partial<DayLog> = { cramps:'none', energy:'medium', mood:'calm', bloating:'none', sleep:'good', cravings:'none', flow:'none', cervicalMucus:'none', sex:'none', ovulationTest:'none', pregnancyTest:'none', pill:'none', symptoms:[] };
 
 interface LogSheetProps {
@@ -54,7 +59,6 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [showMore, setShowMore] = useState(false);
-  const [customSymptom, setCustomSymptom] = useState('');
 
   // Reveal the advanced section automatically when a log already has data there.
   function hasMoreData(l: Partial<DayLog>): boolean {
@@ -67,7 +71,6 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
     if (!open) return;
     setSaved(false);
     setSaving(false);
-    setCustomSymptom('');
     const cached = loadData().logs.find((l) => l.date === date);
     const initial = cached ?? DEFAULTS;
     setForm(initial);
@@ -98,16 +101,6 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
     setForm((f) => {
       const cur = f.symptoms ?? [];
       return { ...f, symptoms: cur.includes(v) ? cur.filter((s) => s !== v) : [...cur, v] };
-    });
-  }
-
-  function addCustomSymptom() {
-    const v = customSymptom.trim().toLowerCase();
-    if (!v) return;
-    setCustomSymptom('');
-    setForm((f) => {
-      const cur = f.symptoms ?? [];
-      return cur.includes(v) ? f : { ...f, symptoms: [...cur, v] };
     });
   }
 
@@ -205,28 +198,6 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
                   <span>{opt.emoji}</span><span>{opt.label}</span>
                 </button>
               ))}
-              {(form.symptoms ?? []).filter((s) => !PRESET_SYMPTOMS.has(s)).map((s) => (
-                <button key={s} onClick={() => toggleSymptom(s)} style={chipStyle(true)}>
-                  <span>{s}</span><span>✕</span>
-                </button>
-              ))}
-            </div>
-            <div style={{ display: 'flex', gap: 7, marginTop: 10 }}>
-              <input
-                value={customSymptom}
-                onChange={(e) => setCustomSymptom(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCustomSymptom(); } }}
-                placeholder="Add your own…"
-                style={{
-                  flex: 1, padding: '9px 12px', borderRadius: 12, fontSize: '.85rem', fontWeight: 600,
-                  border: '1px solid var(--glass-border-dim)', background: 'rgba(255,255,255,0.55)',
-                  color: '#1C0B2E', fontFamily: 'inherit', outline: 'none',
-                }}
-              />
-              <button onClick={addCustomSymptom} style={{
-                padding: '9px 16px', borderRadius: 12, border: 'none', cursor: 'pointer',
-                background: 'rgba(110,52,130,0.12)', color: '#6E3482', fontSize: '.82rem', fontWeight: 800, fontFamily: 'inherit',
-              }}>Add</button>
             </div>
           </div>
 

@@ -24,6 +24,12 @@ export const SYMPTOM_META: Record<string, { label: string; emoji: string }> = {
   tender_breasts: { label: "Tender breasts", emoji: "💗" },
   nausea: { label: "Nausea", emoji: "🤢" },
   fatigue: { label: "Fatigue", emoji: "😮‍💨" },
+  dizziness: { label: "Dizziness", emoji: "😵‍💫" },
+  hot_flashes: { label: "Hot flashes", emoji: "🥵" },
+  chills: { label: "Chills", emoji: "🥶" },
+  diarrhea: { label: "Diarrhea", emoji: "💩" },
+  constipation: { label: "Constipation", emoji: "🧱" },
+  joint_pain: { label: "Joint pain", emoji: "🦴" },
 };
 
 const MOOD_LABEL: Record<DayLog["mood"], string> = {
