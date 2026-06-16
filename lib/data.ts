@@ -1,22 +1,7 @@
-// Single source of truth: Google Sheets (normalized tables).
-// localStorage is a display cache shown instantly while the sheet loads.
-
 import type { BloomData } from './cycle';
 import { loadData, saveData, emptyData } from './cycle';
-import { apiLoadAll, apiSaveAll } from './api';
+import { supabase } from './supabase';
 
-function getSession(): { username: string; password: string } | null {
-  if (typeof window === 'undefined') return null;
-  const raw = localStorage.getItem('bloom_session');
-  if (!raw) return null;
-  try { return JSON.parse(raw); } catch { return null; }
-}
-
-const apiReady = () => !!process.env.NEXT_PUBLIC_BLOOM_API_URL;
-
-// Strips time component from any ISO datetime string (e.g. "2026-06-15T00:00:00.000Z" → "2026-06-15").
-// Sheets auto-converts date strings to Date objects; Code.gs fmtDate() fixes this server-side,
-// but this guards against stale cache entries written before that fix.
 function isoDate(s: string | undefined): string | undefined {
   if (!s) return undefined;
   return s.length > 10 && s.includes('T') ? s.slice(0, 10) : s;
@@ -36,29 +21,100 @@ function sanitize(data: BloomData): BloomData {
 
 export { sanitize };
 
+async function getUserId(): Promise<string | null> {
+  const { data } = await supabase.auth.getUser();
+  return data.user?.id ?? null;
+}
+
 export async function fetchFromSheet(): Promise<BloomData> {
-  if (!apiReady()) return loadData();
-  const session = getSession();
-  if (!session) return loadData();
+  const userId = await getUserId();
+  if (!userId) return loadData();
+
   try {
-    const r = await apiLoadAll(session.username, session.password);
-    if (r.ok && r.data) {
-      const data = sanitize({ cycles: r.data.cycles ?? [], logs: r.data.logs ?? [], settings: r.data.settings ?? {} });
-      saveData(data);
-      return data;
-    }
-  } catch {}
-  return loadData();
+    const [{ data: cycles }, { data: logs }, { data: settingsRow }] = await Promise.all([
+      supabase.from('cycles').select('*').eq('user_id', userId),
+      supabase.from('daily_logs').select('*').eq('user_id', userId),
+      supabase.from('settings').select('data').eq('user_id', userId).maybeSingle(),
+    ]);
+
+    const bloomData: BloomData = {
+      cycles: (cycles ?? []).map((c) => ({
+        id: c.cycle_id,
+        startDate: c.start_date,
+        periodEndDate: c.period_end_date ?? undefined,
+        cycleLength: c.cycle_length ?? undefined,
+        periodLength: c.period_length ?? undefined,
+      })),
+      logs: (logs ?? []).map((l) => ({
+        date: l.date,
+        flow: l.flow ?? undefined,
+        cramps: l.cramps,
+        energy: l.energy,
+        mood: l.mood,
+        bloating: l.bloating,
+        sleep: l.sleep,
+        cravings: l.cravings,
+        notes: l.notes ?? undefined,
+      })),
+      settings: settingsRow?.data ?? {},
+    };
+
+    const sanitized = sanitize(bloomData);
+    saveData(sanitized);
+    return sanitized;
+  } catch {
+    return loadData();
+  }
 }
 
 export async function saveToSheet(data: BloomData): Promise<boolean> {
   saveData(data); // cache first for instant UI
-  if (!apiReady()) return true;
-  const session = getSession();
-  if (!session) return true;
+  const userId = await getUserId();
+  if (!userId) return true;
+
   try {
-    const r = await apiSaveAll(session.username, session.password, data);
-    return !!r.ok;
+    // Replace cycles (handles deletions)
+    await supabase.from('cycles').delete().eq('user_id', userId);
+    if (data.cycles.length > 0) {
+      await supabase.from('cycles').insert(
+        data.cycles.map((c) => ({
+          cycle_id: c.id,
+          user_id: userId,
+          start_date: c.startDate,
+          period_end_date: c.periodEndDate ?? null,
+          cycle_length: c.cycleLength ?? null,
+          period_length: c.periodLength ?? null,
+        }))
+      );
+    }
+
+    // Upsert logs (keyed by user+date, never deleted)
+    if (data.logs.length > 0) {
+      await supabase.from('daily_logs').upsert(
+        data.logs.map((l) => ({
+          log_id: `${userId}_${l.date}`,
+          user_id: userId,
+          date: l.date,
+          flow: l.flow ?? null,
+          cramps: l.cramps ?? null,
+          energy: l.energy ?? null,
+          mood: l.mood ?? null,
+          bloating: l.bloating ?? null,
+          sleep: l.sleep ?? null,
+          cravings: l.cravings ?? null,
+          notes: l.notes ?? null,
+        })),
+        { onConflict: 'log_id' }
+      );
+    }
+
+    // Upsert settings blob
+    await supabase.from('settings').upsert(
+      { user_id: userId, data: data.settings },
+      { onConflict: 'user_id' }
+    );
+
+    return true;
   } catch {
     return false;
   }

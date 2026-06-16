@@ -28,14 +28,13 @@ export default function LoginPage() {
       const fn = mode === 'register' ? apiRegister : apiLogin;
       const r = await fn(u, password);
       if (!r.ok) {
-        setMsg({ text: r.error, err: true });
+        setMsg({ text: r.error ?? 'Something went wrong.', err: true });
         setLoading(false);
         return;
       }
-      localStorage.setItem('bloom_session', JSON.stringify({ username: u, password }));
-      // On login: pull and sanitize latest data from sheet into local cache
+      localStorage.setItem('bloom_username', u);
       if (mode === 'login') {
-        await fetchFromSheet(); // sanitizes dates and saves to localStorage
+        await fetchFromSheet();
       }
       router.push(mode === 'register' ? '/onboarding' : '/');
     } catch {

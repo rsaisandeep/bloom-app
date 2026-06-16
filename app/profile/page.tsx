@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { getSettings, setPcosMode, setPaused, loadData, deleteCycle, isLikelySkipped, type Cycle } from '@/lib/cycle';
 import { fetchFromSheet } from '@/lib/data';
 import TopBar from '@/components/TopBar';
+import { apiLogout } from '@/lib/api';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -20,8 +21,8 @@ export default function ProfilePage() {
   }
 
   useEffect(() => {
-    const raw = localStorage.getItem('bloom_session');
-    if (raw) { const { username: u } = JSON.parse(raw); setUsername(u || ''); }
+    const u = localStorage.getItem('bloom_username');
+    if (u) setUsername(u);
     syncLocal();                          // instant from cache
     fetchFromSheet().then(syncLocal);     // then sheet truth
   }, []);
@@ -45,8 +46,8 @@ export default function ProfilePage() {
 
   const fmt = (s?: string) => s ? new Date(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
 
-  function logout() {
-    localStorage.removeItem('bloom_session');
+  async function logout() {
+    await apiLogout();
     router.replace('/login');
   }
 
@@ -192,7 +193,7 @@ export default function ProfilePage() {
       {/* App info */}
       <div className="glass-card" style={{ padding: '4px 18px', marginBottom: 12 }}>
         {[
-          { label: 'Data storage', value: 'Google Sheets + Local cache' },
+          { label: 'Data storage', value: 'Supabase + Local cache' },
           { label: 'Privacy', value: 'Your data stays yours' },
           { label: 'Version', value: '1.0.0' },
         ].map((item, i) => (

@@ -1,25 +1,34 @@
-import type { BloomData } from './cycle';
+import { supabase } from './supabase';
 
-const API_URL = process.env.NEXT_PUBLIC_BLOOM_API_URL || '';
-
-async function post(payload: Record<string, unknown>) {
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(payload),
-  });
-  return res.json();
-}
+const toEmail = (username: string) => `${username}@bloom.app`;
 
 export async function apiRegister(username: string, password: string) {
-  return post({ action: 'register', username, password });
+  const { data, error } = await supabase.auth.signUp({
+    email: toEmail(username),
+    password,
+    options: { data: { username } },
+  });
+  if (error) {
+    const msg = error.message.toLowerCase();
+    if (msg.includes('already') || msg.includes('taken')) return { ok: false, error: 'Username already taken.' };
+    return { ok: false, error: error.message };
+  }
+  if (!data.user) return { ok: false, error: 'Signup failed.' };
+
+  await supabase.from('profiles').insert({ id: data.user.id, username });
+  return { ok: true };
 }
+
 export async function apiLogin(username: string, password: string) {
-  return post({ action: 'login', username, password });
+  const { error } = await supabase.auth.signInWithPassword({
+    email: toEmail(username),
+    password,
+  });
+  if (error) return { ok: false, error: 'Invalid username or password.' };
+  return { ok: true };
 }
-export async function apiLoadAll(username: string, password: string) {
-  return post({ action: 'loadAll', username, password });
-}
-export async function apiSaveAll(username: string, password: string, data: BloomData) {
-  return post({ action: 'saveAll', username, password, data });
+
+export async function apiLogout() {
+  localStorage.removeItem('bloom_username');
+  await supabase.auth.signOut();
 }

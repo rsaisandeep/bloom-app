@@ -17,8 +17,7 @@ export default function OnboardingPage() {
     const data = loadData();
     const pLen = parseInt(periodLen) || 5;
     const cLen = parseInt(cycleLen) || 28;
-    const session = (() => { try { return JSON.parse(localStorage.getItem('bloom_session') || '{}'); } catch { return {}; } })();
-    const uname = session.username || 'me';
+    const uname = localStorage.getItem('bloom_username') || 'me';
     const endDate = new Date(lastPeriod);
     endDate.setDate(endDate.getDate() + pLen - 1);
 

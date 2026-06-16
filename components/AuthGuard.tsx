@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -8,14 +9,16 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const session = localStorage.getItem('bloom_session');
-    if (!session && pathname !== '/login') {
-      router.replace('/login');
-    } else if (session && pathname === '/login') {
-      router.replace('/');
-    } else {
-      setReady(true);
-    }
+    supabase.auth.getSession().then(({ data }) => {
+      const hasSession = !!data.session;
+      if (!hasSession && pathname !== '/login') {
+        router.replace('/login');
+      } else if (hasSession && pathname === '/login') {
+        router.replace('/');
+      } else {
+        setReady(true);
+      }
+    });
   }, [pathname, router]);
 
   if (!ready) return null;
