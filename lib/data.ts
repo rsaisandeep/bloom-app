@@ -56,7 +56,8 @@ export async function fetchFromSheet(): Promise<BloomData> {
         cravings: l.cravings,
         notes: l.notes ?? undefined,
       })),
-      settings: settingsRow?.data ?? {},
+      // Preserve local settings if Supabase has none yet (race between save and fetch)
+      settings: settingsRow?.data ?? loadData().settings ?? {},
     };
 
     const sanitized = sanitize(bloomData);

@@ -22,8 +22,19 @@ export async function apiLogin(email: string, password: string) {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return { ok: false, error: 'Invalid email or password.' };
 
-  const name = data.user?.user_metadata?.name ?? email.split('@')[0];
+  const user = data.user;
+  const name = user?.user_metadata?.name ?? email.split('@')[0];
   if (typeof window !== 'undefined') localStorage.setItem('bloom_username', name);
+
+  // Profile insert during signup is blocked when email is unconfirmed (RLS + no session).
+  // Upsert here instead — user is now authenticated so RLS allows it.
+  if (user) {
+    const { data: existing } = await supabase.from('profiles').select('id').eq('id', user.id).maybeSingle();
+    if (!existing) {
+      await supabase.from('profiles').insert({ id: user.id, username: email });
+    }
+  }
+
   return { ok: true };
 }
 
