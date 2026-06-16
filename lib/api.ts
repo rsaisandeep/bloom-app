@@ -40,7 +40,9 @@ export async function apiLogin(email: string, password: string) {
 }
 
 export async function apiLogout() {
-  await supabase.auth.signOut();
+  // scope:'local' clears the session without a network round-trip — global
+  // signOut can hang/reject on mobile and block everything below it.
+  try { await supabase.auth.signOut({ scope: 'local' }); } catch {}
   localStorage.clear();
   // Hard redirect so AuthGuard state is fully reset
   window.location.href = '/login';
