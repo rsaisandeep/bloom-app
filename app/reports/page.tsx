@@ -57,10 +57,25 @@ export default function ReportsPage() {
     setPhase(p); setDayOfCycle(d);
     setAvgLen(getAverageCycleLength(data));
     setCycleHistory(data.cycles.filter((c) => c.cycleLength).map((c) => c.cycleLength!).slice(-6));
+
+    // Cache key: date + phase + core symptom fields (mood/energy/cramps).
+    // Rebuilds only when something meaningful changes, not on every tab visit.
+    const cacheKey = `bloom_recs_${log.date}_${p}_${log.mood}_${log.energy}_${log.cramps}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      try {
+        setRecs(JSON.parse(cached));
+        setLoading(false);
+        return;
+      } catch {}
+    }
+
     const rec = await fetch('/api/recommendations', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ phase: p, log }),
     }).then((r) => r.json());
+
+    try { localStorage.setItem(cacheKey, JSON.stringify(rec)); } catch {}
     setRecs(rec);
     setLoading(false);
   }

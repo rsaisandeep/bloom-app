@@ -1,8 +1,8 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { apiLogin, apiRegister, apiLoadAll } from '@/lib/api';
-import { saveData } from '@/lib/cycle';
+import { apiLogin, apiRegister } from '@/lib/api';
+import { fetchFromSheet } from '@/lib/data';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -32,14 +32,11 @@ export default function LoginPage() {
         setLoading(false);
         return;
       }
-      // On login: pull latest data from sheet into local cache
-      if (mode === 'login') {
-        const dataRes = await apiLoadAll(u, password);
-        if (dataRes.ok && dataRes.data) {
-          saveData({ cycles: dataRes.data.cycles ?? [], logs: dataRes.data.logs ?? [], settings: dataRes.data.settings ?? {} });
-        }
-      }
       localStorage.setItem('bloom_session', JSON.stringify({ username: u, password }));
+      // On login: pull and sanitize latest data from sheet into local cache
+      if (mode === 'login') {
+        await fetchFromSheet(); // sanitizes dates and saves to localStorage
+      }
       router.push(mode === 'register' ? '/onboarding' : '/');
     } catch {
       setMsg({ text: 'Network error. Check your connection and try again.', err: true });

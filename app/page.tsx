@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   loadData, emptyData, getCurrentPhase, getPredictions, getPredictionWindow, getAverageCycleLength,
-  getLateInfo, isPaused, setPaused, needsPeriodEnd, PHASE_META, type Phase, type BloomData,
+  getLateInfo, isPaused, setPaused, PHASE_META, type Phase, type BloomData,
 } from '@/lib/cycle';
 import { getActionItems } from '@/lib/actions';
 import { fetchFromSheet } from '@/lib/data';
@@ -74,7 +74,7 @@ export default function HomePage() {
   const predWindow = pcosMode ? getPredictionWindow(data) : null;
   const paused = isPaused(data);
   const lateInfo = hasCycles ? getLateInfo(data) : null;
-  const showPeriodEnd = phase === 'menstrual' && needsPeriodEnd(data) && !paused;
+  const showPeriodEnd = phase === 'menstrual' && !paused; // show throughout menstrual phase so user can set/update end date
   const showPeriodStart = phase === 'luteal' && dayOfCycle >= 25 && !paused;
   const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   const meta = PHASE_META[phase];
