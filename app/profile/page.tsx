@@ -17,6 +17,7 @@ export default function ProfilePage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   function syncLocal() {
     setPcos(!!getSettings().pcosMode);
@@ -58,19 +59,22 @@ export default function ProfilePage() {
   async function handleDeleteAccount() {
     if (deleteConfirmText !== 'DELETE') return;
     setDeleting(true);
+    setDeleteError('');
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
+      if (!token) { setDeleteError('Not logged in. Please refresh and try again.'); setDeleting(false); return; }
       const res = await fetch('/api/delete-account', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error('Delete failed');
+      const json = await res.json();
+      if (!res.ok) { setDeleteError(json.error ?? 'Delete failed. Try again.'); setDeleting(false); return; }
       localStorage.clear();
       router.replace('/login');
     } catch {
+      setDeleteError('Network error. Check your connection and try again.');
       setDeleting(false);
-      setShowDeleteModal(false);
     }
   }
 
@@ -270,8 +274,9 @@ export default function ProfilePage() {
                 outline: 'none', fontFamily: 'var(--font-outfit)',
               }}
             />
+            {deleteError && <p style={{ margin: '0 0 12px', fontSize: 13, color: '#ff6b6b', textAlign: 'center' }}>{deleteError}</p>}
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => { setShowDeleteModal(false); setDeleteConfirmText(''); }} style={{
+              <button onClick={() => { setShowDeleteModal(false); setDeleteConfirmText(''); setDeleteError(''); }} style={{
                 flex: 1, padding: '13px', borderRadius: 12, border: '1px solid rgba(165,106,189,0.3)',
                 background: 'transparent', color: '#A56ABD', fontSize: 15, fontWeight: 700,
                 cursor: 'pointer', fontFamily: 'var(--font-outfit)',
