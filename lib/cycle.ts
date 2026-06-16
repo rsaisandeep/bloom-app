@@ -242,12 +242,43 @@ export function getDefaultPeriodLength(data: BloomData): number {
   return data.settings.defaultPeriodLength ?? 5;
 }
 
+// Completed cycles with a plausible length (excludes skipped/forgotten periods
+// that would otherwise skew predictions), oldest → newest.
+function plausibleLengths(data: BloomData): number[] {
+  return data.cycles
+    .filter((c) => c.cycleLength && c.cycleLength >= MIN_PLAUSIBLE && c.cycleLength <= MAX_PLAUSIBLE)
+    .map((c) => c.cycleLength as number);
+}
+
+// Linear recency weighting (oldest gets weight 1, newest gets weight n) —
+// recent cycles predict the next one better than cycles many months ago.
+function recencyWeightedMean(lens: number[]): number {
+  let wsum = 0, vsum = 0;
+  lens.forEach((v, i) => { const w = i + 1; wsum += w; vsum += v * w; });
+  return vsum / wsum;
+}
+
 export function getAverageCycleLength(data: BloomData): number {
-  // Exclude implausible lengths (skipped/forgotten periods) so they don't skew predictions.
-  const done = data.cycles.filter((c) => c.cycleLength && c.cycleLength >= MIN_PLAUSIBLE && c.cycleLength <= MAX_PLAUSIBLE);
-  if (done.length === 0) return getDefaultCycleLength(data);
-  const recent = done.slice(-6);
-  return Math.round(recent.reduce((s, c) => s + (c.cycleLength as number), 0) / recent.length);
+  const recent = plausibleLengths(data).slice(-6);
+  if (recent.length === 0) return getDefaultCycleLength(data);
+  return Math.round(recencyWeightedMean(recent));
+}
+
+// Self-correcting: backtest the recency-weighted forecast against recent
+// actual cycles. A consistent signed error means cycles are drifting (e.g.
+// lengthening) — fold a damped, clamped slice of that bias into the forecast.
+export function getPredictionBias(data: BloomData): number {
+  const lens = plausibleLengths(data);
+  if (lens.length < 4) return 0; // need enough history to backtest
+  const errs: number[] = [];
+  for (let i = Math.max(3, lens.length - 4); i < lens.length; i++) {
+    const prior = lens.slice(Math.max(0, i - 6), i);
+    if (prior.length < 3) continue;
+    errs.push(lens[i] - recencyWeightedMean(prior));
+  }
+  if (errs.length === 0) return 0;
+  const meanErr = errs.reduce((s, n) => s + n, 0) / errs.length;
+  return Math.max(-3, Math.min(3, meanErr * 0.5)); // damped + clamped, never swings wildly
 }
 
 // Std-dev of recent cycle lengths — drives how wide the prediction range is.
@@ -299,8 +330,10 @@ export function getPredictions(data: BloomData) {
   if (data.cycles.length === 0) return null;
   const last = data.cycles[data.cycles.length - 1];
   const avgLength = getAverageCycleLength(data);
+  const bias = getPredictionBias(data);
+  const projectedLength = Math.round(avgLength + bias); // self-corrected forecast length
   const start = new Date(last.startDate);
-  const nextPeriod = new Date(start); nextPeriod.setDate(start.getDate() + avgLength);
+  const nextPeriod = new Date(start); nextPeriod.setDate(start.getDate() + projectedLength);
   const ovulation = new Date(nextPeriod); ovulation.setDate(nextPeriod.getDate() - 14);
   const fertileStart = new Date(ovulation); fertileStart.setDate(ovulation.getDate() - 2);
   const fertileEnd = new Date(ovulation); fertileEnd.setDate(ovulation.getDate() + 2);
@@ -316,7 +349,7 @@ export function getPredictions(data: BloomData) {
   const irregular = uncertainty >= 3;
 
   return { nextPeriod, ovulation, fertileStart, fertileEnd, daysUntilPeriod, avgLength,
-           nextPeriodEarliest, nextPeriodLatest, uncertainty, irregular };
+           projectedLength, bias, nextPeriodEarliest, nextPeriodLatest, uncertainty, irregular };
 }
 
 // PCOS-aware: a window sized by observed cycle variability.
