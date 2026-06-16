@@ -98,12 +98,14 @@ export function saveLog(log: DayLog) {
   if (idx >= 0) data.logs[idx] = log;
   else data.logs.push(log);
 
-  // Only derive period length from flow logs when user hasn't manually set an end date.
+  // Derive period length from flow logs for predictions/phase math, but never
+  // auto-set the end date — the end date is an explicit user action ("my period
+  // is over"), so the period-end field stays empty until the user confirms it.
   if (data.cycles.length) {
     const cur = data.cycles[data.cycles.length - 1];
     if (!cur.periodEndDate) {
       const pl = derivePeriodLength(cur, data.logs);
-      if (pl) { cur.periodLength = pl; cur.periodEndDate = addDaysStr(cur.startDate, pl - 1); }
+      if (pl) cur.periodLength = pl;
     }
   }
 
@@ -314,7 +316,11 @@ export function getCurrentPhase(data: BloomData): { phase: Phase; dayOfCycle: nu
   const dayOfCycle = daysBetween(last.startDate, todayLocal()) + 1;
 
   const cycleLen = getAverageCycleLength(data);
-  const periodLen = last.periodLength ?? getDefaultPeriodLength(data);
+  // An explicitly confirmed end date wins: menstrual lasts through that date,
+  // so entering an end date moves you out of the menstrual phase the next day.
+  const periodLen = last.periodEndDate
+    ? daysBetween(last.startDate, last.periodEndDate) + 1
+    : (last.periodLength ?? getDefaultPeriodLength(data));
   const ovulationDay = Math.max(periodLen + 3, cycleLen - 14);
 
   let phase: Phase;
