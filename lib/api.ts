@@ -14,9 +14,16 @@ export async function apiRegister(name: string, email: string, password: string)
   }
   if (!data.user) return { ok: false, error: 'Signup failed.' };
 
-  // profiles.username stores email (unique); display name comes from auth metadata
-  await supabase.from('profiles').insert({ id: data.user.id, username: email });
-  return { ok: true };
+  if (typeof window !== 'undefined') localStorage.setItem('bloom_username', name);
+
+  // With "Confirm email" disabled, signUp returns an active session immediately,
+  // so the user is authenticated and we can create their profile row now.
+  // (When confirmation is on, data.session is null and the profile is created
+  // on first login instead — RLS blocks the insert without a session.)
+  if (data.session) {
+    await supabase.from('profiles').insert({ id: data.user.id, username: email });
+  }
+  return { ok: true, session: !!data.session };
 }
 
 export async function apiLogin(email: string, password: string) {

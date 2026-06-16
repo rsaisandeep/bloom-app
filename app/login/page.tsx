@@ -28,8 +28,14 @@ export default function LoginPage() {
       if (isReg) {
         const r = await apiRegister(name.trim(), u, password);
         if (!r.ok) { setMsg({ text: r.error ?? 'Something went wrong.', err: true }); setLoading(false); return; }
-        setMsg({ text: 'Account created! Check your email to verify before logging in.', err: false });
-        setLoading(false);
+        if (r.session) {
+          // Email confirmation disabled — already signed in. Celebrate, then go.
+          setMsg({ text: '🌸 Hurray! You’ve registered with Bloom', err: false });
+          setTimeout(() => router.push('/onboarding'), 1500);
+        } else {
+          setMsg({ text: 'Account created! Check your email to verify before logging in.', err: false });
+          setLoading(false);
+        }
       } else {
         const r = await apiLogin(u, password);
         if (!r.ok) { setMsg({ text: r.error ?? 'Something went wrong.', err: true }); setLoading(false); return; }
