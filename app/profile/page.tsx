@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { getSettings, setPcosMode, setPaused, loadData, deleteCycle, isLikelySkipped, type Cycle } from '@/lib/cycle';
 import { fetchFromSheet } from '@/lib/data';
 import TopBar from '@/components/TopBar';
+import DoctorSummaryModal from '@/components/DoctorSummary';
+import { buildLogsCSV, downloadCSV } from '@/lib/export';
 import { apiLogout } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 
@@ -14,6 +16,7 @@ export default function ProfilePage() {
   const [pcos, setPcos] = useState(false);
   const [paused, setPausedState] = useState(false);
   const [cycles, setCycles] = useState<Cycle[]>([]);
+  const [showSummary, setShowSummary] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleting, setDeleting] = useState(false);
@@ -223,6 +226,26 @@ export default function ProfilePage() {
         </div>
       )}
 
+      {/* Your data — export + doctor summary */}
+      <div className="glass-card" style={{ padding: '14px 18px', marginBottom: 12 }}>
+        <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 800, color: '#1C0B2E' }}>Your data</p>
+        <p style={{ margin: '0 0 12px', fontSize: 12, color: '#8A6A9A', lineHeight: 1.45 }}>
+          Export your logs or generate a doctor-ready cycle summary.
+        </p>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={() => setShowSummary(true)} style={{
+            flex: 1, padding: '12px', borderRadius: 12, border: 'none', cursor: 'pointer',
+            background: 'linear-gradient(135deg,#6E3482,#A56ABD)', color: '#fff',
+            fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-outfit)',
+          }}>📄 Doctor summary</button>
+          <button onClick={() => downloadCSV(`bloom-logs-${new Date().toISOString().slice(0, 10)}.csv`, buildLogsCSV(loadData()))} style={{
+            flex: 1, padding: '12px', borderRadius: 12, cursor: 'pointer',
+            border: '1.5px solid rgba(165,106,189,0.35)', background: 'rgba(165,106,189,0.08)',
+            color: '#6E3482', fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-outfit)',
+          }}>⬇ Export CSV</button>
+        </div>
+      </div>
+
       {/* App info */}
       <div className="glass-card" style={{ padding: '4px 18px', marginBottom: 12 }}>
         {[
@@ -256,6 +279,8 @@ export default function ProfilePage() {
         color: 'rgba(220,38,38,0.5)', fontSize: 13, fontWeight: 600,
         cursor: 'pointer', fontFamily: 'var(--font-outfit)',
       }}>Delete account</button>
+
+      <DoctorSummaryModal open={showSummary} onClose={() => setShowSummary(false)} />
 
       {/* Delete confirmation modal */}
       {showDeleteModal && (
