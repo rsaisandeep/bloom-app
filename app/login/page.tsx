@@ -7,24 +7,23 @@ import { fetchFromSheet } from '@/lib/data';
 export default function LoginPage() {
   const router = useRouter();
   const [mode, setMode] = useState<'login' | 'register'>('login');
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [msg, setMsg] = useState<{ text: string; err: boolean } | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!username.trim() || !password.trim()) {
+    if (!email.trim() || !password.trim()) {
       setMsg({ text: 'Fill in all fields.', err: true });
       return;
     }
     setLoading(true);
     setMsg({ text: 'Working…', err: false });
 
-    const u = username.trim().toLowerCase();
+    const u = email.trim().toLowerCase();
 
     try {
-      // Always authenticate against Google Sheets
       const fn = mode === 'register' ? apiRegister : apiLogin;
       const r = await fn(u, password);
       if (!r.ok) {
@@ -105,13 +104,13 @@ export default function LoginPage() {
 
           <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <label style={{ color: 'rgba(231,219,239,0.65)', fontSize: 13, fontWeight: 500 }}>Username</label>
+              <label style={{ color: 'rgba(231,219,239,0.65)', fontSize: 13, fontWeight: 500 }}>Email</label>
               <input
-                type="text"
-                value={username}
-                onChange={e => setUsername(e.target.value)}
-                placeholder="your_name"
-                autoComplete="username"
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                autoComplete="email"
                 style={{
                   background: 'rgba(255,255,255,0.07)',
                   border: '1px solid rgba(165,106,189,0.25)',

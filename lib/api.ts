@@ -1,30 +1,21 @@
 import { supabase } from './supabase';
 
-const toEmail = (username: string) => `${username}@bloom.app`;
-
-export async function apiRegister(username: string, password: string) {
-  const { data, error } = await supabase.auth.signUp({
-    email: toEmail(username),
-    password,
-    options: { data: { username } },
-  });
+export async function apiRegister(email: string, password: string) {
+  const { data, error } = await supabase.auth.signUp({ email, password });
   if (error) {
     const msg = error.message.toLowerCase();
-    if (msg.includes('already') || msg.includes('taken')) return { ok: false, error: 'Username already taken.' };
+    if (msg.includes('already') || msg.includes('registered')) return { ok: false, error: 'An account with this email already exists.' };
     return { ok: false, error: error.message };
   }
   if (!data.user) return { ok: false, error: 'Signup failed.' };
 
-  await supabase.from('profiles').insert({ id: data.user.id, username });
+  await supabase.from('profiles').insert({ id: data.user.id, username: email });
   return { ok: true };
 }
 
-export async function apiLogin(username: string, password: string) {
-  const { error } = await supabase.auth.signInWithPassword({
-    email: toEmail(username),
-    password,
-  });
-  if (error) return { ok: false, error: 'Invalid username or password.' };
+export async function apiLogin(email: string, password: string) {
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) return { ok: false, error: 'Invalid email or password.' };
   return { ok: true };
 }
 
