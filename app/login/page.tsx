@@ -7,6 +7,7 @@ import { fetchFromSheet } from '@/lib/data';
 export default function LoginPage() {
   const router = useRouter();
   const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [msg, setMsg] = useState<{ text: string; err: boolean } | null>(null);
@@ -14,7 +15,7 @@ export default function LoginPage() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!email.trim() || !password.trim()) {
+    if ((isReg && !name.trim()) || !email.trim() || !password.trim()) {
       setMsg({ text: 'Fill in all fields.', err: true });
       return;
     }
@@ -24,18 +25,17 @@ export default function LoginPage() {
     const u = email.trim().toLowerCase();
 
     try {
-      const fn = mode === 'register' ? apiRegister : apiLogin;
-      const r = await fn(u, password);
-      if (!r.ok) {
-        setMsg({ text: r.error ?? 'Something went wrong.', err: true });
+      if (isReg) {
+        const r = await apiRegister(name.trim(), u, password);
+        if (!r.ok) { setMsg({ text: r.error ?? 'Something went wrong.', err: true }); setLoading(false); return; }
+        setMsg({ text: 'Account created! Check your email to verify before logging in.', err: false });
         setLoading(false);
-        return;
-      }
-      localStorage.setItem('bloom_username', u);
-      if (mode === 'login') {
+      } else {
+        const r = await apiLogin(u, password);
+        if (!r.ok) { setMsg({ text: r.error ?? 'Something went wrong.', err: true }); setLoading(false); return; }
         await fetchFromSheet();
+        router.push('/');
       }
-      router.push(mode === 'register' ? '/onboarding' : '/');
     } catch {
       setMsg({ text: 'Network error. Check your connection and try again.', err: true });
       setLoading(false);
@@ -103,6 +103,31 @@ export default function LoginPage() {
           </h2>
 
           <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {isReg && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label style={{ color: 'rgba(231,219,239,0.65)', fontSize: 13, fontWeight: 500 }}>Name</label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  placeholder="Your name"
+                  autoComplete="name"
+                  style={{
+                    background: 'rgba(255,255,255,0.07)',
+                    border: '1px solid rgba(165,106,189,0.25)',
+                    borderRadius: 12,
+                    padding: '12px 14px',
+                    color: '#F5EBFA',
+                    fontSize: 15,
+                    outline: 'none',
+                    fontFamily: 'var(--font-outfit)',
+                    transition: 'border-color 0.2s',
+                  }}
+                  onFocus={e => (e.target.style.borderColor = 'rgba(165,106,189,0.7)')}
+                  onBlur={e => (e.target.style.borderColor = 'rgba(165,106,189,0.25)')}
+                />
+              </div>
+            )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <label style={{ color: 'rgba(231,219,239,0.65)', fontSize: 13, fontWeight: 500 }}>Email</label>
               <input
