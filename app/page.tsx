@@ -6,7 +6,7 @@ import {
   getLateInfo, isPaused, setPaused, PHASE_META, type Phase, type BloomData,
 } from '@/lib/cycle';
 import { getActionItems } from '@/lib/actions';
-import { fetchFromSheet } from '@/lib/data';
+import { fetchFromSheet, sanitize } from '@/lib/data';
 import { localDateStr } from '@/lib/day';
 import { useAppDay } from '@/lib/useAppDay';
 import Hamburger from '@/components/Hamburger';
@@ -43,7 +43,7 @@ export default function HomePage() {
   useEffect(() => {
     const raw = localStorage.getItem('bloom_session');
     if (raw) { try { const { username: u } = JSON.parse(raw); setUsername(u || ''); } catch {} }
-    setData(loadData());
+    setData(sanitize(loadData()));
     fetchFromSheet().then(setData);
   }, []);
 
@@ -91,7 +91,7 @@ export default function HomePage() {
   // Predefined reminder-style action items based on phase + today's symptoms
   const actions = getActionItems(phase, todayLog);
 
-  function refresh() { setData(loadData()); fetchFromSheet().then(setData); }
+  function refresh() { setData(sanitize(loadData())); fetchFromSheet().then(setData); }
 
   return (
     <div style={{ minHeight: '100vh', padding: '0 16px' }}>
@@ -280,18 +280,18 @@ export default function HomePage() {
         </button>
       )}
 
-      {/* ── Update today's log (when already logged) ── */}
+      {/* ── Logged today indicator ── */}
       {!paused && todayLog && (
-        <button onClick={() => setShowLog(true)} style={{ width: '100%', background: 'none', border: 'none', padding: '0 0 12px', cursor: 'pointer', textAlign: 'left' }}>
-          <div className="glass-card anim-rise" style={{ padding: '13px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 20 }}>✏️</span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#1C0B2E' }}>Update today&apos;s log</p>
-              <p style={{ margin: '1px 0 0', fontSize: 12, color: '#8A6A9A' }}>Your tasks below refresh as you update.</p>
-            </div>
-            <span style={{ fontSize: 16, color: '#A56ABD' }}>›</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, padding: '0 2px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 15 }}>✅</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#6E3482' }}>Logged today</span>
           </div>
-        </button>
+          <button onClick={() => setShowLog(true)} style={{
+            background: 'none', border: 'none', cursor: 'pointer', padding: '4px 10px',
+            fontSize: 12, fontWeight: 700, color: '#A56ABD', fontFamily: 'var(--font-outfit)',
+          }}>Edit ›</button>
+        </div>
       )}
 
       <LogSheet open={showLog} onClose={() => setShowLog(false)} onSaved={refresh} />

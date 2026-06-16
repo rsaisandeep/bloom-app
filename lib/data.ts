@@ -34,6 +34,8 @@ function sanitize(data: BloomData): BloomData {
   };
 }
 
+export { sanitize };
+
 export async function fetchFromSheet(): Promise<BloomData> {
   if (!apiReady()) return loadData();
   const session = getSession();

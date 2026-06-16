@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { loadData, getCurrentPhase, getPredictions, getAverageCycleLength, PHASE_META, type BloomData, type DayLog } from '@/lib/cycle';
 import type { Recommendations } from '@/lib/matcher';
-import { fetchFromSheet } from '@/lib/data';
+import { fetchFromSheet, sanitize } from '@/lib/data';
 import { appDayKey } from '@/lib/day';
 import TopBar from '@/components/TopBar';
 import LogSheet from '@/components/LogSheet';
@@ -83,8 +83,8 @@ export default function ReportsPage() {
   useEffect(() => {
     const todayStr = appDayKey();
 
-    // Check local cache first — no network wait
-    const cached = loadData();
+    // Check local cache first — no network wait (sanitize guards against stale date formats)
+    const cached = sanitize(loadData());
     const cachedLog = cached.logs.find((l) => l.date === todayStr);
 
     if (!cachedLog) {
