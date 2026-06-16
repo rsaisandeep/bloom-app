@@ -13,8 +13,18 @@ const FIELDS: { key: keyof DayLog; label: string; options: Option[] }[] = [
   { key: 'bloating', label: 'Bloating',           options: [{value:'none',label:'None',emoji:'✅'},{value:'mild',label:'Mild',emoji:'😤'},{value:'severe',label:'Severe',emoji:'🫃'}] },
   { key: 'sleep',    label: "Last Night's Sleep", options: [{value:'good',label:'Good',emoji:'😴'},{value:'poor',label:'Poor',emoji:'😪'},{value:'insomnia',label:'Insomnia',emoji:'👀'}] },
   { key: 'cravings', label: 'Cravings',           options: [{value:'none',label:'None',emoji:'🙅'},{value:'sweet',label:'Sweet',emoji:'🍫'},{value:'salty',label:'Salty',emoji:'🧂'},{value:'everything',label:'Everything',emoji:'🍕'}] },
+  { key: 'cervicalMucus', label: 'Cervical Mucus', options: [{value:'none',label:'None',emoji:'⬜'},{value:'dry',label:'Dry',emoji:'🏜️'},{value:'sticky',label:'Sticky',emoji:'🌰'},{value:'creamy',label:'Creamy',emoji:'🥛'},{value:'watery',label:'Watery',emoji:'💧'},{value:'eggwhite',label:'Egg white',emoji:'🥚'},{value:'spotting',label:'Spotting',emoji:'🩸'}] },
+  { key: 'sex', label: 'Sexual Activity', options: [{value:'none',label:'None',emoji:'⬜'},{value:'protected',label:'Protected',emoji:'🛡️'},{value:'unprotected',label:'Unprotected',emoji:'❤️'}] },
 ];
-const DEFAULTS: Partial<DayLog> = { cramps:'none', energy:'medium', mood:'calm', bloating:'none', sleep:'good', cravings:'none', flow:'none' };
+const SYMPTOM_OPTIONS: Option[] = [
+  {value:'headache',label:'Headache',emoji:'🤕'},
+  {value:'acne',label:'Acne',emoji:'🌋'},
+  {value:'backache',label:'Backache',emoji:'🔙'},
+  {value:'tender_breasts',label:'Tender breasts',emoji:'💗'},
+  {value:'nausea',label:'Nausea',emoji:'🤢'},
+  {value:'fatigue',label:'Fatigue',emoji:'🥱'},
+];
+const DEFAULTS: Partial<DayLog> = { cramps:'none', energy:'medium', mood:'calm', bloating:'none', sleep:'good', cravings:'none', flow:'none', cervicalMucus:'none', sex:'none', symptoms:[] };
 
 interface LogSheetProps {
   open: boolean;
@@ -58,6 +68,13 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
         startPeriod(date, session.username || 'me');
       }
     }
+  }
+
+  function toggleSymptom(v: string) {
+    setForm((f) => {
+      const cur = f.symptoms ?? [];
+      return { ...f, symptoms: cur.includes(v) ? cur.filter((s) => s !== v) : [...cur, v] };
+    });
   }
 
   async function handleSave() {
@@ -143,6 +160,54 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
               </div>
             </div>
           ))}
+
+          {/* Symptoms — multi-select */}
+          <div className="glass-card" style={{ padding: '14px 14px 12px' }}>
+            <p style={{ margin: '0 0 10px', fontSize: '.72rem', fontWeight: 800, color: '#1C0B2E', letterSpacing: '.1px', textTransform: 'uppercase' }}>
+              Symptoms <span style={{ fontWeight: 600, textTransform: 'none', color: '#8A6A9A' }}>· select all that apply</span>
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+              {SYMPTOM_OPTIONS.map((opt) => {
+                const active = (form.symptoms ?? []).includes(opt.value);
+                return (
+                  <button key={opt.value} onClick={() => toggleSymptom(opt.value)} style={{
+                    display: 'flex', alignItems: 'center', gap: 5,
+                    padding: '8px 12px', borderRadius: 12, fontSize: '.78rem', fontWeight: 700,
+                    cursor: 'pointer', transition: 'all .18s cubic-bezier(.22,.61,.36,1)',
+                    border: active ? '1px solid rgba(110,52,130,0.5)' : '1px solid var(--glass-border-dim)',
+                    background: active ? 'rgba(110,52,130,0.12)' : 'rgba(255,255,255,0.45)',
+                    backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
+                    color: active ? '#6E3482' : '#1C0B2E',
+                    boxShadow: active ? '0 0 0 2px rgba(110,52,130,0.2)' : '0 2px 8px rgba(0,0,0,0.04),inset 0 1px 0 rgba(255,255,255,0.8)',
+                    fontFamily: 'inherit',
+                  }}>
+                    <span>{opt.emoji}</span><span>{opt.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Basal body temperature */}
+          <div className="glass-card" style={{ padding: '14px 14px 12px' }}>
+            <p style={{ margin: '0 0 10px', fontSize: '.72rem', fontWeight: 800, color: '#1C0B2E', letterSpacing: '.1px', textTransform: 'uppercase' }}>
+              Basal Body Temp <span style={{ fontWeight: 600, textTransform: 'none', color: '#8A6A9A' }}>· measure before getting up</span>
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input
+                type="number" inputMode="decimal" step="0.01" min="34" max="42"
+                value={form.bbt ?? ''}
+                onChange={(e) => setForm((f) => ({ ...f, bbt: e.target.value === '' ? undefined : Number(e.target.value) }))}
+                placeholder="36.55"
+                style={{
+                  width: 120, padding: '10px 12px', borderRadius: 12, fontSize: '.95rem', fontWeight: 700,
+                  border: '1px solid var(--glass-border-dim)', background: 'rgba(255,255,255,0.55)',
+                  color: '#1C0B2E', fontFamily: 'inherit', outline: 'none',
+                }}
+              />
+              <span style={{ fontSize: '.85rem', fontWeight: 700, color: '#8A6A9A' }}>°C</span>
+            </div>
+          </div>
 
           <button onClick={handleSave} disabled={saving} style={{
             width: '100%', marginTop: 6, padding: '14px', border: 0,

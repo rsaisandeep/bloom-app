@@ -20,6 +20,11 @@ export interface DayLog {
   cravings: "none" | "sweet" | "salty" | "everything";
   flow?: "none" | "light" | "medium" | "heavy";
   notes?: string;
+  // Symptothermal signals (richer logging + fertility prediction)
+  symptoms?: string[];                                                          // multi-select: headache, acne, backache, tender_breasts, nausea, fatigue
+  cervicalMucus?: "none" | "dry" | "sticky" | "creamy" | "watery" | "eggwhite" | "spotting";
+  bbt?: number;                                                                 // basal body temperature, °C
+  sex?: "none" | "protected" | "unprotected";
 }
 
 export interface BloomSettings {

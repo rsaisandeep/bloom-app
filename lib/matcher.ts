@@ -72,11 +72,14 @@ function scoreRule(rule: Rule, userInput: Partial<DayLog>): number {
 
   for (const [key, acceptedValues] of Object.entries(conditions)) {
     const val = userInput[key as keyof DayLog];
-    if (val && (acceptedValues as string[]).includes(val as string)) {
-      matchCount++;
-    } else if (val && !(acceptedValues as string[]).includes(val as string)) {
-      return -1;
-    }
+    const accepted = acceptedValues as string[];
+    if (val === undefined || val === null) continue;
+    // Array fields (e.g. symptoms) match on any overlap; scalars on equality.
+    const hit = Array.isArray(val)
+      ? val.some((v) => accepted.includes(v))
+      : accepted.includes(val as string);
+    if (hit) matchCount++;
+    else return -1;
   }
   return matchCount > 0 ? rule.priority * matchCount : 0;
 }

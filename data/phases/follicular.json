@@ -3,7 +3,6 @@
   "days": "6-13",
   "description": "Estrogen rises as follicles develop in the ovaries. Energy, focus, and strength increase. Best phase for new habits, social plans, and challenging workouts.",
   "hormone_profile": "Estrogen ↑↑, FSH ↑, Progesterone ↓, Testosterone ↑ (gradually)",
-
   "default": {
     "food": {
       "science": "Rising estrogen improves insulin sensitivity and increases metabolic efficiency. Phytoestrogens (flaxseeds, soy) support estrogen metabolism. Liver detoxifies used estrogen — cruciferous vegetables support this pathway (Cleveland Clinic).",
@@ -30,12 +29,19 @@
       ]
     }
   },
-
   "rules": [
     {
       "id": "follicular_high_energy_happy",
       "priority": 10,
-      "conditions": { "energy": ["high"], "mood": ["happy", "energetic"] },
+      "conditions": {
+        "energy": [
+          "high"
+        ],
+        "mood": [
+          "happy",
+          "energetic"
+        ]
+      },
       "recommendations": {
         "food": {
           "science": "Peak estrogen phase allows maximum carbohydrate utilization. Complex carbs fuel high-intensity training. Zinc supports FSH and LH hormone synthesis needed for follicle development (PMC nutritional review).",
@@ -63,11 +69,18 @@
         }
       }
     },
-
     {
       "id": "follicular_medium_energy_calm",
       "priority": 8,
-      "conditions": { "energy": ["medium"], "mood": ["calm", "happy"] },
+      "conditions": {
+        "energy": [
+          "medium"
+        ],
+        "mood": [
+          "calm",
+          "happy"
+        ]
+      },
       "recommendations": {
         "food": {
           "science": "Estrogen improves gut microbiome diversity. Fermented foods and prebiotic fiber support this. Protein synthesis improves — good time to increase protein intake for muscle building.",
@@ -95,11 +108,15 @@
         }
       }
     },
-
     {
       "id": "follicular_low_energy_post_period",
       "priority": 9,
-      "conditions": { "energy": ["low", "exhausted"] },
+      "conditions": {
+        "energy": [
+          "low",
+          "exhausted"
+        ]
+      },
       "recommendations": {
         "food": {
           "science": "Residual iron deficiency post-period causes continued fatigue in early follicular phase. B12, folate, and iron all support red blood cell recovery. Protein helps rebuild muscle tissue. (Nova Southeastern University nutrition study).",
@@ -127,11 +144,15 @@
         }
       }
     },
-
     {
       "id": "follicular_anxious_irritable",
       "priority": 7,
-      "conditions": { "mood": ["anxious", "irritable"] },
+      "conditions": {
+        "mood": [
+          "anxious",
+          "irritable"
+        ]
+      },
       "recommendations": {
         "food": {
           "science": "Early follicular phase anxiety may be residual from luteal progesterone withdrawal. L-theanine (green tea) and magnesium reduce anxiety. Omega-3s reduce neuroinflammation associated with anxiety (nutritional psychiatry research).",
@@ -155,6 +176,39 @@
             "Box breathing is clinically effective for acute anxiety: inhale 4 counts, hold 4, exhale 4, hold 4. Repeat 4 times. This activates the vagus nerve and shifts your nervous system from fight-or-flight to rest-and-digest within minutes.",
             "Write it out. Anxious thoughts loop because they're looking for resolution. Get them out of your head and onto paper — just 5 minutes of unfiltered writing. Research shows this reduces rumination and anxiety intensity significantly.",
             "Your body needs a signal that it's safe. 4-7-8 breathing (inhale 4, hold 7, exhale 8) is the most effective breath pattern for calming the nervous system. Do it lying down if possible. Follow with a cup of chamomile or green tea."
+          ]
+        }
+      }
+    },
+    {
+      "id": "follicular_fertile_window_mucus",
+      "priority": 13,
+      "conditions": {
+        "cervicalMucus": [
+          "eggwhite",
+          "watery"
+        ]
+      },
+      "recommendations": {
+        "food": {
+          "science": "Egg-white/watery cervical mucus signals peak fertility and high estrogen. Zinc, selenium, and antioxidants support egg quality and a healthy luteal phase.",
+          "versions": [
+            "Fertile-window nutrition: prioritize zinc (pumpkin seeds, oysters, chickpeas), selenium (brazil nuts), and colorful antioxidants. These support egg quality and progesterone in the luteal phase to come.",
+            "Your body is signaling peak fertility right now. Steady blood sugar with complex carbs and protein, and add omega-3s (salmon, flax) — both support hormonal balance through ovulation."
+          ]
+        },
+        "exercise": {
+          "science": "Estrogen and testosterone peak around ovulation, maximizing strength and power output. Moderate-to-high intensity is well tolerated now.",
+          "versions": [
+            "This is your strongest window — estrogen and testosterone peak. Great time for heavier strength work or higher-intensity training; your body recovers well right now.",
+            "Energy and power are at their cycle high. Lean into challenging workouts, but stay hydrated — metabolic demand is elevated near ovulation."
+          ]
+        },
+        "selfcare": {
+          "science": "Fertile-window awareness helps with both conception and contraception. Tracking mucus alongside BBT confirms ovulation timing (the symptothermal method).",
+          "versions": [
+            "Egg-white mucus means you're in your fertile window. If you're trying to conceive, this is the time; if you're avoiding pregnancy, take extra care. Log an ovulation test to pinpoint timing.",
+            "Peak fertility today. Pair this mucus reading with your morning BBT over the next few days — a sustained temperature rise confirms ovulation has happened."
           ]
         }
       }

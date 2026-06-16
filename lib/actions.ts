@@ -94,6 +94,20 @@ function symptomOverrides(log?: DayLog): ActionItem[] {
     out.push({ icon: '🥜', title: 'Nuts or olives', sub: 'Salt craving with minerals, not chips' });
   }
 
+  // Cervical mucus — fertile-window signal
+  if (log.cervicalMucus === 'eggwhite' || log.cervicalMucus === 'watery') {
+    out.push({ icon: '🌱', title: "You're likely fertile", sub: 'Egg-white/watery mucus = peak fertility. Log an ovulation test' });
+  }
+
+  // Multi-select symptoms
+  const sx = log.symptoms ?? [];
+  if (sx.includes('headache')) out.push({ icon: '💧', title: 'Hydrate + magnesium', sub: 'Common menstrual-migraine triggers' });
+  if (sx.includes('acne')) out.push({ icon: '🧴', title: 'Gentle skincare', sub: 'Hormonal breakouts ease post-period — avoid over-scrubbing' });
+  if (sx.includes('backache')) out.push({ icon: '🔥', title: 'Heat on lower back', sub: '15–20 min — relaxes referred uterine pain' });
+  if (sx.includes('tender_breasts')) out.push({ icon: '👕', title: 'Supportive bra + lower caffeine', sub: 'Eases luteal breast tenderness' });
+  if (sx.includes('nausea')) out.push({ icon: '🫚', title: 'Ginger + small meals', sub: 'Settles prostaglandin-driven nausea' });
+  if (sx.includes('fatigue')) out.push({ icon: '🫘', title: 'Iron + B12', sub: 'Pair with vitamin C; common fatigue driver' });
+
   return out;
 }
 

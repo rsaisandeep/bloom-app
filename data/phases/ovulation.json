@@ -3,7 +3,6 @@
   "days": "14-16",
   "description": "LH surge triggers egg release. Estrogen peaks, testosterone spikes. Energy, confidence, libido, and social drive are at their highest. The body's performance peak.",
   "hormone_profile": "Estrogen ↑↑ (peak), LH ↑↑ (surge), Testosterone ↑↑, Progesterone ↑ (begins rising)",
-
   "default": {
     "food": {
       "science": "Estrogen and testosterone peaks increase metabolic demand. Antioxidant-rich foods protect the egg from oxidative stress. Zinc supports LH surge and healthy ovulation. Fiber supports estrogen clearance through the gut (Oova nutrition guide; BSW Health).",
@@ -30,12 +29,19 @@
       ]
     }
   },
-
   "rules": [
     {
       "id": "ovulation_peak_energy_happy",
       "priority": 10,
-      "conditions": { "energy": ["high"], "mood": ["happy", "energetic"] },
+      "conditions": {
+        "energy": [
+          "high"
+        ],
+        "mood": [
+          "happy",
+          "energetic"
+        ]
+      },
       "recommendations": {
         "food": {
           "science": "High metabolic demand during ovulation. Increasing food intake by 100-200 calories, focused on antioxidants and zinc, supports peak performance and egg quality. Research shows energy intake naturally increases around ovulation (Oxford Nutrition Reviews meta-analysis).",
@@ -63,11 +69,17 @@
         }
       }
     },
-
     {
       "id": "ovulation_medium_energy_calm",
       "priority": 8,
-      "conditions": { "energy": ["medium"], "mood": ["calm"] },
+      "conditions": {
+        "energy": [
+          "medium"
+        ],
+        "mood": [
+          "calm"
+        ]
+      },
       "recommendations": {
         "food": {
           "science": "Some people experience mid-cycle mittelschmerz (ovulation pain) or bloating from the LH surge. Anti-inflammatory foods and adequate hydration reduce these transient symptoms.",
@@ -95,11 +107,15 @@
         }
       }
     },
-
     {
       "id": "ovulation_low_energy_unexpected",
       "priority": 9,
-      "conditions": { "energy": ["low", "exhausted"] },
+      "conditions": {
+        "energy": [
+          "low",
+          "exhausted"
+        ]
+      },
       "recommendations": {
         "food": {
           "science": "Low energy during ovulation may indicate thyroid issues, iron deficiency, or high cortisol suppressing LH surge. Iodine supports thyroid and ovulation. Iron and B12 for energy. Adaptogenic foods reduce cortisol (functional nutrition research).",
@@ -127,11 +143,15 @@
         }
       }
     },
-
     {
       "id": "ovulation_mid_cycle_cramps",
       "priority": 7,
-      "conditions": { "cramps": ["mild", "moderate"] },
+      "conditions": {
+        "cramps": [
+          "mild",
+          "moderate"
+        ]
+      },
       "recommendations": {
         "food": {
           "science": "Mittelschmerz (mid-cycle pain) occurs when the follicle ruptures and releases fluid. It typically lasts 12-24 hours. Anti-inflammatory foods and hydration reduce associated discomfort. Magnesium relaxes smooth muscle.",
@@ -155,6 +175,39 @@
             "A warm heating pad on the side where you feel the cramps is the fastest relief. If it's bothering you significantly, a regular dose of ibuprofen works well for mittelschmerz. Note which side the pain is on — it tells you which ovary released an egg this month.",
             "Ovulation cramps are brief and respond well to heat. Rest for an hour with a heating pad and a cup of ginger tea. If you track your cycle, this cramp is one of the most reliable physical signs of ovulation — make a note in your log.",
             "Take it easy for a few hours. Warm tea, a cozy position, and a heat pad on your lower abdomen are the most effective comfort measures. The cramps should ease significantly within a few hours of onset."
+          ]
+        }
+      }
+    },
+    {
+      "id": "ovulation_fertile_window_mucus",
+      "priority": 13,
+      "conditions": {
+        "cervicalMucus": [
+          "eggwhite",
+          "watery"
+        ]
+      },
+      "recommendations": {
+        "food": {
+          "science": "Egg-white/watery cervical mucus signals peak fertility and high estrogen. Zinc, selenium, and antioxidants support egg quality and a healthy luteal phase.",
+          "versions": [
+            "Fertile-window nutrition: prioritize zinc (pumpkin seeds, oysters, chickpeas), selenium (brazil nuts), and colorful antioxidants. These support egg quality and progesterone in the luteal phase to come.",
+            "Your body is signaling peak fertility right now. Steady blood sugar with complex carbs and protein, and add omega-3s (salmon, flax) — both support hormonal balance through ovulation."
+          ]
+        },
+        "exercise": {
+          "science": "Estrogen and testosterone peak around ovulation, maximizing strength and power output. Moderate-to-high intensity is well tolerated now.",
+          "versions": [
+            "This is your strongest window — estrogen and testosterone peak. Great time for heavier strength work or higher-intensity training; your body recovers well right now.",
+            "Energy and power are at their cycle high. Lean into challenging workouts, but stay hydrated — metabolic demand is elevated near ovulation."
+          ]
+        },
+        "selfcare": {
+          "science": "Fertile-window awareness helps with both conception and contraception. Tracking mucus alongside BBT confirms ovulation timing (the symptothermal method).",
+          "versions": [
+            "Egg-white mucus means you're in your fertile window. If you're trying to conceive, this is the time; if you're avoiding pregnancy, take extra care. Log an ovulation test to pinpoint timing.",
+            "Peak fertility today. Pair this mucus reading with your morning BBT over the next few days — a sustained temperature rise confirms ovulation has happened."
           ]
         }
       }

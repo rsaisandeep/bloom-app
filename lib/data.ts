@@ -55,6 +55,10 @@ export async function fetchFromSheet(): Promise<BloomData> {
         sleep: l.sleep,
         cravings: l.cravings,
         notes: l.notes ?? undefined,
+        symptoms: l.symptoms ?? undefined,
+        cervicalMucus: l.cervical_mucus ?? undefined,
+        bbt: l.bbt ?? undefined,
+        sex: l.sex ?? undefined,
       })),
       // Preserve local settings if Supabase has none yet (race between save and fetch)
       settings: settingsRow?.data ?? loadData().settings ?? {},
@@ -104,6 +108,10 @@ export async function saveToSheet(data: BloomData): Promise<boolean> {
           sleep: l.sleep ?? null,
           cravings: l.cravings ?? null,
           notes: l.notes ?? null,
+          symptoms: l.symptoms ?? null,
+          cervical_mucus: l.cervicalMucus ?? null,
+          bbt: l.bbt ?? null,
+          sex: l.sex ?? null,
         })),
         { onConflict: 'log_id' }
       );
