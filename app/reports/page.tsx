@@ -1,7 +1,8 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { loadData, getCurrentPhase, getPredictions, getAverageCycleLength, PHASE_META, type BloomData, type DayLog } from '@/lib/cycle';
+import { loadData, getCurrentPhase, PHASE_META, type BloomData, type DayLog, type Phase } from '@/lib/cycle';
+import { computeInsights, type Insights } from '@/lib/insights';
 import type { Recommendations } from '@/lib/matcher';
 import { fetchFromSheet, sanitize } from '@/lib/data';
 import { appDayKey } from '@/lib/day';
@@ -40,24 +41,124 @@ function IOSSpinner({ color = '#6E3482', size = 36 }: { color?: string; size?: n
   );
 }
 
+function Patterns({ insights }: { insights: Insights }) {
+  const { cycleStats, symptoms, byPhase, correlations, loggedDays } = insights;
+  const maxBar = cycleStats ? Math.max(cycleStats.avg, ...cycleStats.history, 1) : 1;
+  const maxSym = symptoms[0]?.count ?? 1;
+  const phaseRows = byPhase.filter((p) => p.count > 0);
+
+  return (
+    <div className="anim-rise" style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 16 }}>
+      <p style={{ margin: '2px 0 0', fontSize: 16, fontWeight: 800, color: '#1C0B2E' }}>Your patterns</p>
+
+      {cycleStats && (
+        <div className="glass-card" style={{ padding: '16px 18px' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 }}>
+            <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: '#1C0B2E' }}>Cycle length</p>
+            <span style={{ fontSize: 12, fontWeight: 700, color: cycleStats.irregular ? '#B45309' : '#6E3482' }}>
+              {cycleStats.avg}d avg · {cycleStats.irregular ? 'irregular' : 'regular'}
+            </span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 100 }}>
+            {[...cycleStats.history, cycleStats.avg].map((len, i, arr) => {
+              const isAvg = i === arr.length - 1;
+              return (
+                <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: isAvg ? '#6E3482' : '#8A6A9A' }}>{len}d</span>
+                  <div style={{
+                    width: '100%', height: `${(len / maxBar) * 72}px`, borderRadius: 10,
+                    background: isAvg ? 'linear-gradient(180deg,#A56ABD,#6E3482)' : 'rgba(165,106,189,0.28)',
+                    boxShadow: isAvg ? '0 4px 14px rgba(110,52,130,0.35)' : 'none',
+                    transition: 'height .5s cubic-bezier(.34,1.4,.64,1)',
+                  }} />
+                  <span style={{ fontSize: 9, color: '#A99BB5', fontWeight: 600 }}>{isAvg ? 'avg' : `#${i + 1}`}</span>
+                </div>
+              );
+            })}
+          </div>
+          <p style={{ margin: '10px 0 0', fontSize: 11.5, color: '#8A6A9A' }}>
+            Period ~{cycleStats.periodAvg} days · based on your last {cycleStats.history.length} cycle{cycleStats.history.length === 1 ? '' : 's'}
+          </p>
+        </div>
+      )}
+
+      {symptoms.length > 0 && (
+        <div className="glass-card" style={{ padding: '16px 18px' }}>
+          <p style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 800, color: '#1C0B2E' }}>Most common symptoms</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {symptoms.map((s) => (
+              <div key={s.key} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 16, width: 22, textAlign: 'center' }}>{s.emoji}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#1C0B2E', width: 100 }}>{s.label}</span>
+                <div style={{ flex: 1, height: 8, borderRadius: 6, background: 'rgba(165,106,189,0.15)', overflow: 'hidden' }}>
+                  <div style={{ width: `${(s.count / maxSym) * 100}%`, height: '100%', borderRadius: 6, background: 'linear-gradient(90deg,#A56ABD,#6E3482)' }} />
+                </div>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#8A6A9A', width: 34, textAlign: 'right' }}>{s.pct}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {phaseRows.length > 0 && (
+        <div className="glass-card" style={{ padding: '16px 18px' }}>
+          <p style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 800, color: '#1C0B2E' }}>Mood &amp; energy by phase</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {phaseRows.map((p) => {
+              const m = PHASE_META[p.phase];
+              return (
+                <div key={p.phase} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 16, width: 22, textAlign: 'center' }}>{m.emoji}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#1C0B2E', width: 78 }}>{m.label}</span>
+                  <span style={{ flex: 1, fontSize: 12.5, color: '#6E3482', fontWeight: 600 }}>{p.topMood ?? '—'}</span>
+                  <div style={{ display: 'flex', gap: 3 }}>
+                    {[0, 1, 2, 3].map((d) => (
+                      <span key={d} style={{
+                        width: 7, height: 7, borderRadius: '50%',
+                        background: p.energy != null && d <= Math.round(p.energy) ? '#6E3482' : 'rgba(165,106,189,0.25)',
+                      }} />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <p style={{ margin: '10px 0 0', fontSize: 11, color: '#A99BB5' }}>● energy level · top mood per phase</p>
+        </div>
+      )}
+
+      {correlations.length > 0 && (
+        <div className="glass-card tint-purple" style={{ padding: '16px 18px' }}>
+          <p style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 800, color: '#1C0B2E' }}>What we&apos;re noticing</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {correlations.map((c, i) => (
+              <div key={i} style={{ display: 'flex', gap: 8, fontSize: 12.5, color: '#49225B', lineHeight: 1.5 }}>
+                <span>✨</span><span>{c}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <p style={{ margin: '0 2px', fontSize: 11, color: '#A99BB5' }}>
+        From {loggedDays} logged {loggedDays === 1 ? 'day' : 'days'}. The more you log, the sharper these get.
+      </p>
+    </div>
+  );
+}
+
 export default function ReportsPage() {
   const [recs, setRecs] = useState<Recommendations | null>(null);
-  const [phase, setPhase] = useState('follicular');
+  const [phase, setPhase] = useState<Phase>('follicular');
   const [dayOfCycle, setDayOfCycle] = useState(1);
-  const [cycleHistory, setCycleHistory] = useState<number[]>([]);
-  const [avgLen, setAvgLen] = useState(28);
+  const [data, setData] = useState<BloomData | null>(null);
   const [openScience, setOpenScience] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasLog, setHasLog] = useState(false);
   const [showLog, setShowLog] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  async function loadRecs(data: BloomData, log: DayLog) {
-    const { phase: p, dayOfCycle: d } = getCurrentPhase(data);
-    setPhase(p); setDayOfCycle(d);
-    setAvgLen(getAverageCycleLength(data));
-    setCycleHistory(data.cycles.filter((c) => c.cycleLength).map((c) => c.cycleLength!).slice(-6));
-
+  async function loadRecs(log: DayLog, p: Phase) {
     // Cache key: date + phase + core symptom fields (mood/energy/cramps).
     // Rebuilds only when something meaningful changes, not on every tab visit.
     const cacheKey = `bloom_recs_${log.date}_${p}_${log.mood}_${log.energy}_${log.cramps}`;
@@ -80,24 +181,29 @@ export default function ReportsPage() {
     setLoading(false);
   }
 
+  function applyPhase(d: BloomData) {
+    const cp = getCurrentPhase(d);
+    setPhase(cp.phase); setDayOfCycle(cp.dayOfCycle);
+    return cp.phase;
+  }
+
   useEffect(() => {
     const todayStr = appDayKey();
 
-    // Check local cache first — no network wait (sanitize guards against stale date formats)
+    // Show cached data immediately — patterns render from history, no network wait.
     const cached = sanitize(loadData());
+    setData(cached);
+    applyPhase(cached);
     const cachedLog = cached.logs.find((l) => l.date === todayStr);
 
     if (!cachedLog) {
-      // Show empty state immediately, then quietly verify with sheet
       setHasLog(false);
       setLoading(false);
-      fetchFromSheet().then((data) => {
-        const sheetLog = data.logs.find((l) => l.date === todayStr);
-        if (sheetLog) {
-          setHasLog(true);
-          setLoading(true);
-          loadRecs(data, sheetLog);
-        }
+      fetchFromSheet().then((d) => {
+        setData(d);
+        const p = applyPhase(d);
+        const sheetLog = d.logs.find((l) => l.date === todayStr);
+        if (sheetLog) { setHasLog(true); setLoading(true); loadRecs(sheetLog, p); }
       });
       return;
     }
@@ -105,14 +211,16 @@ export default function ReportsPage() {
     // Have a local log — show spinner, fetch fresh data + recs
     setHasLog(true);
     setRecs(null);
-    fetchFromSheet().then((data) => {
-      const log = data.logs.find((l) => l.date === todayStr) ?? cachedLog;
-      loadRecs(data, log);
+    fetchFromSheet().then((d) => {
+      setData(d);
+      const p = applyPhase(d);
+      const log = d.logs.find((l) => l.date === todayStr) ?? cachedLog;
+      loadRecs(log, p);
     });
   }, [refreshKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const insights = useMemo(() => (data ? computeInsights(data) : null), [data]);
   const meta = PHASE_META[phase as keyof typeof PHASE_META];
-  const maxBar = Math.max(avgLen, ...cycleHistory, 1);
 
   if (loading) return (
     <>
@@ -129,19 +237,33 @@ export default function ReportsPage() {
   if (!hasLog) return (
     <>
       <TopBar title="Reports" />
-      <div style={{ padding: '48px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-        <div style={{ fontSize: 56, marginBottom: 16 }}>📋</div>
-        <p style={{ margin: '0 0 6px', fontSize: 18, fontWeight: 800, color: '#1C0B2E' }}>No log for today</p>
-        <p style={{ margin: '0 0 28px', fontSize: 14, color: '#8A6A9A', lineHeight: 1.6, maxWidth: 260 }}>
-          Log how you&apos;re feeling to unlock personalized reports and recommendations.
-        </p>
-        <button onClick={() => setShowLog(true)} style={{
-          padding: '14px 32px', borderRadius: 999, border: 'none', cursor: 'pointer',
-          background: 'linear-gradient(135deg,#6E3482,#49225B)', color: '#fff',
-          fontSize: 15, fontWeight: 800, fontFamily: 'var(--font-outfit)',
-          boxShadow: '0 8px 24px rgba(110,52,130,0.35)',
-        }}>Log now →</button>
-      </div>
+      {insights?.enough ? (
+        <div style={{ padding: '8px 16px 24px' }}>
+          {insights && <Patterns insights={insights} />}
+          <div className="glass-card tint-purple anim-rise" style={{ padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#1C0B2E', lineHeight: 1.5 }}>Log today to unlock personalized recommendations.</span>
+            <button onClick={() => setShowLog(true)} style={{
+              padding: '10px 18px', borderRadius: 999, border: 'none', cursor: 'pointer', flexShrink: 0,
+              background: 'linear-gradient(135deg,#6E3482,#49225B)', color: '#fff',
+              fontSize: 13, fontWeight: 800, fontFamily: 'var(--font-outfit)',
+            }}>Log now →</button>
+          </div>
+        </div>
+      ) : (
+        <div style={{ padding: '48px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+          <div style={{ fontSize: 56, marginBottom: 16 }}>📋</div>
+          <p style={{ margin: '0 0 6px', fontSize: 18, fontWeight: 800, color: '#1C0B2E' }}>No log for today</p>
+          <p style={{ margin: '0 0 28px', fontSize: 14, color: '#8A6A9A', lineHeight: 1.6, maxWidth: 260 }}>
+            Log how you&apos;re feeling to unlock personalized reports and recommendations.
+          </p>
+          <button onClick={() => setShowLog(true)} style={{
+            padding: '14px 32px', borderRadius: 999, border: 'none', cursor: 'pointer',
+            background: 'linear-gradient(135deg,#6E3482,#49225B)', color: '#fff',
+            fontSize: 15, fontWeight: 800, fontFamily: 'var(--font-outfit)',
+            boxShadow: '0 8px 24px rgba(110,52,130,0.35)',
+          }}>Log now →</button>
+        </div>
+      )}
       <LogSheet open={showLog} onClose={() => setShowLog(false)} onSaved={() => { setShowLog(false); setRefreshKey((k) => k + 1); }} />
     </>
   );
@@ -163,32 +285,10 @@ export default function ReportsPage() {
         }}>
           <p style={{ margin: '0 0 4px', fontSize: 10, fontWeight: 800, letterSpacing: 1, color: 'rgba(255,255,255,0.55)' }}>CURRENT PHASE</p>
           <p style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 800 }}>{meta.emoji} {meta.label} Phase</p>
-          <p style={{ margin: 0, fontSize: 13, color: 'rgba(255,255,255,0.78)', lineHeight: 1.55 }}>{recs!.phaseDescription}</p>
+          <p style={{ margin: 0, fontSize: 13, color: 'rgba(255,255,255,0.78)', lineHeight: 1.55 }}>{recs?.phaseDescription ?? meta.description}</p>
         </div>
 
-        {/* Cycle length chart */}
-        {cycleHistory.length > 0 && (
-          <div className="glass-card anim-rise" style={{ padding: '16px 18px', marginBottom: 16 }}>
-            <p style={{ margin: '0 0 14px', fontSize: 13, fontWeight: 800, color: '#1C0B2E' }}>Cycle length history</p>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 100 }}>
-              {[...cycleHistory, avgLen].map((len, i, arr) => {
-                const isPred = i === arr.length - 1;
-                return (
-                  <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: isPred ? '#6E3482' : '#8A6A9A' }}>{len}d</span>
-                    <div style={{
-                      width: '100%', height: `${(len / maxBar) * 72}px`, borderRadius: 10,
-                      background: isPred ? 'linear-gradient(180deg,#A56ABD,#6E3482)' : 'rgba(165,106,189,0.28)',
-                      boxShadow: isPred ? '0 4px 14px rgba(110,52,130,0.35)' : 'none',
-                      transition: 'height .5s cubic-bezier(.34,1.4,.64,1)',
-                    }} />
-                    <span style={{ fontSize: 9, color: '#A99BB5', fontWeight: 600 }}>{isPred ? 'avg' : `#${i + 1}`}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        {insights?.enough && <Patterns insights={insights} />}
 
         {/* Recommendation cards */}
         <div className="stagger" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
