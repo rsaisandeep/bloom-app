@@ -13,10 +13,11 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
     function route(hasSession: boolean) {
       if (!active) return;
+      // Only GATE protected routes. Never force a user off /login — the login
+      // page navigates home itself after a successful sign-in. Auto-redirecting
+      // /login -> / on any detected session is what bounced logout back home.
       if (!hasSession && pathname !== '/login') {
         router.replace('/login');
-      } else if (hasSession && pathname === '/login') {
-        router.replace('/');
       } else {
         setReady(true);
       }
