@@ -24,9 +24,15 @@ export interface DayLog {
 
 export interface BloomSettings {
   pcosMode?: boolean;
-  paused?: boolean;             // pregnancy / break — stops predictions & reminders
-  defaultCycleLength?: number;  // from onboarding
-  defaultPeriodLength?: number; // from onboarding
+  paused?: boolean;
+  defaultCycleLength?: number;
+  defaultPeriodLength?: number;
+  // Health profile (from onboarding)
+  age?: number;
+  healthConditions?: string[];  // 'pcos' | 'endometriosis' | 'thyroid' | 'none'
+  birthControl?: string;        // 'none' | 'pill' | 'mini-pill' | 'iud-hormonal' | 'iud-copper' | 'implant' | 'patch' | 'ring' | 'other'
+  goal?: string;                // 'track' | 'symptoms' | 'conceive' | 'wellness'
+  onboardingComplete?: boolean;
 }
 
 export interface BloomData {

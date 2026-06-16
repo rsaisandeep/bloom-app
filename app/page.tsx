@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   loadData, emptyData, getCurrentPhase, getPredictions, getPredictionWindow, getAverageCycleLength,
   getLateInfo, isPaused, setPaused, PHASE_META, type Phase, type BloomData,
@@ -32,20 +33,30 @@ function greeting() {
 }
 
 export default function HomePage() {
+  const router = useRouter();
   const [data, setData] = useState<BloomData>(emptyData);
   const [username, setUsername] = useState('');
   const [done, setDone] = useState<number[]>([]);
   const [showLog, setShowLog] = useState(false);
 
-  const todayKey = useAppDay(); // logical day, live-updates at 5 AM
+  const todayKey = useAppDay();
 
-  // Load session + data once on mount.
   useEffect(() => {
-    const raw = localStorage.getItem('bloom_session');
-    if (raw) { try { const { username: u } = JSON.parse(raw); setUsername(u || ''); } catch {} }
-    setData(sanitize(loadData()));
+    const u = localStorage.getItem('bloom_username');
+    if (u) setUsername(u);
+
+    const cached = sanitize(loadData());
+    // Redirect new users to onboarding immediately from cache
+    if (!cached.settings.onboardingComplete) {
+      fetchFromSheet().then(d => {
+        if (!d.settings.onboardingComplete) router.push('/onboarding');
+        else setData(d);
+      });
+      return;
+    }
+    setData(cached);
     fetchFromSheet().then(setData);
-  }, []);
+  }, [router]);
 
   // Reset the focus checklist whenever the logical day changes (incl. live 5 AM rollover).
   useEffect(() => {

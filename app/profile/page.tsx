@@ -6,6 +6,7 @@ import { getSettings, setPcosMode, setPaused, loadData, deleteCycle, isLikelySki
 import { fetchFromSheet } from '@/lib/data';
 import TopBar from '@/components/TopBar';
 import { apiLogout } from '@/lib/api';
+import { supabase } from '@/lib/supabase';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -13,6 +14,9 @@ export default function ProfilePage() {
   const [pcos, setPcos] = useState(false);
   const [paused, setPausedState] = useState(false);
   const [cycles, setCycles] = useState<Cycle[]>([]);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
   function syncLocal() {
     setPcos(!!getSettings().pcosMode);
@@ -49,6 +53,25 @@ export default function ProfilePage() {
   async function logout() {
     await apiLogout();
     router.replace('/login');
+  }
+
+  async function handleDeleteAccount() {
+    if (deleteConfirmText !== 'DELETE') return;
+    setDeleting(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      const res = await fetch('/api/delete-account', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Delete failed');
+      localStorage.clear();
+      router.replace('/login');
+    } catch {
+      setDeleting(false);
+      setShowDeleteModal(false);
+    }
   }
 
   const initial = username ? username[0].toUpperCase() : '🌸';
@@ -215,9 +238,55 @@ export default function ProfilePage() {
         color: '#dc2626', fontSize: 15, fontWeight: 700,
         cursor: 'pointer', fontFamily: 'var(--font-outfit)',
         backdropFilter: 'blur(14px)', letterSpacing: 0.3,
-      }}>
-        Log out
-      </button>
+      }}>Log out</button>
+
+      <button onClick={() => setShowDeleteModal(true)} style={{
+        width: '100%', marginTop: 10, padding: '12px', borderRadius: 16,
+        border: 'none', background: 'transparent',
+        color: 'rgba(220,38,38,0.5)', fontSize: 13, fontWeight: 600,
+        cursor: 'pointer', fontFamily: 'var(--font-outfit)',
+      }}>Delete account</button>
+
+      {/* Delete confirmation modal */}
+      {showDeleteModal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <div style={{ width: '100%', maxWidth: 380, background: '#1C0B2E', borderRadius: 24, padding: 28, border: '1px solid rgba(220,38,38,0.35)' }}>
+            <div style={{ fontSize: 36, marginBottom: 12, textAlign: 'center' }}>⚠️</div>
+            <h3 style={{ margin: '0 0 10px', color: '#fff', fontSize: 20, fontWeight: 800, textAlign: 'center' }}>Delete account?</h3>
+            <p style={{ margin: '0 0 20px', color: 'rgba(255,255,255,0.6)', fontSize: 14, lineHeight: 1.6, textAlign: 'center' }}>
+              This permanently deletes your account and all data — cycles, logs, and settings. This cannot be undone.
+            </p>
+            <p style={{ margin: '0 0 8px', color: 'rgba(255,255,255,0.55)', fontSize: 13 }}>
+              Type <strong style={{ color: '#ff6b6b' }}>DELETE</strong> to confirm:
+            </p>
+            <input
+              value={deleteConfirmText}
+              onChange={e => setDeleteConfirmText(e.target.value)}
+              placeholder="DELETE"
+              style={{
+                width: '100%', boxSizing: 'border-box', marginBottom: 16,
+                background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(220,38,38,0.3)',
+                borderRadius: 12, padding: '12px 14px', color: '#fff', fontSize: 15,
+                outline: 'none', fontFamily: 'var(--font-outfit)',
+              }}
+            />
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => { setShowDeleteModal(false); setDeleteConfirmText(''); }} style={{
+                flex: 1, padding: '13px', borderRadius: 12, border: '1px solid rgba(165,106,189,0.3)',
+                background: 'transparent', color: '#A56ABD', fontSize: 15, fontWeight: 700,
+                cursor: 'pointer', fontFamily: 'var(--font-outfit)',
+              }}>Cancel</button>
+              <button onClick={handleDeleteAccount} disabled={deleteConfirmText !== 'DELETE' || deleting} style={{
+                flex: 1, padding: '13px', borderRadius: 12, border: 'none',
+                background: deleteConfirmText === 'DELETE' && !deleting ? 'linear-gradient(135deg,#dc2626,#9d174d)' : 'rgba(220,38,38,0.25)',
+                color: '#fff', fontSize: 15, fontWeight: 700,
+                cursor: deleteConfirmText === 'DELETE' && !deleting ? 'pointer' : 'default',
+                fontFamily: 'var(--font-outfit)',
+              }}>{deleting ? 'Deleting…' : 'Delete'}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
     </>
   );
