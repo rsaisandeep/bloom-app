@@ -7,9 +7,10 @@ export async function apiRegister(name: string, email: string, password: string)
     options: { data: { name } },
   });
   if (error) {
-    const msg = error.message.toLowerCase();
+    const msg = (error.message ?? '').toLowerCase();
     if (msg.includes('already') || msg.includes('registered')) return { ok: false, error: 'An account with this email already exists.' };
-    return { ok: false, error: error.message };
+    if (msg.includes('smtp') || msg.includes('email') || msg.includes('send')) return { ok: false, error: 'Failed to send verification email. Please try again later.' };
+    return { ok: false, error: error.message || 'Registration failed. Please try again.' };
   }
   if (!data.user) return { ok: false, error: 'Signup failed.' };
 
