@@ -43,7 +43,16 @@ export async function apiLogout() {
   // scope:'local' clears the session without a network round-trip — global
   // signOut can hang/reject on mobile and block everything below it.
   try { await supabase.auth.signOut({ scope: 'local' }); } catch {}
-  localStorage.clear();
-  // Hard redirect so AuthGuard state is fully reset
-  window.location.href = '/login';
+  try {
+    // Defensive: explicitly remove every Supabase auth token + app cache.
+    // If even one sb-*-auth-token survives, AuthGuard sees a session on
+    // /login and bounces straight back to home.
+    Object.keys(localStorage)
+      .filter((k) => k.startsWith('sb-') || k.startsWith('bloom'))
+      .forEach((k) => localStorage.removeItem(k));
+    localStorage.clear();
+    sessionStorage.clear();
+  } catch {}
+  // Full document reload so the supabase client re-initializes with no session.
+  window.location.replace('/login');
 }

@@ -9,8 +9,10 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      const hasSession = !!data.session;
+    let active = true;
+
+    function route(hasSession: boolean) {
+      if (!active) return;
       if (!hasSession && pathname !== '/login') {
         router.replace('/login');
       } else if (hasSession && pathname === '/login') {
@@ -18,7 +20,19 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       } else {
         setReady(true);
       }
+    }
+
+    supabase.auth.getSession().then(({ data }) => route(!!data.session));
+
+    // React to logout/login in real time so a stale read can't strand the user.
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      route(!!session);
     });
+
+    return () => {
+      active = false;
+      sub.subscription.unsubscribe();
+    };
   }, [pathname, router]);
 
   if (!ready) return null;
