@@ -17,10 +17,28 @@ export async function POST(req: Request) {
   const { data: { user }, error } = await adminClient.auth.getUser(token);
   if (error || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  await adminClient.from('profiles').delete().eq('id', user.id);
+  const uid = user.id;
 
-  const { error: deleteError } = await adminClient.auth.admin.deleteUser(user.id);
-  if (deleteError) return NextResponse.json({ error: String(deleteError.message || deleteError) }, { status: 500 });
+  // FKs may not cascade, so delete child data first or the profile/user delete
+  // is rejected by the database. Order matters: children -> profile -> auth user.
+  const fails: string[] = [];
+  const errMsg = (e: unknown) => {
+    const o = e as { message?: string; code?: string; details?: string };
+    return o?.message || o?.details || o?.code || JSON.stringify(e) || 'unknown error';
+  };
+
+  for (const table of ['daily_logs', 'cycles', 'settings']) {
+    const { error: e } = await adminClient.from(table).delete().eq('user_id', uid);
+    if (e) fails.push(`${table}: ${errMsg(e)}`);
+  }
+
+  const { error: profErr } = await adminClient.from('profiles').delete().eq('id', uid);
+  if (profErr) fails.push(`profiles: ${errMsg(profErr)}`);
+
+  const { error: userErr } = await adminClient.auth.admin.deleteUser(uid);
+  if (userErr) fails.push(`auth: ${errMsg(userErr)}`);
+
+  if (fails.length) return NextResponse.json({ error: fails.join('; ') }, { status: 500 });
 
   return NextResponse.json({ ok: true });
 }
