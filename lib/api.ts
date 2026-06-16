@@ -40,6 +40,8 @@ export async function apiLogin(email: string, password: string) {
 }
 
 export async function apiLogout() {
-  localStorage.removeItem('bloom_username');
   await supabase.auth.signOut();
+  localStorage.clear();
+  // Hard redirect so AuthGuard state is fully reset
+  window.location.href = '/login';
 }

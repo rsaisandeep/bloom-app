@@ -52,8 +52,7 @@ export default function ProfilePage() {
   const fmt = (s?: string) => s ? new Date(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
 
   async function logout() {
-    await apiLogout();
-    router.replace('/login');
+    await apiLogout(); // handles redirect internally
   }
 
   async function handleDeleteAccount() {
@@ -71,7 +70,7 @@ export default function ProfilePage() {
       const json = await res.json();
       if (!res.ok) { setDeleteError(json.error ?? 'Delete failed. Try again.'); setDeleting(false); return; }
       localStorage.clear();
-      router.replace('/login');
+      window.location.href = '/login';
     } catch {
       setDeleteError('Network error. Check your connection and try again.');
       setDeleting(false);
