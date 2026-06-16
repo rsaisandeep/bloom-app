@@ -67,12 +67,19 @@ export default function ProfilePage() {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       });
-      const json = await res.json();
-      if (!res.ok) { setDeleteError(json.error ?? 'Delete failed. Try again.'); setDeleting(false); return; }
+      if (!res.ok) {
+        // Only trust a string error from the body; never render a raw object
+        // (that's what produced the "{}" message). Fall back to the status code.
+        let detail = '';
+        try { const j = await res.json(); if (typeof j?.error === 'string') detail = j.error; } catch {}
+        setDeleteError(detail || `Delete failed (${res.status}). Try again.`);
+        setDeleting(false);
+        return;
+      }
       localStorage.clear();
       window.location.href = '/login';
-    } catch {
-      setDeleteError('Network error. Check your connection and try again.');
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : 'Network error. Check your connection and try again.');
       setDeleting(false);
     }
   }
