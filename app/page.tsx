@@ -208,7 +208,11 @@ export default function HomePage() {
                 <span style={{ fontSize: 12, color: '#fff', fontWeight: 600 }}>
                   {pcosMode && predWindow
                     ? `Period likely ${fmt(predWindow.early)} – ${fmt(predWindow.late)}`
-                    : predictions.daysUntilPeriod > 0 ? `Next period in ${predictions.daysUntilPeriod}d` : 'Period may be due'}
+                    : predictions.daysUntilPeriod > 0
+                      ? predictions.uncertainty > 0
+                        ? `Next period in ${Math.max(predictions.daysUntilPeriod - predictions.uncertainty, 0)}–${predictions.daysUntilPeriod + predictions.uncertainty}d`
+                        : `Next period in ${predictions.daysUntilPeriod}d`
+                      : 'Period may be due'}
                 </span>
               </div>
             ) : !hasCycles ? (

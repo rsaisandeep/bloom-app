@@ -250,6 +250,19 @@ export function getAverageCycleLength(data: BloomData): number {
   return Math.round(recent.reduce((s, c) => s + (c.cycleLength as number), 0) / recent.length);
 }
 
+// Std-dev of recent cycle lengths — drives how wide the prediction range is.
+// Works from period history alone, so it benefits every user (no BBT needed).
+export function getCycleLengthStdDev(data: BloomData): number {
+  const done = data.cycles
+    .filter((c) => c.cycleLength && c.cycleLength >= MIN_PLAUSIBLE && c.cycleLength <= MAX_PLAUSIBLE)
+    .slice(-6);
+  if (done.length < 2) return 0; // not enough history to judge variability
+  const lens = done.map((c) => c.cycleLength as number);
+  const mean = lens.reduce((s, n) => s + n, 0) / lens.length;
+  const variance = lens.reduce((s, n) => s + (n - mean) ** 2, 0) / lens.length;
+  return Math.sqrt(variance);
+}
+
 export function getAveragePeriodLength(data: BloomData): number {
   const done = data.cycles.filter((c) => c.periodLength && c.periodLength > 0);
   if (done.length === 0) return getDefaultPeriodLength(data);
@@ -293,7 +306,17 @@ export function getPredictions(data: BloomData) {
   const fertileEnd = new Date(ovulation); fertileEnd.setDate(ovulation.getDate() + 2);
   const today = new Date();
   const daysUntilPeriod = Math.ceil((nextPeriod.getTime() - today.getTime()) / MS_DAY);
-  return { nextPeriod, ovulation, fertileStart, fertileEnd, daysUntilPeriod, avgLength };
+
+  // Range: ±1 std-dev (clamped 1–4 days) so irregular cycles aren't shown
+  // as a false-precision single date. uncertainty 0 = too little history.
+  const stdDev = getCycleLengthStdDev(data);
+  const uncertainty = stdDev > 0 ? Math.min(Math.max(Math.round(stdDev), 1), 4) : 0;
+  const nextPeriodEarliest = new Date(nextPeriod); nextPeriodEarliest.setDate(nextPeriod.getDate() - uncertainty);
+  const nextPeriodLatest = new Date(nextPeriod); nextPeriodLatest.setDate(nextPeriod.getDate() + uncertainty);
+  const irregular = uncertainty >= 3;
+
+  return { nextPeriod, ovulation, fertileStart, fertileEnd, daysUntilPeriod, avgLength,
+           nextPeriodEarliest, nextPeriodLatest, uncertainty, irregular };
 }
 
 // PCOS-aware: a window sized by observed cycle variability.

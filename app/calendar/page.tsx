@@ -107,7 +107,9 @@ export default function CalendarPage() {
             {[
               pcosMode && predWindow
                 ? { dot: "#fca5a5", label: "Period likely",  value: `${fmtD(predWindow.early)} – ${fmtD(predWindow.late)}`, vc: "#dc2626" }
-                : { dot: "#fca5a5", label: "Next period",     value: fmtD(predictions.nextPeriod), vc: "#dc2626" },
+                : predictions.uncertainty > 0
+                  ? { dot: "#fca5a5", label: "Next period",   value: `${fmtD(predictions.nextPeriodEarliest)} – ${fmtD(predictions.nextPeriodLatest)}`, vc: "#dc2626" }
+                  : { dot: "#fca5a5", label: "Next period",   value: fmtD(predictions.nextPeriod), vc: "#dc2626" },
               { dot: "#fde68a", label: "Fertile window",   value: `${fmtD(predictions.fertileStart)} – ${fmtD(predictions.fertileEnd)}`, vc: "#d97706" },
               { dot: "#c4b5fd", label: pcosMode ? "Typical cycle" : "Avg cycle length", value: `${predictions.avgLength} days`, vc: "#6E3482" },
             ].map((item, i) => (
