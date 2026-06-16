@@ -21,10 +21,16 @@ export interface DayLog {
   flow?: "none" | "light" | "medium" | "heavy";
   notes?: string;
   // Symptothermal signals (richer logging + fertility prediction)
-  symptoms?: string[];                                                          // multi-select: headache, acne, backache, tender_breasts, nausea, fatigue
+  symptoms?: string[];                                                          // multi-select: presets + user-added custom symptoms
   cervicalMucus?: "none" | "dry" | "sticky" | "creamy" | "watery" | "eggwhite" | "spotting";
   bbt?: number;                                                                 // basal body temperature, °C
   sex?: "none" | "protected" | "unprotected";
+  // Tier 2/3 richer logging
+  ovulationTest?: "none" | "negative" | "positive";                             // LH ovulation predictor kit result
+  pregnancyTest?: "none" | "negative" | "positive";
+  pill?: "none" | "taken" | "missed";                                           // birth-control pill log
+  water?: number;                                                               // glasses of water
+  weight?: number;                                                              // body weight, kg
 }
 
 export interface BloomSettings {

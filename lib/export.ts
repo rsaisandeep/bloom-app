@@ -10,7 +10,8 @@ import { computeInsights, type SymptomFreq } from "./insights";
 
 const LOG_COLUMNS = [
   "date", "flow", "cramps", "energy", "mood", "bloating", "sleep",
-  "cravings", "cervicalMucus", "bbt", "sex", "symptoms", "notes",
+  "cravings", "cervicalMucus", "bbt", "sex", "ovulationTest", "pregnancyTest",
+  "pill", "water", "weight", "symptoms", "notes",
 ] as const;
 
 function csvCell(v: unknown): string {

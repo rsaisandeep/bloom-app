@@ -59,6 +59,11 @@ export async function fetchFromSheet(): Promise<BloomData> {
         cervicalMucus: l.cervical_mucus ?? undefined,
         bbt: l.bbt ?? undefined,
         sex: l.sex ?? undefined,
+        ovulationTest: l.ovulation_test ?? undefined,
+        pregnancyTest: l.pregnancy_test ?? undefined,
+        pill: l.pill ?? undefined,
+        water: l.water ?? undefined,
+        weight: l.weight ?? undefined,
       })),
       // Preserve local settings if Supabase has none yet (race between save and fetch)
       settings: settingsRow?.data ?? loadData().settings ?? {},
@@ -95,26 +100,40 @@ export async function saveToSheet(data: BloomData): Promise<boolean> {
 
     // Upsert logs (keyed by user+date, never deleted)
     if (data.logs.length > 0) {
-      await supabase.from('daily_logs').upsert(
-        data.logs.map((l) => ({
-          log_id: `${userId}_${l.date}`,
-          user_id: userId,
-          date: l.date,
-          flow: l.flow ?? null,
-          cramps: l.cramps ?? null,
-          energy: l.energy ?? null,
-          mood: l.mood ?? null,
-          bloating: l.bloating ?? null,
-          sleep: l.sleep ?? null,
-          cravings: l.cravings ?? null,
-          notes: l.notes ?? null,
-          symptoms: l.symptoms ?? null,
-          cervical_mucus: l.cervicalMucus ?? null,
-          bbt: l.bbt ?? null,
-          sex: l.sex ?? null,
-        })),
-        { onConflict: 'log_id' }
-      );
+      const rows = data.logs.map((l) => ({
+        log_id: `${userId}_${l.date}`,
+        user_id: userId,
+        date: l.date,
+        flow: l.flow ?? null,
+        cramps: l.cramps ?? null,
+        energy: l.energy ?? null,
+        mood: l.mood ?? null,
+        bloating: l.bloating ?? null,
+        sleep: l.sleep ?? null,
+        cravings: l.cravings ?? null,
+        notes: l.notes ?? null,
+        symptoms: l.symptoms ?? null,
+        cervical_mucus: l.cervicalMucus ?? null,
+        bbt: l.bbt ?? null,
+        sex: l.sex ?? null,
+        ovulation_test: l.ovulationTest ?? null,
+        pregnancy_test: l.pregnancyTest ?? null,
+        pill: l.pill ?? null,
+        water: l.water ?? null,
+        weight: l.weight ?? null,
+      }));
+      const { error } = await supabase.from('daily_logs').upsert(rows, { onConflict: 'log_id' });
+      // If the Tier 2/3 columns aren't migrated yet, retry without them so core
+      // logging never breaks. (Run the migration to persist the new fields.)
+      if (error) {
+        const extra = ['ovulation_test', 'pregnancy_test', 'pill', 'water', 'weight'];
+        const stripped = rows.map((r) => {
+          const c: Record<string, unknown> = { ...r };
+          for (const k of extra) delete c[k];
+          return c;
+        });
+        await supabase.from('daily_logs').upsert(stripped, { onConflict: 'log_id' });
+      }
     }
 
     // Upsert settings blob

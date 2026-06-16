@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { loadData, getCurrentPhase, PHASE_META, type BloomData, type DayLog, type Phase } from '@/lib/cycle';
-import { computeInsights, type Insights } from '@/lib/insights';
+import { computeInsights, type Insights, type TrendPoint } from '@/lib/insights';
 import type { Recommendations } from '@/lib/matcher';
 import { fetchFromSheet, sanitize } from '@/lib/data';
 import { appDayKey } from '@/lib/day';
@@ -41,11 +41,35 @@ function IOSSpinner({ color = '#6E3482', size = 36 }: { color?: string; size?: n
   );
 }
 
+function TrendChart({ points, unit, decimals = 1 }: { points: TrendPoint[]; unit: string; decimals?: number }) {
+  const W = 320, H = 64, pad = 5;
+  const vals = points.map((p) => p.value);
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const span = max - min || 1;
+  const n = points.length;
+  const x = (i: number) => pad + (i / (n - 1 || 1)) * (W - 2 * pad);
+  const y = (v: number) => H - pad - ((v - min) / span) * (H - 2 * pad);
+  const d = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(1)},${y(p.value).toFixed(1)}`).join(' ');
+  const last = points[n - 1].value;
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#8A6A9A', marginBottom: 4 }}>
+        <span>latest <strong style={{ color: '#6E3482' }}>{last.toFixed(decimals)}{unit}</strong></span>
+        <span>{min.toFixed(decimals)}–{max.toFixed(decimals)}{unit}</span>
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ width: '100%', height: H, display: 'block' }}>
+        <path d={d} fill="none" stroke="#6E3482" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+      </svg>
+    </div>
+  );
+}
+
 function Patterns({ insights }: { insights: Insights }) {
   const { cycleStats, symptoms, byPhase, correlations, loggedDays } = insights;
   const maxBar = cycleStats ? Math.max(cycleStats.avg, ...cycleStats.history, 1) : 1;
   const maxSym = symptoms[0]?.count ?? 1;
   const phaseRows = byPhase.filter((p) => p.count > 0);
+  const { bbtTrend, weightTrend } = insights;
 
   return (
     <div className="anim-rise" style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 16 }}>
@@ -124,6 +148,24 @@ function Patterns({ insights }: { insights: Insights }) {
             })}
           </div>
           <p style={{ margin: '10px 0 0', fontSize: 11, color: '#A99BB5' }}>● energy level · top mood per phase</p>
+        </div>
+      )}
+
+      {(bbtTrend.length >= 3 || weightTrend.length >= 3) && (
+        <div className="glass-card" style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: '#1C0B2E' }}>Trends</p>
+          {bbtTrend.length >= 3 && (
+            <div>
+              <p style={{ margin: '0 0 2px', fontSize: 12, fontWeight: 700, color: '#6E3482' }}>🌡️ Basal body temperature</p>
+              <TrendChart points={bbtTrend} unit="°C" decimals={2} />
+            </div>
+          )}
+          {weightTrend.length >= 3 && (
+            <div>
+              <p style={{ margin: '0 0 2px', fontSize: 12, fontWeight: 700, color: '#6E3482' }}>⚖️ Weight</p>
+              <TrendChart points={weightTrend} unit=" kg" decimals={1} />
+            </div>
+          )}
         </div>
       )}
 

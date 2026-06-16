@@ -60,12 +60,15 @@ export function phaseForDate(data: BloomData, date: string): Phase | null {
 
 export interface SymptomFreq { key: string; label: string; emoji: string; count: number; pct: number; }
 export interface PhaseMood { phase: Phase; topMood: string | null; energy: number | null; energyLabel: string; count: number; }
+export interface TrendPoint { date: string; value: number; }
 
 export interface Insights {
   loggedDays: number;
   cycleStats: { history: number[]; avg: number; periodAvg: number; stdDev: number; irregular: boolean } | null;
   symptoms: SymptomFreq[];
   byPhase: PhaseMood[];
+  bbtTrend: TrendPoint[];
+  weightTrend: TrendPoint[];
   correlations: string[];
   enough: boolean; // enough history to show meaningful patterns
 }
@@ -124,10 +127,15 @@ export function computeInsights(data: BloomData): Insights {
     };
   });
 
+  // BBT + weight trends (last ~30 logged points each)
+  const chrono = [...logs].sort((a, b) => (a.date < b.date ? -1 : 1));
+  const bbtTrend: TrendPoint[] = chrono.filter((l) => l.bbt != null).slice(-30).map((l) => ({ date: l.date, value: l.bbt! }));
+  const weightTrend: TrendPoint[] = chrono.filter((l) => l.weight != null).slice(-30).map((l) => ({ date: l.date, value: l.weight! }));
+
   const correlations = deriveCorrelations(data, logs, byPhase);
   const enough = loggedDays >= 4 || (cycleStats?.history.length ?? 0) >= 2;
 
-  return { loggedDays, cycleStats, symptoms, byPhase, correlations, enough };
+  return { loggedDays, cycleStats, symptoms, byPhase, bbtTrend, weightTrend, correlations, enough };
 }
 
 // Conservative, sample-gated heuristics — only surface a pattern when there's
