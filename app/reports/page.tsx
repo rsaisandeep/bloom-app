@@ -49,17 +49,34 @@ function TrendChart({ points, unit, decimals = 1 }: { points: TrendPoint[]; unit
   const n = points.length;
   const x = (i: number) => pad + (i / (n - 1 || 1)) * (W - 2 * pad);
   const y = (v: number) => H - pad - ((v - min) / span) * (H - 2 * pad);
-  const d = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(1)},${y(p.value).toFixed(1)}`).join(' ');
+  const line = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(1)},${y(p.value).toFixed(1)}`).join(' ');
+  const area = `${line} L${x(n - 1).toFixed(1)},${H} L${x(0).toFixed(1)},${H} Z`;
   const last = points[n - 1].value;
+  const gradId = 'tg-' + unit.replace(/[^a-z]/gi, '');
+  const lastLeft = (x(n - 1) / W) * 100, lastTop = (y(last) / H) * 100;
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#8A6A9A', marginBottom: 4 }}>
         <span>latest <strong style={{ color: '#6E3482' }}>{last.toFixed(decimals)}{unit}</strong></span>
         <span>{min.toFixed(decimals)}–{max.toFixed(decimals)}{unit}</span>
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ width: '100%', height: H, display: 'block' }}>
-        <path d={d} fill="none" stroke="#6E3482" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
-      </svg>
+      <div style={{ position: 'relative' }}>
+        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ width: '100%', height: H, display: 'block' }}>
+          <defs>
+            <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#6E3482" stopOpacity="0.22" />
+              <stop offset="1" stopColor="#6E3482" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <path d={area} fill={`url(#${gradId})`} stroke="none" />
+          <path d={line} fill="none" stroke="#6E3482" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+        </svg>
+        <span style={{
+          position: 'absolute', left: `${lastLeft}%`, top: `${lastTop}%`,
+          width: 8, height: 8, marginLeft: -5, marginTop: -4, borderRadius: '50%',
+          background: '#6E3482', boxShadow: '0 0 0 3px rgba(110,52,130,0.18)',
+        }} />
+      </div>
     </div>
   );
 }
@@ -76,39 +93,56 @@ function Patterns({ insights }: { insights: Insights }) {
       <p style={{ margin: '2px 0 0', fontSize: 16, fontWeight: 800, color: '#1C0B2E' }}>Your patterns</p>
 
       {cycleStats && (
-        <div className="glass-card" style={{ padding: '16px 18px' }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 }}>
-            <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: '#1C0B2E' }}>Cycle length</p>
-            <span style={{ fontSize: 12, fontWeight: 700, color: cycleStats.irregular ? '#B45309' : '#6E3482' }}>
-              {cycleStats.avg}d avg · {cycleStats.irregular ? 'irregular' : 'regular'}
-            </span>
+        <>
+          {/* Stat tiles */}
+          <div style={{ display: 'flex', gap: 10 }}>
+            {[
+              { label: 'Avg cycle', value: `${cycleStats.avg}`, unit: 'days', color: '#6E3482' },
+              { label: 'Avg period', value: `${cycleStats.periodAvg}`, unit: 'days', color: '#A56ABD' },
+              { label: 'Regularity', value: cycleStats.irregular ? 'Irregular' : 'Regular', unit: `±${Math.round(cycleStats.stdDev)}d`, color: cycleStats.irregular ? '#B45309' : '#166534', small: true },
+            ].map((t) => (
+              <div key={t.label} className="glass-card" style={{ flex: 1, padding: '12px 10px', textAlign: 'center' }}>
+                <p style={{ margin: '0 0 4px', fontSize: 9.5, fontWeight: 800, letterSpacing: 0.3, color: '#8A6A9A', textTransform: 'uppercase' }}>{t.label}</p>
+                <p style={{ margin: 0, fontSize: t.small ? 15 : 22, fontWeight: 800, color: t.color, lineHeight: 1.1 }}>{t.value}</p>
+                <p style={{ margin: '2px 0 0', fontSize: 10, color: '#A99BB5' }}>{t.unit}</p>
+              </div>
+            ))}
           </div>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 100 }}>
-            {[...cycleStats.history, cycleStats.avg].map((len, i, arr) => {
-              const isAvg = i === arr.length - 1;
-              return (
-                <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: isAvg ? '#6E3482' : '#8A6A9A' }}>{len}d</span>
-                  <div style={{
-                    width: '100%', height: `${(len / maxBar) * 72}px`, borderRadius: 10,
-                    background: isAvg ? 'linear-gradient(180deg,#A56ABD,#6E3482)' : 'rgba(165,106,189,0.28)',
-                    boxShadow: isAvg ? '0 4px 14px rgba(110,52,130,0.35)' : 'none',
-                    transition: 'height .5s cubic-bezier(.34,1.4,.64,1)',
-                  }} />
-                  <span style={{ fontSize: 9, color: '#A99BB5', fontWeight: 600 }}>{isAvg ? 'avg' : `#${i + 1}`}</span>
-                </div>
-              );
-            })}
+
+          {/* Cycle length chart with dashed average reference line */}
+          <div className="glass-card" style={{ padding: '16px 18px' }}>
+            <p style={{ margin: '0 0 14px', fontSize: 13, fontWeight: 800, color: '#1C0B2E' }}>📊 Cycle length history</p>
+            <div style={{ position: 'relative', height: 88 }}>
+              {/* avg line */}
+              <div style={{ position: 'absolute', left: 0, right: 0, bottom: `${(cycleStats.avg / maxBar) * 72}px`, borderTop: '1.5px dashed rgba(110,52,130,0.5)' }}>
+                <span style={{ position: 'absolute', right: 0, top: -15, fontSize: 9, fontWeight: 800, color: '#6E3482', background: 'rgba(237,233,255,0.95)', padding: '1px 5px', borderRadius: 6 }}>avg {cycleStats.avg}d</span>
+              </div>
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'flex-end', gap: 8 }}>
+                {cycleStats.history.map((len, i) => (
+                  <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end' }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: '#8A6A9A', marginBottom: 3 }}>{len}d</span>
+                    <div style={{
+                      width: '100%', height: `${(len / maxBar) * 72}px`, borderRadius: 8,
+                      background: 'linear-gradient(180deg,#C4A6D6,#6E3482)',
+                      boxShadow: '0 3px 10px rgba(110,52,130,0.18)',
+                      transition: 'height .5s cubic-bezier(.34,1.4,.64,1)',
+                    }} />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 5 }}>
+              {cycleStats.history.map((_, i) => (
+                <span key={i} style={{ flex: 1, textAlign: 'center', fontSize: 9, fontWeight: 600, color: '#A99BB5' }}>#{i + 1}</span>
+              ))}
+            </div>
           </div>
-          <p style={{ margin: '10px 0 0', fontSize: 11.5, color: '#8A6A9A' }}>
-            Period ~{cycleStats.periodAvg} days · based on your last {cycleStats.history.length} cycle{cycleStats.history.length === 1 ? '' : 's'}
-          </p>
-        </div>
+        </>
       )}
 
       {symptoms.length > 0 && (
         <div className="glass-card" style={{ padding: '16px 18px' }}>
-          <p style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 800, color: '#1C0B2E' }}>Most common symptoms</p>
+          <p style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 800, color: '#1C0B2E' }}>🩹 Most common symptoms</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {symptoms.map((s) => (
               <div key={s.key} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -126,34 +160,30 @@ function Patterns({ insights }: { insights: Insights }) {
 
       {phaseRows.length > 0 && (
         <div className="glass-card" style={{ padding: '16px 18px' }}>
-          <p style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 800, color: '#1C0B2E' }}>Mood &amp; energy by phase</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <p style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 800, color: '#1C0B2E' }}>🌈 Mood &amp; energy by phase</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {phaseRows.map((p) => {
               const m = PHASE_META[p.phase];
+              const pct = p.energy != null ? (p.energy / 3) * 100 : 0;
               return (
                 <div key={p.phase} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span style={{ fontSize: 16, width: 22, textAlign: 'center' }}>{m.emoji}</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#1C0B2E', width: 78 }}>{m.label}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#1C0B2E', width: 74 }}>{m.label}</span>
                   <span style={{ flex: 1, fontSize: 12.5, color: '#6E3482', fontWeight: 600 }}>{p.topMood ?? '—'}</span>
-                  <div style={{ display: 'flex', gap: 3 }}>
-                    {[0, 1, 2, 3].map((d) => (
-                      <span key={d} style={{
-                        width: 7, height: 7, borderRadius: '50%',
-                        background: p.energy != null && d <= Math.round(p.energy) ? '#6E3482' : 'rgba(165,106,189,0.25)',
-                      }} />
-                    ))}
+                  <div title={p.energyLabel} style={{ width: 56, height: 8, borderRadius: 6, background: 'rgba(165,106,189,0.18)', overflow: 'hidden', flexShrink: 0 }}>
+                    <div style={{ width: `${pct}%`, height: '100%', borderRadius: 6, background: 'linear-gradient(90deg,#C4A6D6,#6E3482)' }} />
                   </div>
                 </div>
               );
             })}
           </div>
-          <p style={{ margin: '10px 0 0', fontSize: 11, color: '#A99BB5' }}>● energy level · top mood per phase</p>
+          <p style={{ margin: '12px 0 0', fontSize: 11, color: '#A99BB5' }}>▰ energy level · top mood per phase</p>
         </div>
       )}
 
       {(bbtTrend.length >= 3 || weightTrend.length >= 3) && (
         <div className="glass-card" style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: '#1C0B2E' }}>Trends</p>
+          <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: '#1C0B2E' }}>📈 Trends</p>
           {bbtTrend.length >= 3 && (
             <div>
               <p style={{ margin: '0 0 2px', fontSize: 12, fontWeight: 700, color: '#6E3482' }}>🌡️ Basal body temperature</p>
