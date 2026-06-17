@@ -117,12 +117,35 @@ function symptomOverrides(log?: DayLog): ActionItem[] {
   return out;
 }
 
-// Flat, de-duped list of every applicable task (symptom-targeted first, then the
-// phase baseline). Order is preserved so checkbox indexing stays stable.
-export function getActionItems(phase: Phase, log?: DayLog): ActionItem[] {
+// Goal-targeted tasks. Goals come from onboarding (multi-select); tasks are added
+// only when relevant to the current phase so they feel timely, not generic.
+function goalOverrides(phase: Phase, goals: string[]): ActionItem[] {
+  const out: ActionItem[] = [];
+
+  if (goals.includes('conceive')) {
+    if (phase === 'follicular') {
+      out.push({ group: 'Conceiving', icon: '🌡️', title: 'Log your BBT each morning', sub: 'Before getting up — the temp shift confirms ovulation' });
+      out.push({ group: 'Conceiving', icon: '💧', title: 'Watch cervical mucus', sub: 'Egg-white/watery = your fertile window is opening' });
+    } else if (phase === 'ovulation') {
+      out.push({ group: 'Conceiving', icon: '❤️', title: 'Your fertile window is now', sub: 'Best 2–3 days to try — time intercourse around ovulation' });
+      out.push({ group: 'Conceiving', icon: '🧪', title: 'Use an ovulation test', sub: 'A positive LH test means ovulation in ~24–36 h' });
+    }
+  }
+
+  if (goals.includes('symptoms') && (phase === 'luteal' || phase === 'menstrual')) {
+    out.push({ group: 'Symptom prep', icon: '🧂', title: 'Pre-empt PMS this week', sub: 'Lower salt, caffeine & sugar to soften the luteal dip' });
+    out.push({ group: 'Symptom prep', icon: '📝', title: 'Log symptoms daily now', sub: 'Most patterns show up late-luteal — tracking sharpens them' });
+  }
+
+  return out;
+}
+
+// Flat, de-duped list of every applicable task (goal- and symptom-targeted first,
+// then the phase baseline). Order is preserved so checkbox indexing stays stable.
+export function getActionItems(phase: Phase, log?: DayLog, goals: string[] = []): ActionItem[] {
   const phaseLabel = `${PHASE_META[phase].label} phase`;
   const baseline: ActionItem[] = BASE[phase].map((i) => ({ ...i, group: phaseLabel }));
-  const merged = [...symptomOverrides(log), ...baseline];
+  const merged = [...goalOverrides(phase, goals), ...symptomOverrides(log), ...baseline];
   const seen = new Set<string>();
   const out: ActionItem[] = [];
   for (const item of merged) {
@@ -134,10 +157,10 @@ export function getActionItems(phase: Phase, log?: DayLog): ActionItem[] {
 }
 
 // Same tasks, grouped by what they target, headers in first-seen order.
-export function getActionGroups(phase: Phase, log?: DayLog): ActionGroup[] {
+export function getActionGroups(phase: Phase, log?: DayLog, goals: string[] = []): ActionGroup[] {
   const groups: ActionGroup[] = [];
   const byName = new Map<string, ActionGroup>();
-  for (const item of getActionItems(phase, log)) {
+  for (const item of getActionItems(phase, log, goals)) {
     let g = byName.get(item.group);
     if (!g) { g = { group: item.group, items: [] }; byName.set(item.group, g); groups.push(g); }
     g.items.push(item);

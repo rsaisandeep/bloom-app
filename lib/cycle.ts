@@ -44,8 +44,19 @@ export interface BloomSettings {
   age?: number;
   healthConditions?: string[];  // 'pcos' | 'endometriosis' | 'thyroid' | 'none'
   birthControl?: string;        // 'none' | 'pill' | 'mini-pill' | 'iud-hormonal' | 'iud-copper' | 'implant' | 'patch' | 'ring' | 'other'
-  goal?: string;                // 'track' | 'symptoms' | 'conceive' | 'wellness'
+  goals?: string[];             // multi-select: 'track' | 'symptoms' | 'conceive' | 'wellness'
+  goal?: string;                // legacy single goal (pre-multiselect) — read via getGoals for back-compat
   onboardingComplete?: boolean;
+}
+
+// Goals are multi-select. Older accounts stored a single `goal` string; normalise both.
+export function getGoals(s: BloomSettings): string[] {
+  if (s.goals?.length) return s.goals;
+  if (s.goal) return [s.goal];
+  return [];
+}
+export function hasGoal(s: BloomSettings, id: string): boolean {
+  return getGoals(s).includes(id);
 }
 
 export interface BloomData {

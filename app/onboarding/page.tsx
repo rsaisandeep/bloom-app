@@ -1,14 +1,36 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { loadData } from '@/lib/cycle';
 import { saveToSheet } from '@/lib/data';
 
-const CONDITIONS = [
+const CONDITIONS: { id: string; label: string; info?: { title: string; body: string; cycle: string } }[] = [
   { id: 'none', label: 'None' },
-  { id: 'pcos', label: 'PCOS' },
-  { id: 'endometriosis', label: 'Endometriosis' },
-  { id: 'thyroid', label: 'Thyroid condition' },
+  {
+    id: 'pcos', label: 'PCOS',
+    info: {
+      title: 'PCOS — Polycystic Ovary Syndrome',
+      body: 'A common hormonal condition where the ovaries may not release an egg regularly. It can cause irregular or missed periods, acne, extra hair growth, and weight changes. It’s manageable — diet, movement, and tracking help a lot.',
+      cycle: 'Cycles are often longer or unpredictable, so Bloom shows your period as a date range instead of a single day.',
+    },
+  },
+  {
+    id: 'endometriosis', label: 'Endometriosis',
+    info: {
+      title: 'Endometriosis',
+      body: 'Tissue similar to the uterine lining grows outside the uterus. It often causes painful, heavy periods and pelvic pain that can flare around your period.',
+      cycle: 'Logging pain and flow each day builds a record you and your doctor can use to spot patterns and triggers.',
+    },
+  },
+  {
+    id: 'thyroid', label: 'Thyroid condition',
+    info: {
+      title: 'Thyroid condition',
+      body: 'An under-active (hypo) or over-active (hyper) thyroid affects the hormones that drive your cycle. It can make periods heavier, lighter, longer, shorter, or skip them altogether.',
+      cycle: 'Keeping a steady cycle + symptom log helps you and your doctor see whether your thyroid is affecting your cycle.',
+    },
+  },
 ];
 
 const BIRTH_CONTROLS = [
@@ -51,11 +73,15 @@ export default function OnboardingPage() {
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   // Step 1
   const [age, setAge] = useState('');
   const [conditions, setConditions] = useState<string[]>([]);
   const [birthControl, setBirthControl] = useState('none');
-  const [goal, setGoal] = useState('');
+  const [goals, setGoals] = useState<string[]>([]);
+  const [infoId, setInfoId] = useState<string | null>(null);
 
   // Step 2
   const [lastPeriod, setLastPeriod] = useState('');
@@ -70,10 +96,15 @@ export default function OnboardingPage() {
     });
   }
 
+  function toggleGoal(id: string) {
+    setError('');
+    setGoals(prev => prev.includes(id) ? prev.filter(g => g !== id) : [...prev, id]);
+  }
+
   function goToStep2() {
     const a = parseInt(age);
     if (!age || isNaN(a) || a < 10 || a > 60) { setError('Please enter a valid age (10–60).'); return; }
-    if (!goal) { setError('Please select your primary goal.'); return; }
+    if (!goals.length) { setError('Please select at least one goal.'); return; }
     setError('');
     setStep(2);
   }
@@ -109,7 +140,8 @@ export default function OnboardingPage() {
       age: parseInt(age) || undefined,
       healthConditions: conditions.length ? conditions : ['none'],
       birthControl,
-      goal,
+      goals,
+      goal: goals[0], // keep legacy single-goal field populated for any old readers
       pcosMode: conditions.includes('pcos'),
       onboardingComplete: true,
     };
@@ -164,14 +196,25 @@ export default function OnboardingPage() {
             {/* Health conditions */}
             <div className="glass-card" style={{ padding: 20 }}>
               <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 700, color: '#49225B' }}>Any health conditions?</p>
-              <p style={{ margin: '0 0 12px', fontSize: 12, color: '#8A6A9A' }}>Select all that apply</p>
+              <p style={{ margin: '0 0 12px', fontSize: 12, color: '#8A6A9A' }}>Select all that apply · tap ⓘ to learn more</p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {CONDITIONS.map(c => (
-                  <button key={c.id} onClick={() => toggleCondition(c.id)}
-                    style={pill(conditions.includes(c.id) || (c.id === 'none' && conditions.length === 0))}>
-                    {c.label}
-                  </button>
-                ))}
+                {CONDITIONS.map(c => {
+                  const active = conditions.includes(c.id) || (c.id === 'none' && conditions.length === 0);
+                  return (
+                    <div key={c.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      <button onClick={() => toggleCondition(c.id)} style={pill(active)}>{c.label}</button>
+                      {c.info && (
+                        <button onClick={() => setInfoId(c.id)} aria-label={`About ${c.label}`} style={{
+                          width: 24, height: 24, borderRadius: '50%', flexShrink: 0, cursor: 'pointer',
+                          border: '1.5px solid rgba(165,106,189,0.4)', background: 'rgba(165,106,189,0.08)',
+                          color: '#6E3482', fontSize: 13, fontWeight: 800, fontStyle: 'italic',
+                          fontFamily: 'Georgia, serif', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          lineHeight: 1,
+                        }}>i</button>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -184,27 +227,36 @@ export default function OnboardingPage() {
               </select>
             </div>
 
-            {/* Goal */}
+            {/* Goals */}
             <div className="glass-card" style={{ padding: 20 }}>
-              <p style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700, color: '#49225B' }}>What's your primary goal?</p>
+              <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 700, color: '#49225B' }}>What are your goals?</p>
+              <p style={{ margin: '0 0 12px', fontSize: 12, color: '#8A6A9A' }}>Pick all that apply — this tailors your tasks and reports</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {GOALS.map(g => (
-                  <button key={g.id} onClick={() => { setGoal(g.id); setError(''); }} style={{
-                    display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
-                    borderRadius: 14, border: `1.5px solid ${goal === g.id ? '#6E3482' : 'rgba(165,106,189,0.25)'}`,
-                    background: goal === g.id ? 'rgba(110,52,130,0.12)' : 'transparent',
-                    cursor: 'pointer', fontFamily: 'var(--font-outfit)', textAlign: 'left', transition: 'all .2s',
-                  }}>
-                    <span style={{ fontSize: 22 }}>{g.emoji}</span>
-                    <div>
-                      <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: goal === g.id ? '#6E3482' : '#1C0B2E' }}>{g.label}</p>
-                      <p style={{ margin: '1px 0 0', fontSize: 12, color: '#8A6A9A' }}>{g.sub}</p>
-                    </div>
-                    {goal === g.id && <div style={{ marginLeft: 'auto', width: 20, height: 20, borderRadius: '50%', background: '#6E3482', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                    </div>}
-                  </button>
-                ))}
+                {GOALS.map(g => {
+                  const on = goals.includes(g.id);
+                  return (
+                    <button key={g.id} onClick={() => toggleGoal(g.id)} style={{
+                      display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
+                      borderRadius: 14, border: `1.5px solid ${on ? '#6E3482' : 'rgba(165,106,189,0.25)'}`,
+                      background: on ? 'rgba(110,52,130,0.12)' : 'transparent',
+                      cursor: 'pointer', fontFamily: 'var(--font-outfit)', textAlign: 'left', transition: 'all .2s',
+                    }}>
+                      <span style={{ fontSize: 22 }}>{g.emoji}</span>
+                      <div>
+                        <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: on ? '#6E3482' : '#1C0B2E' }}>{g.label}</p>
+                        <p style={{ margin: '1px 0 0', fontSize: 12, color: '#8A6A9A' }}>{g.sub}</p>
+                      </div>
+                      <div style={{
+                        marginLeft: 'auto', width: 22, height: 22, borderRadius: 7, flexShrink: 0,
+                        border: on ? 'none' : '2px solid rgba(165,106,189,0.4)',
+                        background: on ? '#6E3482' : 'transparent',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        {on && <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -322,6 +374,48 @@ export default function OnboardingPage() {
             }}>← Back</button>
           </div>
         </>
+      )}
+
+      {/* ── Health-condition info popup ── */}
+      {mounted && infoId && createPortal(
+        (() => {
+          const c = CONDITIONS.find(x => x.id === infoId);
+          if (!c?.info) return null;
+          return (
+            <div onClick={() => setInfoId(null)} style={{
+              position: 'fixed', inset: 0, zIndex: 600, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: 20, background: 'rgba(28,11,46,0.45)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
+            }}>
+              <div onClick={e => e.stopPropagation()} style={{
+                width: '100%', maxWidth: 380, background: 'rgba(255,255,255,0.97)',
+                backdropFilter: 'blur(40px) saturate(180%)', WebkitBackdropFilter: 'blur(40px) saturate(180%)',
+                borderRadius: 24, padding: '22px 22px 20px', boxShadow: '0 20px 60px rgba(110,52,130,0.3)',
+                animation: 'floatIn .25s cubic-bezier(.22,.8,.3,1) both',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 12 }}>
+                  <p style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#1C0B2E', lineHeight: 1.3 }}>{c.info.title}</p>
+                  <button onClick={() => setInfoId(null)} aria-label="Close" style={{
+                    width: 30, height: 30, borderRadius: 999, flexShrink: 0, cursor: 'pointer', border: 'none',
+                    background: 'rgba(165,106,189,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="#6E3482" strokeWidth="2.4" strokeLinecap="round" /></svg>
+                  </button>
+                </div>
+                <p style={{ margin: '0 0 14px', fontSize: 14, color: '#49225B', lineHeight: 1.6 }}>{c.info.body}</p>
+                <div style={{ padding: '12px 14px', borderRadius: 14, background: 'rgba(165,106,189,0.1)', borderLeft: '3px solid #A56ABD' }}>
+                  <p style={{ margin: '0 0 3px', fontSize: 11, fontWeight: 800, letterSpacing: 0.4, textTransform: 'uppercase', color: '#A56ABD' }}>How Bloom helps</p>
+                  <p style={{ margin: 0, fontSize: 13, color: '#6E3482', lineHeight: 1.55 }}>{c.info.cycle}</p>
+                </div>
+                <button onClick={() => setInfoId(null)} style={{
+                  marginTop: 16, width: '100%', padding: '12px', borderRadius: 14, border: 'none',
+                  background: 'linear-gradient(135deg,#6E3482,#A56ABD)', color: '#fff',
+                  fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-outfit)',
+                }}>Got it</button>
+              </div>
+            </div>
+          );
+        })(),
+        document.body
       )}
     </div>
   );

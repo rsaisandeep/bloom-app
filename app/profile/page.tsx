@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getSettings, setPcosMode, setPaused, loadData, deleteCycle, isLikelySkipped, type Cycle } from '@/lib/cycle';
+import { getSettings, setPcosMode, setPaused, updateSettings, getGoals, loadData, deleteCycle, isLikelySkipped, type Cycle } from '@/lib/cycle';
 import { fetchFromSheet } from '@/lib/data';
 import TopBar from '@/components/TopBar';
 import DoctorSummaryModal from '@/components/DoctorSummary';
@@ -11,11 +11,19 @@ import { buildLogsCSV, downloadCSV } from '@/lib/export';
 import { apiLogout } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 
+const GOALS = [
+  { id: 'track', emoji: '📅', label: 'Track my cycle', sub: 'Know where I am in my cycle' },
+  { id: 'symptoms', emoji: '🩺', label: 'Manage symptoms', sub: 'PMS, cramps, mood swings' },
+  { id: 'conceive', emoji: '🌱', label: 'Trying to conceive', sub: 'Fertility window tracking' },
+  { id: 'wellness', emoji: '✨', label: 'General wellness', sub: 'Eat, move, and sleep better' },
+];
+
 export default function ProfilePage() {
   const router = useRouter();
   const [username, setUsername] = useState('');
   const [pcos, setPcos] = useState(false);
   const [paused, setPausedState] = useState(false);
+  const [goals, setGoalsState] = useState<string[]>([]);
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [showSummary, setShowSummary] = useState(false);
   const [showImport, setShowImport] = useState(false);
@@ -25,9 +33,17 @@ export default function ProfilePage() {
   const [deleteError, setDeleteError] = useState('');
 
   function syncLocal() {
-    setPcos(!!getSettings().pcosMode);
-    setPausedState(!!getSettings().paused);
+    const s = getSettings();
+    setPcos(!!s.pcosMode);
+    setPausedState(!!s.paused);
+    setGoalsState(getGoals(s));
     setCycles([...loadData().cycles].reverse()); // newest first
+  }
+
+  function toggleGoal(id: string) {
+    const next = goals.includes(id) ? goals.filter(g => g !== id) : [...goals, id];
+    setGoalsState(next);
+    updateSettings({ goals: next, goal: next[0] }); // persist + keep legacy field
   }
 
   useEffect(() => {
@@ -177,6 +193,41 @@ export default function ProfilePage() {
               boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
             }} />
           </button>
+        </div>
+      </div>
+
+      {/* Your goals */}
+      <div className="glass-card" style={{ padding: '16px 18px', marginBottom: 12 }}>
+        <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 700, color: '#1C0B2E' }}>Your goals</p>
+        <p style={{ margin: '0 0 12px', fontSize: 12, color: '#8A6A9A', lineHeight: 1.45 }}>
+          Pick all that apply — tailors your daily tasks and what your reports emphasise.
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {GOALS.map(g => {
+            const on = goals.includes(g.id);
+            return (
+              <button key={g.id} onClick={() => toggleGoal(g.id)} style={{
+                display: 'flex', alignItems: 'center', gap: 12, padding: '11px 13px',
+                borderRadius: 12, border: `1.5px solid ${on ? '#6E3482' : 'rgba(165,106,189,0.25)'}`,
+                background: on ? 'rgba(110,52,130,0.12)' : 'transparent',
+                cursor: 'pointer', fontFamily: 'var(--font-outfit)', textAlign: 'left', transition: 'all .2s',
+              }}>
+                <span style={{ fontSize: 20 }}>{g.emoji}</span>
+                <div style={{ flex: 1 }}>
+                  <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: on ? '#6E3482' : '#1C0B2E' }}>{g.label}</p>
+                  <p style={{ margin: '1px 0 0', fontSize: 12, color: '#8A6A9A' }}>{g.sub}</p>
+                </div>
+                <div style={{
+                  width: 22, height: 22, borderRadius: 7, flexShrink: 0,
+                  border: on ? 'none' : '2px solid rgba(165,106,189,0.4)',
+                  background: on ? '#6E3482' : 'transparent',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {on && <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 

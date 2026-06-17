@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { loadData, getCurrentPhase, PHASE_META, type BloomData, type DayLog, type Phase } from '@/lib/cycle';
+import { loadData, getCurrentPhase, getGoals, PHASE_META, type BloomData, type DayLog, type Phase } from '@/lib/cycle';
 import { computeInsights, type Insights, type TrendPoint } from '@/lib/insights';
 import { buildSampleData, SAMPLE_RECS } from '@/lib/sampleData';
 import type { Recommendations } from '@/lib/matcher';
@@ -9,6 +9,15 @@ import { fetchFromSheet, sanitize } from '@/lib/data';
 import { appDayKey } from '@/lib/day';
 import TopBar from '@/components/TopBar';
 import LogSheet from '@/components/LogSheet';
+
+// What each goal makes the report emphasise — shown as a small focus banner so
+// the user can see their onboarding goals actually shape what's surfaced here.
+const GOAL_FOCUS: Record<string, { emoji: string; label: string }> = {
+  conceive: { emoji: '🌱', label: 'Fertile-window & ovulation signals (BBT, mucus, LH tests)' },
+  symptoms: { emoji: '🩺', label: 'Symptom frequency & PMS patterns by phase' },
+  track:    { emoji: '📅', label: 'Cycle length, regularity & next-period accuracy' },
+  wellness: { emoji: '✨', label: 'Phase-based food, movement & sleep guidance' },
+};
 
 const REC_CARDS = [
   { key: 'food',     emoji: '🥗', label: 'Food & Nutrition', tint: 'rgba(232,248,238,0.82)', border: 'rgba(100,200,130,0.3)', color: '#166534' },
@@ -371,6 +380,25 @@ export default function ReportsPage() {
           <p style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 800 }}>{meta.emoji} {meta.label} Phase</p>
           <p style={{ margin: 0, fontSize: 13, color: 'rgba(255,255,255,0.78)', lineHeight: 1.55 }}>{recsToShow?.phaseDescription ?? meta.description}</p>
         </div>
+
+        {(() => {
+          const goals = getGoals(data.settings).filter((g) => GOAL_FOCUS[g]);
+          if (!goals.length) return null;
+          return (
+            <div className="glass-card anim-rise" style={{ padding: '12px 16px', marginBottom: 16 }}>
+              <p style={{ margin: '0 0 8px', fontSize: 11, fontWeight: 800, letterSpacing: 0.5, textTransform: 'uppercase', color: '#A56ABD' }}>
+                Tailored to your goals
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {goals.map((g) => (
+                  <div key={g} style={{ display: 'flex', gap: 8, fontSize: 12.5, color: '#49225B', lineHeight: 1.45 }}>
+                    <span>{GOAL_FOCUS[g].emoji}</span><span>{GOAL_FOCUS[g].label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
 
         <Patterns insights={shownInsights} sample={sampleMode} />
 
