@@ -24,16 +24,12 @@ const GROUPS: { id: string; title: string; emoji: string; blurb: string; slugs: 
 export default function ReadPage() {
   const [openSlug, setOpenSlug] = useState<string | null>(null);
   const [currentSlug, setCurrentSlug] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState<Set<string>>(new Set(['phases']));
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchFromSheet().then((data) => {
       const { phase } = getCurrentPhase(data);
-      const slug = PHASE_SLUG[phase];
-      setCurrentSlug(slug);
-      // Auto-open the group that holds the user's current-phase article.
-      const g = GROUPS.find((grp) => grp.slugs.includes(slug));
-      if (g) setExpanded((prev) => new Set(prev).add(g.id));
+      setCurrentSlug(PHASE_SLUG[phase]);
     });
   }, []);
 

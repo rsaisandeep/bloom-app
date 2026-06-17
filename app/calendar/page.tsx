@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import { loadData, getPredictions, getPredictionWindow, PHASE_META, type BloomData } from "@/lib/cycle";
+import { loadData, getPredictions, getPredictionWindow, getAveragePeriodLength, PHASE_META, type BloomData, type Phase } from "@/lib/cycle";
+import { phaseForDate } from "@/lib/insights";
 import { fetchFromSheet } from "@/lib/data";
 import { localDateStr } from "@/lib/day";
 import TopBar from "@/components/TopBar";
@@ -9,44 +10,66 @@ import LogSheet from "@/components/LogSheet";
 const PHASE_COLORS: Record<string, string> = {
   menstrual: "#fca5a5", follicular: "#c4b5fd", ovulation: "#fde68a", luteal: "#a5b4fc",
 };
-function getDayPhase(d: number) {
-  if (d <= 0) return null;
-  if (d <= 5) return "menstrual";
-  if (d <= 13) return "follicular";
-  if (d <= 16) return "ovulation";
-  return "luteal";
-}
 
 export default function CalendarPage() {
   const [data, setData] = useState<BloomData>(() => loadData());
   const [logDate, setLogDate] = useState<string | null>(null);
+  // Month currently shown (1st of month). Starts on the real current month.
+  const [view, setView] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
   useEffect(() => { fetchFromSheet().then(setData); }, []);
 
   const today = new Date();
-  const year = today.getFullYear(), month = today.getMonth();
+  const year = view.getFullYear(), month = view.getMonth();
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const predictions = getPredictions(data);
   const pcosMode = !!data.settings?.pcosMode;
   const predWindow = pcosMode ? getPredictionWindow(data) : null;
   const fmtD = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  const lastStart = data.cycles.length > 0 ? new Date(data.cycles[data.cycles.length-1].startDate) : null;
+  const lastStart = data.cycles.length > 0 ? new Date(data.cycles[data.cycles.length - 1].startDate) : null;
+  const periodLen = getAveragePeriodLength(data);
+  const todayStr = localDateStr(today);
 
+  function phaseFromDay(d: number, cycleLen: number): Phase {
+    const ovDay = Math.max(periodLen + 3, cycleLen - 14);
+    if (d <= periodLen) return "menstrual";
+    if (d < ovDay - 1) return "follicular";
+    if (d <= ovDay + 1) return "ovulation";
+    return "luteal";
+  }
+
+  // Past/current days use real logged cycles; future days are projected forward
+  // from the last period in average-length cycles (so the next period shows up
+  // in the month it actually falls in).
   function getDayInfo(day: number) {
     const date = new Date(year, month, day);
-    if (!lastStart) return { phase: null, hasLog: false, isToday: false };
-    const diff = Math.floor((date.getTime() - lastStart.getTime()) / 86400000);
-    const phase = getDayPhase(diff + 1);
     const dateStr = localDateStr(date);
-    return { phase, hasLog: data.logs.some((l) => l.date === dateStr), isToday: day === today.getDate() };
+    const isToday = dateStr === todayStr;
+    const hasLog = data.logs.some((l) => l.date === dateStr);
+    let phase: Phase | null = null;
+    if (lastStart) {
+      if (dateStr <= todayStr) {
+        phase = phaseForDate(data, dateStr);
+      } else if (predictions) {
+        const diff = Math.round((date.getTime() - lastStart.getTime()) / 86400000);
+        const avg = predictions.avgLength;
+        phase = phaseFromDay((diff % avg) + 1, avg); // position within the projected cycle
+      }
+    }
+    return { phase, hasLog, isToday };
   }
+
+  const monthLabel = view.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const navBtn = { width: 34, height: 34, borderRadius: 999, border: "none", cursor: "pointer", background: "rgba(165,106,189,0.15)", color: "#6E3482", fontSize: 16, fontWeight: 800, fontFamily: "var(--font-outfit)", display: "flex", alignItems: "center", justifyContent: "center" } as const;
 
   return (
     <><TopBar title="Calendar" />
     <div style={{ minHeight: "100vh", padding: "4px 16px 24px" }}>
-      <p style={{ margin: "0 0 14px", fontSize: ".78rem", fontWeight: 600, color: "#8A6A9A" }}>
-        {today.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
-      </p>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "0 0 14px" }}>
+        <button aria-label="Previous month" onClick={() => setView(new Date(year, month - 1, 1))} style={navBtn}>‹</button>
+        <p style={{ margin: 0, fontSize: ".95rem", fontWeight: 800, color: "#1C0B2E" }}>{monthLabel}</p>
+        <button aria-label="Next month" onClick={() => setView(new Date(year, month + 1, 1))} style={navBtn}>›</button>
+      </div>
 
       {/* Legend */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 14 }}>
