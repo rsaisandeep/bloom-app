@@ -34,10 +34,16 @@ export function useInstall() {
   const [canInstall, setCanInstall] = useState(false);
   const [standalone, setStandalone] = useState(false);
   const [isIos, setIsIos] = useState(false);
+  const [isIosSafari, setIsIosSafari] = useState(false);
 
   useEffect(() => {
     setStandalone(checkStandalone());
-    setIsIos(/iphone|ipad|ipod/i.test(navigator.userAgent));
+    const ua = navigator.userAgent;
+    const ios = /iphone|ipad|ipod/i.test(ua);
+    setIsIos(ios);
+    // On iOS a real PWA install only works from Safari. Chrome/Firefox/Edge on
+    // iOS (CriOS/FxiOS/EdgiOS) are WebKit shells that can't install properly.
+    setIsIosSafari(ios && /safari/i.test(ua) && !/crios|fxios|edgios/i.test(ua));
     setCanInstall(!!deferred);
     const onAvail = () => setCanInstall(!!deferred);
     const onInstalled = () => { setCanInstall(false); setStandalone(true); };
@@ -63,5 +69,5 @@ export function useInstall() {
   // can prompt or it's iOS where the user adds it manually).
   const installable = !standalone && (canInstall || isIos);
 
-  return { canInstall, standalone, isIos, installable, promptInstall };
+  return { canInstall, standalone, isIos, isIosSafari, installable, promptInstall };
 }

@@ -5,7 +5,7 @@ import { useInstall } from '@/lib/useInstall';
 const DISMISS_KEY = 'bloom_install_dismissed';
 
 export default function InstallPrompt() {
-  const { canInstall, standalone, isIos, installable, promptInstall } = useInstall();
+  const { canInstall, standalone, isIos, isIosSafari, installable, promptInstall } = useInstall();
   const [dismissed, setDismissed] = useState(true); // hidden until the effect checks
 
   useEffect(() => {
@@ -53,9 +53,11 @@ export default function InstallPrompt() {
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#1C0B2E' }}>Install Bloom</p>
           <p style={{ margin: '1px 0 0', fontSize: 12, color: '#8A6A9A', lineHeight: 1.4 }}>
-            {showIosHint
-              ? <>Tap <strong>Share</strong> then <strong>Add to Home Screen</strong>.</>
-              : 'Add to your home screen for a full-screen, app-like experience.'}
+            {!showIosHint
+              ? 'Add to your home screen for a full-screen, app-like experience.'
+              : isIosSafari
+                ? <>Tap <strong>Share</strong> then <strong>Add to Home Screen</strong>.</>
+                : <>Open this page in <strong>Safari</strong> to install.</>}
           </p>
         </div>
         {!showIosHint && (

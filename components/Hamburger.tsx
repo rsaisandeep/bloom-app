@@ -10,7 +10,7 @@ export default function Hamburger({ username }: { username: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const { canInstall, isIos, installable, promptInstall } = useInstall();
+  const { canInstall, isIos, isIosSafari, installable, promptInstall } = useInstall();
   useEffect(() => { setMounted(true); }, []);
 
   function handleInstall() {
@@ -87,7 +87,7 @@ export default function Hamburger({ username }: { username: string }) {
                   <div>
                     <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#1C0B2E' }}>Install Bloom</p>
                     <p style={{ margin: '1px 0 0', fontSize: 11, color: '#8A6A9A' }}>
-                      {isIos ? 'Tap Share, then Add to Home Screen' : 'Add to your home screen'}
+                      {!isIos ? 'Add to your home screen' : isIosSafari ? 'Tap Share, then Add to Home Screen' : 'Open in Safari to install'}
                     </p>
                   </div>
                 </button>
