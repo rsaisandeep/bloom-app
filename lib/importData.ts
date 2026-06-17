@@ -191,3 +191,89 @@ export function buildImport(parsed: ParsedCSV, mapping: Mapping, existing: Bloom
 }
 
 const MS_DAY_LOCAL = 86400000;
+
+// ── Native Flo JSON import ──────────────────────────────────────────────
+// Flo's data export (GDPR dump) is JSON, not CSV. The meaningful structured
+// data lives in operationalData.cycles[], each carrying period_start_date /
+// period_end_date. (Verified against github.com/SaraVieira/flo-to-drip, which
+// reads exactly those two fields.) Per-day symptom logs aren't reliably present,
+// so we reconstruct period-flow logs from the cycle date ranges.
+
+interface FloCycle { period_start_date?: string; period_end_date?: string }
+interface FloExport { operationalData?: { cycles?: FloCycle[] } }
+
+function diffDays(a: string, b: string): number {
+  return Math.round((new Date(b).getTime() - new Date(a).getTime()) / MS_DAY_LOCAL);
+}
+function addDays(date: string, n: number): string {
+  return new Date(new Date(date).getTime() + n * MS_DAY_LOCAL).toISOString().slice(0, 10);
+}
+function defaultLog(date: string): DayLog {
+  return { date, cramps: "none", energy: "medium", mood: "calm", bloating: "none", sleep: "good", cravings: "none" };
+}
+
+// Pull the cycle start/end dates out of a parsed Flo export (lenient on shape).
+export function parseFloCycles(json: unknown): { startDate: string; endDate?: string }[] {
+  const cycles = (json as FloExport)?.operationalData?.cycles;
+  if (!Array.isArray(cycles)) return [];
+  const out: { startDate: string; endDate?: string }[] = [];
+  for (const c of cycles) {
+    const start = normDate(String(c?.period_start_date ?? ""));
+    if (!start) continue;
+    const end = normDate(String(c?.period_end_date ?? ""));
+    out.push({ startDate: start, endDate: end });
+  }
+  return out;
+}
+
+export function isFloExport(json: unknown): boolean {
+  return Array.isArray((json as FloExport)?.operationalData?.cycles);
+}
+
+// Build cycles + reconstructed period-flow logs from a Flo JSON export, merged
+// into existing data (existing dates/cycles preserved; Flo fills the gaps).
+export function buildFloImport(json: unknown, existing: BloomData): ImportResult {
+  const parsed = parseFloCycles(json);
+  const byDate = new Map<string, DayLog>(existing.logs.map((l) => [l.date, { ...l }]));
+  const cycleMap = new Map<string, Cycle>(existing.cycles.map((c) => [c.startDate, { ...c }]));
+  const importedDates: string[] = [];
+
+  for (const { startDate, endDate } of parsed) {
+    const dup = [...cycleMap.keys()].some((k) => Math.abs(diffDays(k, startDate)) <= 1);
+    if (!dup) {
+      const cyc: Cycle = { id: `me_${startDate}`, startDate };
+      if (endDate && endDate >= startDate) {
+        cyc.periodEndDate = endDate;
+        cyc.periodLength = diffDays(startDate, endDate) + 1;
+      }
+      cycleMap.set(startDate, cyc);
+    }
+    // Reconstruct flow logs for each bleeding day so reports/predictions have data.
+    const span = endDate && endDate >= startDate ? diffDays(startDate, endDate) : 0;
+    for (let i = 0; i <= span; i++) {
+      const d = addDays(startDate, i);
+      const base = byDate.get(d) ?? defaultLog(d);
+      base.flow = i <= 1 ? "heavy" : i === span ? "light" : "medium";
+      byDate.set(d, base);
+      importedDates.push(d);
+    }
+  }
+
+  const logs = [...byDate.values()].sort((a, b) => (a.date < b.date ? -1 : 1));
+  const cycles = [...cycleMap.values()].sort((a, b) => (a.startDate < b.startDate ? -1 : 1));
+  for (let i = 0; i < cycles.length; i++) {
+    cycles[i].cycleLength = i < cycles.length - 1 ? diffDays(cycles[i].startDate, cycles[i + 1].startDate) : cycles[i].cycleLength;
+  }
+
+  const range = importedDates.length
+    ? { from: importedDates.reduce((a, b) => (a < b ? a : b)), to: importedDates.reduce((a, b) => (a > b ? a : b)) }
+    : null;
+
+  return {
+    data: { cycles, logs, settings: existing.settings },
+    logCount: new Set(importedDates).size,
+    cycleCount: parsed.length,
+    dateRange: range,
+    skipped: 0,
+  };
+}

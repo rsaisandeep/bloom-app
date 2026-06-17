@@ -5,6 +5,7 @@ import { loadData } from '@/lib/cycle';
 import { saveToSheet } from '@/lib/data';
 import {
   parseCSV, autoMap, buildImport, IMPORT_FIELDS,
+  isFloExport, buildFloImport,
   type ParsedCSV, type Mapping, type ImportResult,
 } from '@/lib/importData';
 
@@ -12,9 +13,10 @@ const SKIP = '__skip__';
 
 export default function ImportSheet({ open, onClose, onImported }: { open: boolean; onClose: () => void; onImported?: () => void }) {
   const [mounted, setMounted] = useState(false);
-  const [step, setStep] = useState<'pick' | 'map' | 'done'>('pick');
+  const [step, setStep] = useState<'pick' | 'map' | 'flo' | 'done'>('pick');
   const [parsed, setParsed] = useState<ParsedCSV | null>(null);
   const [mapping, setMapping] = useState<Mapping>({});
+  const [floPreview, setFloPreview] = useState<ImportResult | null>(null);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
@@ -22,10 +24,10 @@ export default function ImportSheet({ open, onClose, onImported }: { open: boole
 
   useEffect(() => setMounted(true), []);
   useEffect(() => {
-    if (open) { setStep('pick'); setParsed(null); setMapping({}); setError(''); setResult(null); }
+    if (open) { setStep('pick'); setParsed(null); setMapping({}); setFloPreview(null); setError(''); setResult(null); }
   }, [open]);
 
-  // Live preview of what will be imported as the mapping changes.
+  // Live preview of what will be imported as the mapping changes (CSV path).
   const preview = useMemo(
     () => (parsed && mapping.date ? buildImport(parsed, mapping, loadData()) : null),
     [parsed, mapping],
@@ -37,24 +39,40 @@ export default function ImportSheet({ open, onClose, onImported }: { open: boole
     setError('');
     try {
       const text = await file.text();
+      // Flo's real export is JSON (operationalData.cycles) — detect and use the
+      // native path so the emailed file works without converting to CSV first.
+      const looksJson = file.name.toLowerCase().endsWith('.json') || text.trimStart().startsWith('{');
+      if (looksJson) {
+        let obj: unknown;
+        try { obj = JSON.parse(text); } catch { setError('That JSON file is not valid. Re-download your Flo export.'); return; }
+        if (isFloExport(obj)) {
+          setFloPreview(buildFloImport(obj, loadData()));
+          setStep('flo');
+          return;
+        }
+        setError("That JSON doesn't look like a Flo export (no cycles found). Try the CSV path instead.");
+        return;
+      }
       const p = parseCSV(text);
       if (!p.headers.length || !p.rows.length) { setError('That file has no rows we can read. Export a CSV and try again.'); return; }
       setParsed(p);
       setMapping(autoMap(p.headers));
       setStep('map');
     } catch {
-      setError('Could not read that file. Make sure it is a .csv export.');
+      setError('Could not read that file. Upload a .json (Flo) or .csv export.');
     }
   }
 
-  async function confirmImport() {
-    if (!preview) return;
+  async function doImport(res: ImportResult) {
     setSaving(true);
-    await saveToSheet(preview.data);
-    setResult(preview);
+    await saveToSheet(res.data);
+    setResult(res);
     setSaving(false);
     setStep('done');
     onImported?.();
+  }
+  async function confirmImport() {
+    if (preview) await doImport(preview);
   }
 
   if (!mounted || !open) return null;
@@ -84,18 +102,18 @@ export default function ImportSheet({ open, onClose, onImported }: { open: boole
               <p style={{ margin: '0 0 8px', fontSize: 12.5, fontWeight: 800, color: '#6E3482' }}>📲 Getting your Flo data</p>
               <ol style={{ margin: 0, paddingLeft: 18, fontSize: 12.5, color: '#49225B', lineHeight: 1.6 }}>
                 <li>In Flo: tap your avatar → <strong>Settings</strong> → request a data export (or Help → Contact us).</li>
-                <li>Flo emails you a file. Open it in Sheets/Excel and <strong>Save as CSV</strong>.</li>
-                <li>Upload that CSV below.</li>
+                <li>Flo emails you a <strong>JSON</strong> file — upload it directly below.</li>
+                <li>Other apps (Clue, Apple Health): upload their <strong>CSV</strong> and we&apos;ll map the columns.</li>
               </ol>
             </div>
 
-            <input ref={fileRef} type="file" accept=".csv,text/csv" onChange={onFile} style={{ display: 'none' }} />
+            <input ref={fileRef} type="file" accept=".json,application/json,.csv,text/csv" onChange={onFile} style={{ display: 'none' }} />
             <button onClick={() => fileRef.current?.click()} style={{
               width: '100%', padding: '15px', borderRadius: 16, border: 'none', cursor: 'pointer',
               background: 'linear-gradient(135deg,#6E3482,#49225B)', color: '#fff',
               fontSize: 15, fontWeight: 800, fontFamily: 'var(--font-outfit)',
               boxShadow: '0 8px 24px rgba(110,52,130,0.3)',
-            }}>⬆ Choose a CSV file</button>
+            }}>⬆ Choose a Flo JSON or CSV file</button>
             {error && <p style={{ margin: '12px 0 0', fontSize: 13, color: '#dc2626', textAlign: 'center' }}>{error}</p>}
           </>
         )}
@@ -149,6 +167,34 @@ export default function ImportSheet({ open, onClose, onImported }: { open: boole
                 background: mapping.date && !saving && preview?.logCount ? 'linear-gradient(135deg,#6E3482,#49225B)' : 'rgba(165,106,189,0.3)',
                 color: '#fff', fontSize: 14, fontWeight: 800, fontFamily: 'var(--font-outfit)',
               }}>{saving ? 'Importing…' : `Import ${preview?.logCount ?? 0} logs`}</button>
+            </div>
+          </>
+        )}
+
+        {step === 'flo' && floPreview && (
+          <>
+            <h3 style={{ margin: '0 0 6px', fontSize: 20, fontWeight: 800, color: '#1C0B2E' }}>Flo export detected 🌸</h3>
+            <p style={{ margin: '0 0 16px', fontSize: 13, color: '#8A6A9A', lineHeight: 1.55 }}>
+              We read your cycles straight from the Flo file — no column mapping needed. Nothing you&apos;ve already logged is overwritten.
+            </p>
+            <div className="glass-card tint-purple" style={{ padding: '14px 16px', marginBottom: 16, fontSize: 13.5, color: '#49225B', lineHeight: 1.7 }}>
+              <div>🩸 <strong>{floPreview.cycleCount}</strong> cycles</div>
+              <div>📅 <strong>{floPreview.logCount}</strong> period days reconstructed</div>
+              {floPreview.dateRange && <div>🗓 <strong>{floPreview.dateRange.from}</strong> → <strong>{floPreview.dateRange.to}</strong></div>}
+            </div>
+            {floPreview.cycleCount === 0 && <p style={{ margin: '0 0 12px', fontSize: 12.5, color: '#dc2626' }}>No cycles found in this file.</p>}
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setStep('pick')} style={{
+                flex: 1, padding: '13px', borderRadius: 14, cursor: 'pointer',
+                border: '1.5px solid rgba(165,106,189,0.35)', background: 'transparent',
+                color: '#6E3482', fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-outfit)',
+              }}>Back</button>
+              <button onClick={() => doImport(floPreview)} disabled={saving || !floPreview.cycleCount} style={{
+                flex: 2, padding: '13px', borderRadius: 14, border: 'none',
+                cursor: saving || !floPreview.cycleCount ? 'default' : 'pointer',
+                background: !saving && floPreview.cycleCount ? 'linear-gradient(135deg,#6E3482,#49225B)' : 'rgba(165,106,189,0.3)',
+                color: '#fff', fontSize: 14, fontWeight: 800, fontFamily: 'var(--font-outfit)',
+              }}>{saving ? 'Importing…' : `Import ${floPreview.cycleCount} cycles`}</button>
             </div>
           </>
         )}
