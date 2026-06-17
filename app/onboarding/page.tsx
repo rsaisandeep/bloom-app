@@ -92,12 +92,12 @@ export default function OnboardingPage() {
     const data = loadData();
 
     if (lastPeriod) {
-      const endDate = new Date(lastPeriod);
-      endDate.setDate(endDate.getDate() + pLen - 1);
+      // Don't auto-set periodEndDate — the end date is an explicit user action.
+      // periodLength alone drives phase math; the end-date field stays empty
+      // until the user confirms it in the Log period modal.
       data.cycles = [{
         id: `${uname}_${lastPeriod}`,
         startDate: lastPeriod,
-        periodEndDate: endDate.toISOString().slice(0, 10),
         periodLength: pLen,
       }];
     }

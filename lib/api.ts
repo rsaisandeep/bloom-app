@@ -60,6 +60,44 @@ export async function apiLogout() {
     localStorage.clear();
     sessionStorage.clear();
   } catch {}
+
+  // Force-clear ALL other browser storage so no user data lingers after logout.
+  // Cache Storage holds PWA service-worker page caches; IndexedDB and cookies
+  // are cleared defensively. Each is wrapped so one failure can't block logout.
+  try {
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+    }
+  } catch {}
+  try {
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map((r) => r.unregister()));
+    }
+  } catch {}
+  try {
+    if (window.indexedDB?.databases) {
+      const dbs = await window.indexedDB.databases();
+      await Promise.all(
+        dbs.map((d) =>
+          d.name
+            ? new Promise<void>((res) => {
+                const req = indexedDB.deleteDatabase(d.name!);
+                req.onsuccess = req.onerror = req.onblocked = () => res();
+              })
+            : Promise.resolve()
+        )
+      );
+    }
+  } catch {}
+  try {
+    document.cookie.split(';').forEach((c) => {
+      const name = c.split('=')[0].trim();
+      if (name) document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+    });
+  } catch {}
+
   // Full document reload so the supabase client re-initializes with no session.
   window.location.replace('/login');
 }
