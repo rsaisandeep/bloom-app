@@ -64,9 +64,10 @@ export default function InstallPrompt() {
 
   return (
     <div style={{
-      position: 'fixed', left: '50%', transform: 'translateX(-50%)',
+      position: 'fixed', left: 0, right: 0, margin: '0 auto',
       bottom: 'calc(86px + env(safe-area-inset-bottom))',
       width: 'calc(100% - 24px)', maxWidth: 424, zIndex: 250,
+      boxSizing: 'border-box',
       background: 'rgba(250,246,252,0.96)',
       backdropFilter: 'blur(28px) saturate(180%)', WebkitBackdropFilter: 'blur(28px) saturate(180%)',
       border: '1px solid rgba(255,255,255,0.85)', borderRadius: 22,
