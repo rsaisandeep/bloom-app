@@ -1,65 +1,34 @@
 'use client';
 import { useEffect, useState } from 'react';
-
-interface BIPEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
-}
+import { useInstall } from '@/lib/useInstall';
 
 const DISMISS_KEY = 'bloom_install_dismissed';
 
 export default function InstallPrompt() {
-  const [deferred, setDeferred] = useState<BIPEvent | null>(null);
-  const [showIosHint, setShowIosHint] = useState(false);
-  const [visible, setVisible] = useState(false);
+  const { canInstall, standalone, isIos, installable, promptInstall } = useInstall();
+  const [dismissed, setDismissed] = useState(true); // hidden until the effect checks
 
   useEffect(() => {
     // Register the service worker (enables Android install + offline cache).
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(() => {});
     }
-
     // Session-scoped dismiss: hide only for this visit, then suggest again next
-    // time they open in the browser (if they're in the browser, they haven't
-    // installed yet). The standalone check below stops it inside the PWA.
-    if (sessionStorage.getItem(DISMISS_KEY)) return;
-
-    const standalone =
-      window.matchMedia('(display-mode: standalone)').matches ||
-      // @ts-expect-error iOS-only Safari flag
-      window.navigator.standalone === true;
-    if (standalone) return; // already installed
-
-    // Android / Chromium: capture the native install prompt.
-    const onBIP = (e: Event) => {
-      e.preventDefault();
-      setDeferred(e as BIPEvent);
-      setVisible(true);
-    };
-    window.addEventListener('beforeinstallprompt', onBIP);
-
-    // iOS Safari has no prompt API — show a manual "Add to Home Screen" hint.
-    const ua = window.navigator.userAgent;
-    const isIos = /iphone|ipad|ipod/i.test(ua);
-    const isSafari = /safari/i.test(ua) && !/crios|fxios|edgios/i.test(ua);
-    if (isIos && isSafari) {
-      setShowIosHint(true);
-      setVisible(true);
-    }
-
-    return () => window.removeEventListener('beforeinstallprompt', onBIP);
+    // time they open in the browser. Standalone check (in the hook) stops it
+    // inside the installed PWA.
+    setDismissed(!!sessionStorage.getItem(DISMISS_KEY));
   }, []);
 
+  const showIosHint = isIos && !canInstall;
+  const visible = installable && !dismissed && !standalone;
+
   function dismiss() {
-    setVisible(false);
+    setDismissed(true);
     try { sessionStorage.setItem(DISMISS_KEY, '1'); } catch {}
   }
 
   async function install() {
-    if (!deferred) return;
-    await deferred.prompt();
-    await deferred.userChoice;
-    setDeferred(null);
+    await promptInstall();
     dismiss();
   }
 

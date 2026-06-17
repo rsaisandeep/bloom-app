@@ -4,12 +4,19 @@ import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import PeriodStartModal from '@/components/PeriodStartModal';
 import { apiLogout } from '@/lib/api';
+import { useInstall } from '@/lib/useInstall';
 
 export default function Hamburger({ username }: { username: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const { canInstall, isIos, installable, promptInstall } = useInstall();
   useEffect(() => { setMounted(true); }, []);
+
+  function handleInstall() {
+    if (canInstall) { promptInstall(); }
+    setOpen(false); // on iOS, closing reveals Safari's Share button for "Add to Home Screen"
+  }
 
   function logout() {
     apiLogout(); // signs out of Supabase + clears app cache, then redirects to /login
@@ -71,6 +78,20 @@ export default function Hamburger({ username }: { username: string }) {
             {/* Items */}
             <div className="stagger" style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
               <PeriodStartModal variant="menu" onDone={() => setOpen(false)} />
+              {installable && (
+                <button onClick={handleInstall} className="liquid-pill" style={{
+                  display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left',
+                  padding: '13px 16px', borderRadius: 18, cursor: 'pointer', fontFamily: 'var(--font-outfit)',
+                }}>
+                  <span style={{ fontSize: 20 }}>📲</span>
+                  <div>
+                    <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#1C0B2E' }}>Install Bloom</p>
+                    <p style={{ margin: '1px 0 0', fontSize: 11, color: '#8A6A9A' }}>
+                      {isIos ? 'Tap Share, then Add to Home Screen' : 'Add to your home screen'}
+                    </p>
+                  </div>
+                </button>
+              )}
               {items.map((it) => (
                 <button key={it.label} onClick={it.onClick} className="liquid-pill" style={{
                   display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left',
