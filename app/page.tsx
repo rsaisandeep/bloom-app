@@ -6,7 +6,7 @@ import {
   loadData, emptyData, getCurrentPhase, getPredictions, getPredictionWindow, getAverageCycleLength,
   getLateInfo, isPaused, setPaused, PHASE_META, type Phase, type BloomData,
 } from '@/lib/cycle';
-import { getActionItems } from '@/lib/actions';
+import { getActionItems, getActionGroups } from '@/lib/actions';
 import { fetchFromSheet, sanitize } from '@/lib/data';
 import { localDateStr } from '@/lib/day';
 import { useAppDay } from '@/lib/useAppDay';
@@ -99,8 +99,10 @@ export default function HomePage() {
   const [c1, c2] = RING_COLORS[phase];
   const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-  // Predefined reminder-style action items based on phase + today's symptoms
+  // Predefined reminder-style action items based on phase + today's symptoms,
+  // grouped by what each task targets (a check-in symptom, fertility, or phase).
   const actions = getActionItems(phase, todayLog);
+  const actionGroups = getActionGroups(phase, todayLog);
 
   function refresh() { setData(sanitize(loadData())); fetchFromSheet().then(setData); }
 
@@ -327,45 +329,56 @@ export default function HomePage() {
         )}
       </div>
 
-      <div className="glass-card stagger" style={{ padding: '6px 8px', marginBottom: 14 }}>
-        {actions.map((a, i) => {
-          const isDone = done.includes(i);
-          return (
-            <button key={i} onClick={() => toggleDone(i)} style={{
-              width: '100%', display: 'flex', alignItems: 'center', gap: 12,
-              padding: '12px 10px', background: 'none', border: 'none', cursor: 'pointer',
-              borderBottom: i < actions.length - 1 ? '1px solid rgba(165,106,189,0.12)' : 'none',
-              textAlign: 'left', fontFamily: 'var(--font-outfit)',
-            }}>
-              <span style={{ fontSize: 22, flexShrink: 0, opacity: isDone ? 0.45 : 1, transition: 'opacity .2s' }}>{a.icon}</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{
-                  margin: 0, fontSize: 14, fontWeight: 700,
-                  color: isDone ? '#A99BB5' : '#1C0B2E',
-                  textDecoration: isDone ? 'line-through' : 'none', transition: 'all .2s',
-                }}>{a.title}</p>
-                <p style={{ margin: '1px 0 0', fontSize: 12, color: '#8A6A9A', textDecoration: isDone ? 'line-through' : 'none' }}>{a.sub}</p>
-              </div>
-              {/* Checkbox */}
-              <div style={{
-                width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
-                border: isDone ? 'none' : '2px solid rgba(165,106,189,0.45)',
-                background: isDone ? 'linear-gradient(135deg,#6E3482,#A56ABD)' : 'transparent',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'all .25s cubic-bezier(.34,1.56,.64,1)',
-                transform: isDone ? 'scale(1.08)' : 'scale(1)',
-                boxShadow: isDone ? '0 4px 12px rgba(110,52,130,0.35)' : 'none',
-              }}>
-                {isDone && (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                    <path d="M5 13l4 4L19 7" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
-              </div>
-            </button>
-          );
-        })}
-      </div>
+      {(() => { let flatIdx = -1; return (
+        actionGroups.map((g) => (
+          <div key={g.group} style={{ marginBottom: 14 }}>
+            <p style={{
+              margin: '0 0 6px 4px', fontSize: 11, fontWeight: 800, letterSpacing: 0.6,
+              textTransform: 'uppercase', color: '#A56ABD',
+            }}>{g.group}</p>
+            <div className="glass-card stagger" style={{ padding: '6px 8px' }}>
+              {g.items.map((a, j) => {
+                const i = ++flatIdx;
+                const isDone = done.includes(i);
+                return (
+                  <button key={i} onClick={() => toggleDone(i)} style={{
+                    width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '12px 10px', background: 'none', border: 'none', cursor: 'pointer',
+                    borderBottom: j < g.items.length - 1 ? '1px solid rgba(165,106,189,0.12)' : 'none',
+                    textAlign: 'left', fontFamily: 'var(--font-outfit)',
+                  }}>
+                    <span style={{ fontSize: 22, flexShrink: 0, opacity: isDone ? 0.45 : 1, transition: 'opacity .2s' }}>{a.icon}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{
+                        margin: 0, fontSize: 14, fontWeight: 700,
+                        color: isDone ? '#A99BB5' : '#1C0B2E',
+                        textDecoration: isDone ? 'line-through' : 'none', transition: 'all .2s',
+                      }}>{a.title}</p>
+                      <p style={{ margin: '1px 0 0', fontSize: 12, color: '#8A6A9A', textDecoration: isDone ? 'line-through' : 'none' }}>{a.sub}</p>
+                    </div>
+                    {/* Checkbox */}
+                    <div style={{
+                      width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
+                      border: isDone ? 'none' : '2px solid rgba(165,106,189,0.45)',
+                      background: isDone ? 'linear-gradient(135deg,#6E3482,#A56ABD)' : 'transparent',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      transition: 'all .25s cubic-bezier(.34,1.56,.64,1)',
+                      transform: isDone ? 'scale(1.08)' : 'scale(1)',
+                      boxShadow: isDone ? '0 4px 12px rgba(110,52,130,0.35)' : 'none',
+                    }}>
+                      {isDone && (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                          <path d="M5 13l4 4L19 7" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))
+      ); })()}
       </>)}
     </div>
   );
