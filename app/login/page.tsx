@@ -1,13 +1,15 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { apiLogin, apiRegister } from '@/lib/api';
+import { apiLogin, apiLoginByUsername, apiRegister, HANDLE_RE } from '@/lib/api';
 import { fetchFromSheet } from '@/lib/data';
 
 export default function LoginPage() {
   const router = useRouter();
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [msg, setMsg] = useState<{ text: string; err: boolean } | null>(null);
@@ -15,18 +17,25 @@ export default function LoginPage() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if ((isReg && !name.trim()) || !email.trim() || !password.trim()) {
+    if (isReg) {
+      if (!name.trim() || !username.trim() || !email.trim() || !password.trim()) {
+        setMsg({ text: 'Fill in all fields.', err: true });
+        return;
+      }
+      if (!HANDLE_RE.test(username.trim().toLowerCase())) {
+        setMsg({ text: 'Username must be 3–20 letters, numbers or underscores.', err: true });
+        return;
+      }
+    } else if (!identifier.trim() || !password.trim()) {
       setMsg({ text: 'Fill in all fields.', err: true });
       return;
     }
     setLoading(true);
     setMsg({ text: 'Working…', err: false });
 
-    const u = email.trim().toLowerCase();
-
     try {
       if (isReg) {
-        const r = await apiRegister(name.trim(), u, password);
+        const r = await apiRegister(name.trim(), username.trim().toLowerCase(), email.trim().toLowerCase(), password);
         if (!r.ok) { setMsg({ text: r.error ?? 'Something went wrong.', err: true }); setLoading(false); return; }
         if (r.session) {
           // Email confirmation disabled — already signed in. Celebrate, then go.
@@ -37,10 +46,13 @@ export default function LoginPage() {
           setLoading(false);
         }
       } else {
-        const r = await apiLogin(u, password);
+        // Branch on the identifier: an "@" means email, otherwise username.
+        const id = identifier.trim().toLowerCase();
+        const r = id.includes('@') ? await apiLogin(id, password) : await apiLoginByUsername(id, password);
         if (!r.ok) { setMsg({ text: r.error ?? 'Something went wrong.', err: true }); setLoading(false); return; }
         await fetchFromSheet();
-        router.push('/');
+        // Legacy accounts with no username yet pick one before continuing.
+        router.push(r.handle ? '/' : '/choose-username');
       }
     } catch {
       setMsg({ text: 'Network error. Check your connection and try again.', err: true });
@@ -49,6 +61,20 @@ export default function LoginPage() {
   }
 
   const isReg = mode === 'register';
+
+  const fieldStyle: React.CSSProperties = {
+    background: 'rgba(255,255,255,0.07)',
+    border: '1px solid rgba(165,106,189,0.25)',
+    borderRadius: 12,
+    padding: '12px 14px',
+    color: '#F5EBFA',
+    fontSize: 15,
+    outline: 'none',
+    fontFamily: 'var(--font-outfit)',
+    transition: 'border-color 0.2s',
+  };
+  const focusOn = (e: React.FocusEvent<HTMLInputElement>) => (e.target.style.borderColor = 'rgba(165,106,189,0.7)');
+  const focusOff = (e: React.FocusEvent<HTMLInputElement>) => (e.target.style.borderColor = 'rgba(165,106,189,0.25)');
 
   return (
     <div style={{
@@ -134,29 +160,52 @@ export default function LoginPage() {
                 />
               </div>
             )}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <label style={{ color: 'rgba(231,219,239,0.65)', fontSize: 13, fontWeight: 500 }}>Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                autoComplete="email"
-                style={{
-                  background: 'rgba(255,255,255,0.07)',
-                  border: '1px solid rgba(165,106,189,0.25)',
-                  borderRadius: 12,
-                  padding: '12px 14px',
-                  color: '#F5EBFA',
-                  fontSize: 15,
-                  outline: 'none',
-                  fontFamily: 'var(--font-outfit)',
-                  transition: 'border-color 0.2s',
-                }}
-                onFocus={e => (e.target.style.borderColor = 'rgba(165,106,189,0.7)')}
-                onBlur={e => (e.target.style.borderColor = 'rgba(165,106,189,0.25)')}
-              />
-            </div>
+            {isReg && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label style={{ color: 'rgba(231,219,239,0.65)', fontSize: 13, fontWeight: 500 }}>Username</label>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={e => setUsername(e.target.value)}
+                  placeholder="e.g. rose_26"
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  style={fieldStyle}
+                  onFocus={focusOn}
+                  onBlur={focusOff}
+                />
+              </div>
+            )}
+            {isReg ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label style={{ color: 'rgba(231,219,239,0.65)', fontSize: 13, fontWeight: 500 }}>Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  autoComplete="email"
+                  style={fieldStyle}
+                  onFocus={focusOn}
+                  onBlur={focusOff}
+                />
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label style={{ color: 'rgba(231,219,239,0.65)', fontSize: 13, fontWeight: 500 }}>Username or email</label>
+                <input
+                  type="text"
+                  value={identifier}
+                  onChange={e => setIdentifier(e.target.value)}
+                  placeholder="username or you@example.com"
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  style={fieldStyle}
+                  onFocus={focusOn}
+                  onBlur={focusOff}
+                />
+              </div>
+            )}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <label style={{ color: 'rgba(231,219,239,0.65)', fontSize: 13, fontWeight: 500 }}>Password</label>
