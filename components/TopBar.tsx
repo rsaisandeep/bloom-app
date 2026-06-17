@@ -6,7 +6,7 @@ import InfoModal from '@/components/InfoModal';
 export default function TopBar({ title }: { title?: string }) {
   const [username, setUsername] = useState('');
   useEffect(() => {
-    try { const s = JSON.parse(localStorage.getItem('bloom_session') || '{}'); setUsername(s.username || ''); } catch {}
+    setUsername(localStorage.getItem('bloom_username') || '');
   }, []);
   return (
     <div style={{

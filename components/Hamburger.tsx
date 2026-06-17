@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import PeriodStartModal from '@/components/PeriodStartModal';
+import { apiLogout } from '@/lib/api';
 
 export default function Hamburger({ username }: { username: string }) {
   const router = useRouter();
@@ -11,8 +12,7 @@ export default function Hamburger({ username }: { username: string }) {
   useEffect(() => { setMounted(true); }, []);
 
   function logout() {
-    localStorage.removeItem('bloom_session');
-    router.replace('/login');
+    apiLogout(); // signs out of Supabase + clears app cache, then redirects to /login
   }
 
   const items = [
