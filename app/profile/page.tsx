@@ -6,6 +6,7 @@ import { getSettings, setPcosMode, setPaused, loadData, deleteCycle, isLikelySki
 import { fetchFromSheet } from '@/lib/data';
 import TopBar from '@/components/TopBar';
 import DoctorSummaryModal from '@/components/DoctorSummary';
+import ImportSheet from '@/components/ImportSheet';
 import { buildLogsCSV, downloadCSV } from '@/lib/export';
 import { apiLogout } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
@@ -17,6 +18,7 @@ export default function ProfilePage() {
   const [paused, setPausedState] = useState(false);
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [showSummary, setShowSummary] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleting, setDeleting] = useState(false);
@@ -244,6 +246,11 @@ export default function ProfilePage() {
             color: '#6E3482', fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-outfit)',
           }}>⬇ Export CSV</button>
         </div>
+        <button onClick={() => setShowImport(true)} style={{
+          width: '100%', marginTop: 10, padding: '12px', borderRadius: 12, cursor: 'pointer',
+          border: '1.5px dashed rgba(165,106,189,0.45)', background: 'transparent',
+          color: '#6E3482', fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-outfit)',
+        }}>⬆ Import from another app (Flo, Clue…)</button>
       </div>
 
       {/* App info */}
@@ -281,6 +288,7 @@ export default function ProfilePage() {
       }}>Delete account</button>
 
       <DoctorSummaryModal open={showSummary} onClose={() => setShowSummary(false)} />
+      <ImportSheet open={showImport} onClose={() => setShowImport(false)} onImported={() => fetchFromSheet().then(syncLocal)} />
 
       {/* Delete confirmation modal */}
       {showDeleteModal && (

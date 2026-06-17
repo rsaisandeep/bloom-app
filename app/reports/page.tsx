@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { loadData, getCurrentPhase, PHASE_META, type BloomData, type DayLog, type Phase } from '@/lib/cycle';
 import { computeInsights, type Insights, type TrendPoint } from '@/lib/insights';
+import { buildSampleData, SAMPLE_RECS } from '@/lib/sampleData';
 import type { Recommendations } from '@/lib/matcher';
 import { fetchFromSheet, sanitize } from '@/lib/data';
 import { appDayKey } from '@/lib/day';
@@ -81,7 +82,7 @@ function TrendChart({ points, unit, decimals = 1 }: { points: TrendPoint[]; unit
   );
 }
 
-function Patterns({ insights }: { insights: Insights }) {
+function Patterns({ insights, sample }: { insights: Insights; sample?: boolean }) {
   const { cycleStats, symptoms, byPhase, correlations, loggedDays } = insights;
   const maxBar = cycleStats ? Math.max(cycleStats.avg, ...cycleStats.history, 1) : 1;
   const maxSym = symptoms[0]?.count ?? 1;
@@ -90,7 +91,10 @@ function Patterns({ insights }: { insights: Insights }) {
 
   return (
     <div className="anim-rise" style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 16 }}>
-      <p style={{ margin: '2px 0 0', fontSize: 16, fontWeight: 800, color: '#1C0B2E' }}>Your patterns</p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <p style={{ margin: '2px 0 0', fontSize: 16, fontWeight: 800, color: '#1C0B2E' }}>Your patterns</p>
+        {sample && <SampleChip />}
+      </div>
 
       {cycleStats && (
         <>
@@ -213,8 +217,42 @@ function Patterns({ insights }: { insights: Insights }) {
       )}
 
       <p style={{ margin: '0 2px', fontSize: 11, color: '#A99BB5' }}>
-        From {loggedDays} logged {loggedDays === 1 ? 'day' : 'days'}. The more you log, the sharper these get.
+        {sample
+          ? 'Sample data shown so you can see what your reports will look like. Log a few days to replace it with your own.'
+          : `From ${loggedDays} logged ${loggedDays === 1 ? 'day' : 'days'}. The more you log, the sharper these get.`}
       </p>
+    </div>
+  );
+}
+
+function SampleChip() {
+  return (
+    <span style={{
+      fontSize: 9.5, fontWeight: 800, letterSpacing: 0.4, textTransform: 'uppercase',
+      color: '#B45309', background: 'rgba(245,158,11,0.16)', padding: '3px 8px', borderRadius: 999,
+      border: '1px solid rgba(245,158,11,0.3)',
+    }}>Sample preview</span>
+  );
+}
+
+function SampleBanner({ onLog }: { onLog: () => void }) {
+  return (
+    <div className="glass-card anim-rise" style={{
+      padding: '14px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12,
+      background: 'rgba(245,158,11,0.08)', borderColor: 'rgba(245,158,11,0.3)',
+    }}>
+      <span style={{ fontSize: 22 }}>📊</span>
+      <div style={{ flex: 1 }}>
+        <p style={{ margin: 0, fontSize: 13.5, fontWeight: 800, color: '#1C0B2E' }}>This is a sample preview</p>
+        <p style={{ margin: '2px 0 0', fontSize: 12, color: '#8A6A9A', lineHeight: 1.45 }}>
+          The numbers below are example data. Log your cycle to see your own.
+        </p>
+      </div>
+      <button onClick={onLog} style={{
+        padding: '9px 14px', borderRadius: 999, border: 'none', cursor: 'pointer', flexShrink: 0,
+        background: 'linear-gradient(135deg,#6E3482,#49225B)', color: '#fff',
+        fontSize: 12.5, fontWeight: 800, fontFamily: 'var(--font-outfit)',
+      }}>Log now →</button>
     </div>
   );
 }
@@ -291,10 +329,16 @@ export default function ReportsPage() {
     });
   }, [refreshKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const insights = useMemo(() => (data ? computeInsights(data) : null), [data]);
+  const realInsights = useMemo(() => (data ? computeInsights(data) : null), [data]);
+  const sampleInsights = useMemo(() => computeInsights(buildSampleData()), []);
+  const sampleMode = !realInsights?.enough;            // no real history yet → show labeled sample
+  const shownInsights = sampleMode ? sampleInsights : realInsights!;
+  const recsToShow: Recommendations | null = recs ?? (sampleMode ? SAMPLE_RECS : null);
+  const recsLoading = loading && hasLog;               // fetching the real, today-log-based recs
+  const showLogCta = !hasLog && !sampleMode;           // real history, but nothing logged today
   const meta = PHASE_META[phase as keyof typeof PHASE_META];
 
-  if (loading) return (
+  if (!data) return (
     <>
       <TopBar title="Reports" />
       <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -303,40 +347,6 @@ export default function ReportsPage() {
           <p style={{ marginTop: 14, fontSize: 13, fontWeight: 600, color: '#8A6A9A' }}>Building your report…</p>
         </div>
       </div>
-    </>
-  );
-
-  if (!hasLog) return (
-    <>
-      <TopBar title="Reports" />
-      {insights?.enough ? (
-        <div style={{ padding: '8px 16px 24px' }}>
-          {insights && <Patterns insights={insights} />}
-          <div className="glass-card tint-purple anim-rise" style={{ padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: '#1C0B2E', lineHeight: 1.5 }}>Log today to unlock personalized recommendations.</span>
-            <button onClick={() => setShowLog(true)} style={{
-              padding: '10px 18px', borderRadius: 999, border: 'none', cursor: 'pointer', flexShrink: 0,
-              background: 'linear-gradient(135deg,#6E3482,#49225B)', color: '#fff',
-              fontSize: 13, fontWeight: 800, fontFamily: 'var(--font-outfit)',
-            }}>Log now →</button>
-          </div>
-        </div>
-      ) : (
-        <div style={{ padding: '48px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-          <div style={{ fontSize: 56, marginBottom: 16 }}>📋</div>
-          <p style={{ margin: '0 0 6px', fontSize: 18, fontWeight: 800, color: '#1C0B2E' }}>No log for today</p>
-          <p style={{ margin: '0 0 28px', fontSize: 14, color: '#8A6A9A', lineHeight: 1.6, maxWidth: 260 }}>
-            Log how you&apos;re feeling to unlock personalized reports and recommendations.
-          </p>
-          <button onClick={() => setShowLog(true)} style={{
-            padding: '14px 32px', borderRadius: 999, border: 'none', cursor: 'pointer',
-            background: 'linear-gradient(135deg,#6E3482,#49225B)', color: '#fff',
-            fontSize: 15, fontWeight: 800, fontFamily: 'var(--font-outfit)',
-            boxShadow: '0 8px 24px rgba(110,52,130,0.35)',
-          }}>Log now →</button>
-        </div>
-      )}
-      <LogSheet open={showLog} onClose={() => setShowLog(false)} onSaved={() => { setShowLog(false); setRefreshKey((k) => k + 1); }} />
     </>
   );
 
@@ -349,6 +359,8 @@ export default function ReportsPage() {
           <span style={{ fontSize: 28 }}>{meta.emoji}</span>
         </div>
 
+        {sampleMode && <SampleBanner onLog={() => setShowLog(true)} />}
+
         {/* Phase banner */}
         <div className="anim-float shimmer-host" style={{
           borderRadius: 24, padding: 18, marginBottom: 16,
@@ -357,40 +369,59 @@ export default function ReportsPage() {
         }}>
           <p style={{ margin: '0 0 4px', fontSize: 10, fontWeight: 800, letterSpacing: 1, color: 'rgba(255,255,255,0.55)' }}>CURRENT PHASE</p>
           <p style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 800 }}>{meta.emoji} {meta.label} Phase</p>
-          <p style={{ margin: 0, fontSize: 13, color: 'rgba(255,255,255,0.78)', lineHeight: 1.55 }}>{recs?.phaseDescription ?? meta.description}</p>
+          <p style={{ margin: 0, fontSize: 13, color: 'rgba(255,255,255,0.78)', lineHeight: 1.55 }}>{recsToShow?.phaseDescription ?? meta.description}</p>
         </div>
 
-        {insights?.enough && <Patterns insights={insights} />}
+        <Patterns insights={shownInsights} sample={sampleMode} />
 
-        {/* Recommendation cards */}
-        <div className="stagger" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {REC_CARDS.map(({ key, emoji, label, tint, border, color }) => {
-            const d = recs![key as keyof Recommendations] as { text: string; science: string };
-            const isOpen = openScience === key;
-            return (
-              <div key={key} className="glass-card" style={{ background: tint, borderColor: border, padding: 16 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                  <span style={{ fontSize: 20 }}>{emoji}</span>
-                  <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.5, color }}>{label.toUpperCase()}</span>
-                </div>
-                <p style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600, color: '#1C0B2E', lineHeight: 1.6 }}>{d.text}</p>
-                <button onClick={() => setOpenScience(isOpen ? null : key)} className="liquid-pill" style={{
-                  padding: '7px 14px', fontSize: 12, fontWeight: 700, color: '#6E3482',
-                  cursor: 'pointer', fontFamily: 'var(--font-outfit)',
-                }}>
-                  {isOpen ? '▲ Hide science' : '▼ Why this works'}
-                </button>
-                {isOpen && (
-                  <div className="anim-rise" style={{
-                    marginTop: 10, padding: '10px 12px', borderRadius: 12,
-                    background: 'rgba(255,255,255,0.55)', borderLeft: '3px solid #A56ABD',
-                    fontSize: 12.5, fontStyle: 'italic', color: '#6E3482', lineHeight: 1.6,
-                  }}>{d.science}</div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+        {/* Recommendation cards — real (today's log), sample, a loading spinner, or a log-CTA */}
+        {recsLoading ? (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '24px 0' }}><IOSSpinner size={32} /></div>
+        ) : showLogCta ? (
+          <div className="glass-card tint-purple anim-rise" style={{ padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#1C0B2E', lineHeight: 1.5 }}>Log today to unlock personalized recommendations.</span>
+            <button onClick={() => setShowLog(true)} style={{
+              padding: '10px 18px', borderRadius: 999, border: 'none', cursor: 'pointer', flexShrink: 0,
+              background: 'linear-gradient(135deg,#6E3482,#49225B)', color: '#fff',
+              fontSize: 13, fontWeight: 800, fontFamily: 'var(--font-outfit)',
+            }}>Log now →</button>
+          </div>
+        ) : recsToShow && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '0 2px 10px' }}>
+              <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: '#1C0B2E' }}>Recommendations</p>
+              {sampleMode && <SampleChip />}
+            </div>
+            <div className="stagger" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {REC_CARDS.map(({ key, emoji, label, tint, border, color }) => {
+                const d = recsToShow[key as keyof Recommendations] as { text: string; science: string };
+                const isOpen = openScience === key;
+                return (
+                  <div key={key} className="glass-card" style={{ background: tint, borderColor: border, padding: 16 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                      <span style={{ fontSize: 20 }}>{emoji}</span>
+                      <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.5, color }}>{label.toUpperCase()}</span>
+                    </div>
+                    <p style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600, color: '#1C0B2E', lineHeight: 1.6 }}>{d.text}</p>
+                    <button onClick={() => setOpenScience(isOpen ? null : key)} className="liquid-pill" style={{
+                      padding: '7px 14px', fontSize: 12, fontWeight: 700, color: '#6E3482',
+                      cursor: 'pointer', fontFamily: 'var(--font-outfit)',
+                    }}>
+                      {isOpen ? '▲ Hide science' : '▼ Why this works'}
+                    </button>
+                    {isOpen && (
+                      <div className="anim-rise" style={{
+                        marginTop: 10, padding: '10px 12px', borderRadius: 12,
+                        background: 'rgba(255,255,255,0.55)', borderLeft: '3px solid #A56ABD',
+                        fontSize: 12.5, fontStyle: 'italic', color: '#6E3482', lineHeight: 1.6,
+                      }}>{d.science}</div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
 
         <Link href="/read" style={{ textDecoration: 'none' }}>
           <div className="glass-card tint-purple anim-rise" style={{ padding: '14px 18px', marginTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -402,6 +433,7 @@ export default function ReportsPage() {
           </div>
         </Link>
       </div>
+      <LogSheet open={showLog} onClose={() => setShowLog(false)} onSaved={() => { setShowLog(false); setRefreshKey((k) => k + 1); }} />
     </>
   );
 }
