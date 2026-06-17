@@ -5,7 +5,8 @@ export type Phase = "menstrual" | "follicular" | "ovulation" | "luteal";
 export interface Cycle {
   id: string;               // `${username}_${startDate}` — stable PK
   startDate: string;        // day 1 (period start), ISO date
-  periodEndDate?: string;   // last bleeding day
+  periodEndDate?: string;   // last bleeding day (date only — shown in UI, used for all day-count math)
+  periodEndAt?: string;     // full timestamp the end was logged — used for phase transition (date + time)
   cycleLength?: number;     // days to next period start (set when next cycle begins)
   periodLength?: number;    // bleeding days (derived from flow logs / onboarding)
 }
@@ -119,7 +120,8 @@ export function setPeriodEnd(endDate: string) {
   if (data.cycles.length === 0) return;
   const last = data.cycles[data.cycles.length - 1];
   if (endDate < last.startDate) return;
-  last.periodEndDate = endDate;
+  last.periodEndDate = endDate;                   // date only — display + day-count math
+  last.periodEndAt = new Date().toISOString();    // timestamp — drives phase transition (date + time)
   last.periodLength = daysBetween(last.startDate, endDate) + 1;
   saveData(data);
   syncAfterSave();
@@ -131,6 +133,7 @@ export function clearPeriodEnd() {
   if (data.cycles.length === 0) return;
   const last = data.cycles[data.cycles.length - 1];
   delete last.periodEndDate;
+  delete last.periodEndAt;
   delete last.periodLength;
   saveData(data);
   syncAfterSave();
@@ -316,15 +319,21 @@ export function getCurrentPhase(data: BloomData): { phase: Phase; dayOfCycle: nu
   const dayOfCycle = daysBetween(last.startDate, todayLocal()) + 1;
 
   const cycleLen = getAverageCycleLength(data);
-  // An explicitly confirmed end date wins: menstrual lasts through that date,
-  // so entering an end date moves you out of the menstrual phase the next day.
+  // Day-count math always uses the date-only end date.
   const periodLen = last.periodEndDate
     ? daysBetween(last.startDate, last.periodEndDate) + 1
     : (last.periodLength ?? getDefaultPeriodLength(data));
   const ovulationDay = Math.max(periodLen + 3, cycleLen - 14);
 
+  // Phase transition refers to date AND time: once the logged end moment has
+  // passed, the menstrual phase is over — so confirming the end date advances
+  // the phase immediately, not only at the next date rollover.
+  const endedByTime = last.periodEndAt
+    ? Date.now() >= new Date(last.periodEndAt).getTime()
+    : false;
+
   let phase: Phase;
-  if (dayOfCycle <= periodLen) phase = "menstrual";
+  if (!endedByTime && dayOfCycle <= periodLen) phase = "menstrual";
   else if (dayOfCycle < ovulationDay - 1) phase = "follicular";
   else if (dayOfCycle <= ovulationDay + 1) phase = "ovulation";
   else phase = "luteal";

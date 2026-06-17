@@ -13,7 +13,8 @@ function sanitize(data: BloomData): BloomData {
     cycles: data.cycles.map((c) => ({
       ...c,
       startDate: isoDate(c.startDate) ?? c.startDate,
-      periodEndDate: isoDate(c.periodEndDate),
+      periodEndDate: isoDate(c.periodEndDate), // date only
+      periodEndAt: c.periodEndAt,              // keep full timestamp (date + time)
     })),
     logs: data.logs.map((l) => ({ ...l, date: isoDate(l.date) ?? l.date })),
   };
@@ -42,6 +43,7 @@ export async function fetchFromSheet(): Promise<BloomData> {
         id: c.cycle_id,
         startDate: c.start_date,
         periodEndDate: c.period_end_date ?? undefined,
+        periodEndAt: c.period_end_at ?? undefined,
         cycleLength: c.cycle_length ?? undefined,
         periodLength: c.period_length ?? undefined,
       })),
@@ -86,16 +88,26 @@ export async function saveToSheet(data: BloomData): Promise<boolean> {
     // Replace cycles (handles deletions)
     await supabase.from('cycles').delete().eq('user_id', userId);
     if (data.cycles.length > 0) {
-      await supabase.from('cycles').insert(
-        data.cycles.map((c) => ({
-          cycle_id: c.id,
-          user_id: userId,
-          start_date: c.startDate,
-          period_end_date: c.periodEndDate ?? null,
-          cycle_length: c.cycleLength ?? null,
-          period_length: c.periodLength ?? null,
-        }))
-      );
+      const cycleRows = data.cycles.map((c) => ({
+        cycle_id: c.id,
+        user_id: userId,
+        start_date: c.startDate,
+        period_end_date: c.periodEndDate ?? null,
+        period_end_at: c.periodEndAt ?? null,
+        cycle_length: c.cycleLength ?? null,
+        period_length: c.periodLength ?? null,
+      }));
+      const { error } = await supabase.from('cycles').insert(cycleRows);
+      // If the period_end_at column isn't migrated yet, retry without it so
+      // cycle saving never breaks. (Run the migration to persist the timestamp.)
+      if (error) {
+        const stripped = cycleRows.map((r) => {
+          const c: Record<string, unknown> = { ...r };
+          delete c.period_end_at;
+          return c;
+        });
+        await supabase.from('cycles').insert(stripped);
+      }
     }
 
     // Upsert logs (keyed by user+date, never deleted)
