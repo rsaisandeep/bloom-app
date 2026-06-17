@@ -19,7 +19,10 @@ export default function InstallPrompt() {
       navigator.serviceWorker.register('/sw.js').catch(() => {});
     }
 
-    if (localStorage.getItem(DISMISS_KEY)) return;
+    // Session-scoped dismiss: hide only for this visit, then suggest again next
+    // time they open in the browser (if they're in the browser, they haven't
+    // installed yet). The standalone check below stops it inside the PWA.
+    if (sessionStorage.getItem(DISMISS_KEY)) return;
 
     const standalone =
       window.matchMedia('(display-mode: standalone)').matches ||
@@ -49,7 +52,7 @@ export default function InstallPrompt() {
 
   function dismiss() {
     setVisible(false);
-    try { localStorage.setItem(DISMISS_KEY, '1'); } catch {}
+    try { sessionStorage.setItem(DISMISS_KEY, '1'); } catch {}
   }
 
   async function install() {
