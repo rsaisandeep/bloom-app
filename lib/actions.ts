@@ -105,14 +105,14 @@ function symptomOverrides(log?: DayLog): ActionItem[] {
     out.push({ group: 'Fertility', icon: '🌱', title: "You're likely fertile", sub: 'Egg-white/watery mucus = peak fertility. Log an ovulation test' });
   }
 
-  // Multi-select symptoms
+  // Multi-select symptoms — each tagged with the specific symptom it targets
   const sx = log.symptoms ?? [];
-  if (sx.includes('headache')) out.push({ group: 'Symptoms', icon: '💧', title: 'Hydrate + magnesium', sub: 'Common menstrual-migraine triggers' });
-  if (sx.includes('acne')) out.push({ group: 'Symptoms', icon: '🧴', title: 'Gentle skincare', sub: 'Hormonal breakouts ease post-period — avoid over-scrubbing' });
-  if (sx.includes('backache')) out.push({ group: 'Symptoms', icon: '🔥', title: 'Heat on lower back', sub: '15–20 min — relaxes referred uterine pain' });
-  if (sx.includes('tender_breasts')) out.push({ group: 'Symptoms', icon: '👕', title: 'Supportive bra + lower caffeine', sub: 'Eases luteal breast tenderness' });
-  if (sx.includes('nausea')) out.push({ group: 'Symptoms', icon: '🫚', title: 'Ginger + small meals', sub: 'Settles prostaglandin-driven nausea' });
-  if (sx.includes('fatigue')) out.push({ group: 'Symptoms', icon: '🫘', title: 'Iron + B12', sub: 'Pair with vitamin C; common fatigue driver' });
+  if (sx.includes('headache')) out.push({ group: 'Headache', icon: '💧', title: 'Hydrate + magnesium', sub: 'Common menstrual-migraine triggers' });
+  if (sx.includes('acne')) out.push({ group: 'Acne', icon: '🧴', title: 'Gentle skincare', sub: 'Hormonal breakouts ease post-period — avoid over-scrubbing' });
+  if (sx.includes('backache')) out.push({ group: 'Backache', icon: '🔥', title: 'Heat on lower back', sub: '15–20 min — relaxes referred uterine pain' });
+  if (sx.includes('tender_breasts')) out.push({ group: 'Tender breasts', icon: '👕', title: 'Supportive bra + lower caffeine', sub: 'Eases luteal breast tenderness' });
+  if (sx.includes('nausea')) out.push({ group: 'Nausea', icon: '🫚', title: 'Ginger + small meals', sub: 'Settles prostaglandin-driven nausea' });
+  if (sx.includes('fatigue')) out.push({ group: 'Fatigue', icon: '🫘', title: 'Iron + B12', sub: 'Pair with vitamin C; common fatigue driver' });
 
   return out;
 }
