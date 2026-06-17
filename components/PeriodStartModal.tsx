@@ -1,12 +1,15 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { addPeriodStart, editPeriodStart, setPeriodEnd, clearPeriodEnd, deleteCycle, loadData } from '@/lib/cycle';
+import { addPeriodStart, editPeriodStart, setPeriodEnd, clearPeriodEnd, deleteCycle, loadData, getActivePeriodCycle, type Cycle } from '@/lib/cycle';
 import { fetchFromSheet, saveToSheet } from '@/lib/data';
 
 function session() {
   try { return JSON.parse(localStorage.getItem('bloom_session') || '{}'); } catch { return {}; }
 }
+
+// Each cycle is named period_{startDate} (derived from its start date).
+const periodName = (startDate: string) => `period_${startDate.slice(0, 10)}`;
 
 function XBtn({ onClear }: { onClear: () => void }) {
   return (
@@ -34,7 +37,8 @@ export default function PeriodStartModal({
 }) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [cycles, setCycles] = useState<Cycle[]>([]);     // existing periods, for the name selector
+  const [activeId, setActiveId] = useState<string | null>(null); // null = "New period"
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [saving, setSaving] = useState(false);
@@ -48,18 +52,37 @@ export default function PeriodStartModal({
     setStartDate('');
     setEndDate('');
     setActiveId(null);
+    setCycles([]);
     setOpen(true);
     fetchFromSheet().then((fresh) => {
-      if (fresh.cycles.length > 0) {
-        const last = fresh.cycles[fresh.cycles.length - 1];
-        setActiveId(last.id);
-        setStartDate(last.startDate ?? '');
-        setEndDate(last.periodEndDate ?? '');
+      setCycles(fresh.cycles);
+      // Default to the active (ongoing) period if there is one — so logging an
+      // end date keeps working — otherwise start a fresh "New period".
+      const active = getActivePeriodCycle(fresh);
+      if (active) {
+        setActiveId(active.id);
+        setStartDate(active.startDate ?? '');
+        setEndDate(active.periodEndDate ?? '');
       } else {
         setStartDate(today);
       }
       setFetching(false);
     });
+  }
+
+  // Switch the period being edited via the name selector. "" = New period.
+  function selectPeriod(id: string) {
+    if (!id) {
+      setActiveId(null);
+      setStartDate(today);
+      setEndDate('');
+      return;
+    }
+    const c = cycles.find((x) => x.id === id);
+    if (!c) return;
+    setActiveId(c.id);
+    setStartDate(c.startDate ?? '');
+    setEndDate(c.periodEndDate ?? '');
   }
 
   async function confirm() {
@@ -72,10 +95,12 @@ export default function PeriodStartModal({
       } else {
         addPeriodStart(startDate, uname);
       }
+      // editPeriodStart/addPeriodStart key the cycle id off the start date.
+      const targetId = `${uname}_${startDate}`;
       if (endDate && endDate >= startDate) {
-        setPeriodEnd(endDate);
+        setPeriodEnd(endDate, targetId);
       } else {
-        clearPeriodEnd(); // clears any previously saved end date
+        clearPeriodEnd(targetId); // clears any previously saved end date
       }
     } else if (activeId) {
       // start date was explicitly deleted — remove the whole cycle
@@ -166,6 +191,25 @@ export default function PeriodStartModal({
                   ? `Started ${fmt(startDate)}. Update dates below.`
                   : 'Pick the start date. End date is optional.'}
             </p>
+
+            {/* Period name */}
+            <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 800, color: '#6E3482', letterSpacing: 0.5, textTransform: 'uppercase' }}>
+              Period name
+            </p>
+            <div style={{ position: 'relative', marginBottom: 16 }}>
+              <select
+                value={activeId ?? ''}
+                disabled={fetching}
+                onChange={(e) => selectPeriod(e.target.value)}
+                style={{ ...inputStyle, padding: '14px 16px', appearance: 'none', WebkitAppearance: 'none', cursor: fetching ? 'default' : 'pointer', color: '#1C0B2E', opacity: fetching ? 0.5 : 1 }}
+              >
+                <option value="">+ New period{startDate && !activeId ? ` (${periodName(startDate)})` : ''}</option>
+                {[...cycles].reverse().map((c) => (
+                  <option key={c.id} value={c.id}>{periodName(c.startDate)}</option>
+                ))}
+              </select>
+              <span style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#A56ABD', fontSize: 12 }}>▼</span>
+            </div>
 
             {/* Period start */}
             <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 800, color: '#6E3482', letterSpacing: 0.5, textTransform: 'uppercase' }}>

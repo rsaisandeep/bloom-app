@@ -114,27 +114,31 @@ export function saveLog(log: DayLog) {
   syncAfterSave();
 }
 
-// Explicitly set the period end date for the most recent cycle.
-export function setPeriodEnd(endDate: string) {
+// Explicitly set the period end date. Targets the cycle with `id` if given,
+// otherwise the most recent cycle.
+export function setPeriodEnd(endDate: string, id?: string) {
   const data = loadData();
   if (data.cycles.length === 0) return;
-  const last = data.cycles[data.cycles.length - 1];
-  if (endDate < last.startDate) return;
-  last.periodEndDate = endDate;                   // date only — display + day-count math
-  last.periodEndAt = new Date().toISOString();    // timestamp — drives phase transition (date + time)
-  last.periodLength = daysBetween(last.startDate, endDate) + 1;
+  const c = id ? data.cycles.find((x) => x.id === id) : data.cycles[data.cycles.length - 1];
+  if (!c) return;
+  if (endDate < c.startDate) return;
+  c.periodEndDate = endDate;                   // date only — display + day-count math
+  c.periodEndAt = new Date().toISOString();    // timestamp — drives phase transition (date + time)
+  c.periodLength = daysBetween(c.startDate, endDate) + 1;
   saveData(data);
   syncAfterSave();
 }
 
-// Remove the period end date from the most recent cycle.
-export function clearPeriodEnd() {
+// Remove the period end date. Targets the cycle with `id` if given, otherwise
+// the most recent cycle.
+export function clearPeriodEnd(id?: string) {
   const data = loadData();
   if (data.cycles.length === 0) return;
-  const last = data.cycles[data.cycles.length - 1];
-  delete last.periodEndDate;
-  delete last.periodEndAt;
-  delete last.periodLength;
+  const c = id ? data.cycles.find((x) => x.id === id) : data.cycles[data.cycles.length - 1];
+  if (!c) return;
+  delete c.periodEndDate;
+  delete c.periodEndAt;
+  delete c.periodLength;
   saveData(data);
   syncAfterSave();
 }

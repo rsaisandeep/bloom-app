@@ -23,8 +23,6 @@ export default function Hamburger({ username }: { username: string }) {
   }
 
   const items = [
-    { emoji: '🗓', label: 'Cycle setup', sub: 'Update period & length', onClick: () => { setOpen(false); router.push('/onboarding'); } },
-    { emoji: '📖', label: 'Read', sub: 'Articles & guides', onClick: () => { setOpen(false); router.push('/read'); } },
     { emoji: '👤', label: 'Profile', sub: 'Your account', onClick: () => { setOpen(false); router.push('/profile'); } },
   ];
 
