@@ -1,15 +1,15 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { addPeriodStart, editPeriodStart, setPeriodEnd, clearPeriodEnd, deleteCycle, loadData, getActivePeriodCycle, type Cycle } from '@/lib/cycle';
+import { addPeriodStart, editPeriodStart, setPeriodEnd, clearPeriodEnd, deleteCycle, loadData, getActivePeriodCycle, periodName, type Cycle } from '@/lib/cycle';
 import { fetchFromSheet, saveToSheet } from '@/lib/data';
 
 function session() {
   try { return JSON.parse(localStorage.getItem('bloom_session') || '{}'); } catch { return {}; }
 }
 
-// Each cycle is named period_{startDate} (derived from its start date).
-const periodName = (startDate: string) => `period_${startDate.slice(0, 10)}`;
+// Stored name, falling back to the derived period_{startDate}.
+const cycleLabel = (c: Cycle) => c.name || periodName(c.startDate);
 
 function XBtn({ onClear }: { onClear: () => void }) {
   return (
@@ -205,7 +205,7 @@ export default function PeriodStartModal({
               >
                 <option value="">+ New period{startDate && !activeId ? ` (${periodName(startDate)})` : ''}</option>
                 {[...cycles].reverse().map((c) => (
-                  <option key={c.id} value={c.id}>{periodName(c.startDate)}</option>
+                  <option key={c.id} value={c.id}>{cycleLabel(c)}</option>
                 ))}
               </select>
               <span style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#A56ABD', fontSize: 12 }}>▼</span>

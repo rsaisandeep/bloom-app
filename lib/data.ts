@@ -41,6 +41,7 @@ export async function fetchFromSheet(): Promise<BloomData> {
     const bloomData: BloomData = {
       cycles: (cycles ?? []).map((c) => ({
         id: c.cycle_id,
+        name: c.name ?? undefined,
         startDate: c.start_date,
         periodEndDate: c.period_end_date ?? undefined,
         periodEndAt: c.period_end_at ?? undefined,
@@ -91,6 +92,7 @@ export async function saveToSheet(data: BloomData): Promise<boolean> {
       const cycleRows = data.cycles.map((c) => ({
         cycle_id: c.id,
         user_id: userId,
+        name: c.name ?? null,
         start_date: c.startDate,
         period_end_date: c.periodEndDate ?? null,
         period_end_at: c.periodEndAt ?? null,
@@ -98,12 +100,13 @@ export async function saveToSheet(data: BloomData): Promise<boolean> {
         period_length: c.periodLength ?? null,
       }));
       const { error } = await supabase.from('cycles').insert(cycleRows);
-      // If the period_end_at column isn't migrated yet, retry without it so
-      // cycle saving never breaks. (Run the migration to persist the timestamp.)
+      // If the period_end_at / name columns aren't migrated yet, retry without
+      // them so cycle saving never breaks. (Run the migration to persist them.)
       if (error) {
         const stripped = cycleRows.map((r) => {
           const c: Record<string, unknown> = { ...r };
           delete c.period_end_at;
+          delete c.name;
           return c;
         });
         await supabase.from('cycles').insert(stripped);

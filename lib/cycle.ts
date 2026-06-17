@@ -4,6 +4,7 @@ export type Phase = "menstrual" | "follicular" | "ovulation" | "luteal";
 
 export interface Cycle {
   id: string;               // `${username}_${startDate}` — stable PK
+  name?: string;            // display name `period_${startDate}` (persisted + derived)
   startDate: string;        // day 1 (period start), ISO date
   periodEndDate?: string;   // last bleeding day (date only — shown in UI, used for all day-count math)
   periodEndAt?: string;     // full timestamp the end was logged — used for phase transition (date + time)
@@ -55,6 +56,9 @@ export interface BloomData {
 
 const STORAGE_KEY = "bloom_data";
 const MS_DAY = 86400000;
+
+// Each cycle's display name, derived from its start date: period_YYYY-MM-DD.
+export const periodName = (startDate: string) => `period_${String(startDate).slice(0, 10)}`;
 
 export function emptyData(): BloomData {
   return { cycles: [], logs: [], settings: {} };
@@ -165,6 +169,7 @@ function recomputeCycles(data: BloomData) {
   for (let i = 0; i < cs.length; i++) {
     cs[i].cycleLength = i < cs.length - 1 ? daysBetween(cs[i].startDate, cs[i + 1].startDate) : undefined;
     if (!cs[i].periodLength) cs[i].periodLength = derivePeriodLength(cs[i], data.logs);
+    cs[i].name = periodName(cs[i].startDate); // keep name in sync with start date (backfills legacy cycles)
   }
 }
 
@@ -173,7 +178,7 @@ function recomputeCycles(data: BloomData) {
 export function addPeriodStart(date: string, username = "me") {
   const data = loadData();
   if (data.cycles.some((c) => Math.abs(daysBetween(c.startDate, date)) <= 1)) return;
-  data.cycles.push({ id: `${username}_${date}`, startDate: date });
+  data.cycles.push({ id: `${username}_${date}`, startDate: date, name: periodName(date) });
   recomputeCycles(data);
   if (data.settings.paused) data.settings = { ...data.settings, paused: false }; // logging a period resumes tracking
   saveData(data);
