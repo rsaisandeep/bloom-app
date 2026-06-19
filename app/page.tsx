@@ -223,16 +223,25 @@ export default function HomePage() {
   return (
     <div style={{ minHeight: '100vh', padding: '0 16px' }}>
 
-      {/* ── Header ── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 0 14px' }}>
+      {/* ── Header (sticky) ── */}
+      <div style={{
+        position: 'sticky', top: 0, zIndex: 100,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '14px 16px 10px',
+        margin: '0 -16px',
+        background: 'rgba(238,232,245,0.88)',
+        backdropFilter: 'blur(20px) saturate(150%)',
+        WebkitBackdropFilter: 'blur(20px) saturate(150%)',
+        borderBottom: '1px solid rgba(165,106,189,0.12)',
+      }}>
         <Hamburger username={username} />
 
-        <div style={{ textAlign: 'center', flex: 1 }}>
+        {/* Truly centered regardless of button widths */}
+        <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', textAlign: 'center', pointerEvents: 'none' }}>
           <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: '#8A6A9A' }}>{greeting()},</p>
           <p style={{ margin: '1px 0 0', fontSize: 17, fontWeight: 800, color: '#1C0B2E' }}>{cap(username) || 'there'} 🌸</p>
         </div>
 
-        {/* Info + logout top-right */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <InfoModal />
           <LogoutButton />
