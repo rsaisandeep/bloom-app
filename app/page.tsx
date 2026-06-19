@@ -345,108 +345,117 @@ export default function HomePage() {
       )}
 
       {/* ── Cycle status card ── */}
-      {!paused && (
-      <div className="anim-float shimmer-host" style={{
-        borderRadius: 26, padding: 20, marginBottom: 14,
-        background: 'linear-gradient(135deg,#6E3482 0%,#49225B 60%,#2D0F3D 100%)',
-        boxShadow: '0 14px 44px rgba(110,52,130,0.35)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-          <div
-            onClick={!hasCycles && loaded ? () => router.push('/onboarding') : undefined}
-            style={{ position: 'relative', flexShrink: 0, cursor: !hasCycles && loaded ? 'pointer' : 'default' }}
-          >
-            <svg width="120" height="120" style={{ display: 'block', transform: 'rotate(-90deg)' }}>
-              <defs>
-                <linearGradient id="phaseGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor={c1} /><stop offset="100%" stopColor={c2} />
-                </linearGradient>
-              </defs>
-              <circle cx="60" cy="60" r={R} fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="12" />
-              <circle cx="60" cy="60" r={R} fill="none" stroke="url(#phaseGrad)" strokeWidth="12"
-                strokeDasharray={`${C * ringFill} ${C}`} strokeLinecap="round"
-                style={{ transition: 'stroke-dasharray .8s cubic-bezier(.34,1.2,.64,1)' }} />
-            </svg>
-            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-              {!loaded ? (
-                <>
-                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', fontWeight: 600, letterSpacing: 0.5 }}>DAY</span>
-                  <span style={{ fontSize: 30, color: '#fff', fontWeight: 800, lineHeight: 1.1, opacity: 0.35 }}>–</span>
-                </>
-              ) : hasCycles ? (
-                <>
-                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', fontWeight: 600, letterSpacing: 0.5 }}>DAY</span>
-                  <span style={{ fontSize: 30, color: '#fff', fontWeight: 800, lineHeight: 1.1 }}>{dayOfCycle}</span>
-                </>
-              ) : (
-                <BloomMascot size={72} />
-              )}
-            </div>
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ margin: '0 0 2px', fontSize: 10, color: 'rgba(255,255,255,0.5)', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>CURRENT PHASE</p>
-            <p style={{ margin: '0 0 5px', fontSize: 18, color: '#fff', fontWeight: 800, lineHeight: 1.2 }}>{meta.emoji} {meta.label}</p>
-            <p style={{ margin: '0 0 14px', fontSize: 12, color: 'rgba(255,255,255,0.60)', lineHeight: 1.5 }}>
-              {!loaded ? '' : hasCycles ? meta.description : 'Add your last period date to unlock predictions.'}
-            </p>
-            {hasCycles && predictions ? (
-              <div className="pill" style={{ background: 'rgba(255,255,255,0.14)', padding: '7px 14px', display: 'inline-flex', alignItems: 'center', gap: 6, maxWidth: '100%' }}>
-                <span style={{ fontSize: 12 }}>🗓</span>
-                <span style={{ fontSize: 12, color: '#fff', fontWeight: 600 }}>
-                  {pcosMode && predWindow
-                    ? `Period likely ${fmt(predWindow.early)} – ${fmt(predWindow.late)}`
-                    : predictions.daysUntilPeriod > 0
-                      ? predictions.uncertainty > 0
-                        ? `Next period in ${Math.max(predictions.daysUntilPeriod - predictions.uncertainty, 0)}–${predictions.daysUntilPeriod + predictions.uncertainty}d`
-                        : `Next period in ${predictions.daysUntilPeriod}d`
-                      : 'Period may be due'}
-                </span>
-              </div>
-            ) : !hasCycles ? (
-              <Link href="/onboarding" className="pill" style={{ display: 'inline-block', background: 'rgba(255,255,255,0.18)', padding: '7px 14px', fontSize: 12, color: '#fff', fontWeight: 700, textDecoration: 'none' }}>
-                Set up cycle →
-              </Link>
-            ) : null}
+      {!paused && (() => {
+        const SZ = 210, CX2 = 105, CY2 = 105, RR = 84, SW = 18;
+        const CC = 2 * Math.PI * RR;
+        const GAP = 5;
+        const mLen = Math.max(0, (menstrualPct / 100) * CC - GAP);
+        const fLen = Math.max(0, (follicularPct / 100) * CC - GAP);
+        const oLen = Math.max(0, (ovulationPct / 100) * CC - GAP);
+        const lLen = Math.max(0, (lutealPct / 100) * CC - GAP);
+        const cumM = (menstrualPct / 100) * CC;
+        const cumF = cumM + (follicularPct / 100) * CC;
+        const cumO = cumF + (ovulationPct / 100) * CC;
+        // Dot positions — in SVG-rotated coords (frac*2π gives correct pos when SVG is rotated -90deg)
+        const ringDot = (frac: number) => ({
+          x: CX2 + RR * Math.cos(frac * 2 * Math.PI),
+          y: CY2 + RR * Math.sin(frac * 2 * Math.PI),
+        });
+        const curFrac = hasCycles ? Math.min(dayOfCycle / avgLen, 1) : 0;
+        const curDot = ringDot(curFrac);
+        const transDots = [0, menstrualPct / 100, (menstrualPct + follicularPct) / 100, (menstrualPct + follicularPct + ovulationPct) / 100].map(ringDot);
+        const arc = (color: string, len: number, off: number) => (
+          <circle cx={CX2} cy={CY2} r={RR} fill="none" stroke={color} strokeWidth={SW}
+            strokeDasharray={`${len} ${CC}`} strokeDashoffset={-off} strokeLinecap="butt" />
+        );
+        return (
+          <div className="anim-float shimmer-host" style={{
+            borderRadius: 26, padding: '18px 20px 16px', marginBottom: 14,
+            background: 'linear-gradient(135deg,#6E3482 0%,#49225B 60%,#2D0F3D 100%)',
+            boxShadow: '0 14px 44px rgba(110,52,130,0.35)',
+          }}>
+            {/* Phase label */}
+            <p style={{ margin: 0, textAlign: 'center', fontSize: 10, color: 'rgba(255,255,255,0.5)', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>CURRENT PHASE</p>
+            <p style={{ margin: '2px 0 12px', textAlign: 'center', fontSize: 19, color: '#fff', fontWeight: 800 }}>{meta.emoji} {meta.label}</p>
 
-            {/* ── Phase timeline bar ── */}
-            {hasCycles && (
-              <div style={{ marginTop: 14 }}>
-                <div style={{ position: 'relative', height: 7, borderRadius: 999, display: 'flex', overflow: 'visible' }}>
-                  <div style={{ width: `${menstrualPct}%`,  background: '#f87171', borderRadius: '999px 0 0 999px', minWidth: 4 }} />
-                  <div style={{ width: `${follicularPct}%`, background: '#a78bfa', minWidth: follicularPct > 0 ? 4 : 0 }} />
-                  <div style={{ width: `${ovulationPct}%`, background: '#fbbf24', minWidth: 4 }} />
-                  <div style={{ flex: 1, background: '#818cf8', borderRadius: '0 999px 999px 0', minWidth: lutealPct > 0 ? 4 : 0 }} />
-                  {/* Current day marker */}
-                  <div style={{
-                    position: 'absolute',
-                    left: `${progressPct}%`,
-                    top: '50%', transform: 'translate(-50%, -50%)',
-                    width: 14, height: 14, borderRadius: '50%',
-                    background: '#fff',
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.35)',
-                    border: '2px solid rgba(255,255,255,0.9)',
-                    transition: 'left .8s cubic-bezier(.34,1.2,.64,1)',
-                  }} />
-                </div>
-                <div style={{ display: 'flex', gap: 10, marginTop: 7, flexWrap: 'wrap' }}>
-                  {[
-                    { label: 'Menstrual', color: '#f87171' },
-                    { label: 'Follicular', color: '#a78bfa' },
-                    { label: 'Ovulation', color: '#fbbf24' },
-                    { label: 'Luteal', color: '#818cf8' },
-                  ].map((p) => (
-                    <div key={p.label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: p.color, flexShrink: 0 }} />
-                      <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)', fontWeight: 700, letterSpacing: 0.3 }}>{p.label}</span>
-                    </div>
+            {/* Ring */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+              <div style={{ position: 'relative', width: SZ, height: SZ }}>
+                <svg width={SZ} height={SZ} viewBox={`0 0 ${SZ} ${SZ}`} style={{ transform: 'rotate(-90deg)' }}>
+                  <circle cx={CX2} cy={CY2} r={RR} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth={SW} />
+                  {hasCycles && arc('#fca5a5', mLen, 0)}
+                  {hasCycles && arc('#d8b4fe', fLen, cumM)}
+                  {hasCycles && arc('#fcd34d', oLen, cumF)}
+                  {hasCycles && arc('#a5b4fc', lLen, cumO)}
+                  {hasCycles && transDots.map((d, i) => (
+                    <circle key={i} cx={d.x} cy={d.y} r={3.5} fill="rgba(255,255,255,0.45)" />
                   ))}
+                  {hasCycles && (
+                    <circle cx={curDot.x} cy={curDot.y} r={7.5} fill="white"
+                      style={{ filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.4))' }} />
+                  )}
+                </svg>
+                {/* Inner content */}
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                  {!loaded ? (
+                    <span style={{ fontSize: 28, color: 'rgba(255,255,255,0.25)', fontWeight: 800 }}>–</span>
+                  ) : hasCycles ? (
+                    <>
+                      <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', fontWeight: 700, letterSpacing: 0.5 }}>DAY</span>
+                      <span style={{ fontSize: 30, color: '#fff', fontWeight: 800, lineHeight: 1 }}>{dayOfCycle}</span>
+                      <div style={{ margin: '5px 0 0' }}><BloomMascot size={62} /></div>
+                    </>
+                  ) : (
+                    <div onClick={() => router.push('/onboarding')} style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+                      <BloomMascot size={70} />
+                      <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', textAlign: 'center' }}>Tap to set up</span>
+                    </div>
+                  )}
                 </div>
+              </div>
+            </div>
+
+            {/* Prediction pill */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+              {hasCycles && predictions ? (
+                <div className="pill" style={{ background: 'rgba(255,255,255,0.14)', padding: '7px 14px', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 12 }}>🗓</span>
+                  <span style={{ fontSize: 12, color: '#fff', fontWeight: 600 }}>
+                    {pcosMode && predWindow
+                      ? `Period likely ${fmt(predWindow.early)} – ${fmt(predWindow.late)}`
+                      : predictions.daysUntilPeriod > 0
+                        ? predictions.uncertainty > 0
+                          ? `Next period in ${Math.max(predictions.daysUntilPeriod - predictions.uncertainty, 0)}–${predictions.daysUntilPeriod + predictions.uncertainty}d`
+                          : `Next period in ${predictions.daysUntilPeriod}d`
+                        : 'Period may be due'}
+                  </span>
+                </div>
+              ) : !hasCycles ? (
+                <Link href="/onboarding" className="pill" style={{ display: 'inline-block', background: 'rgba(255,255,255,0.18)', padding: '7px 14px', fontSize: 12, color: '#fff', fontWeight: 700, textDecoration: 'none' }}>
+                  Set up cycle →
+                </Link>
+              ) : null}
+            </div>
+
+            {/* Phase legend */}
+            {hasCycles && (
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap' }}>
+                {([
+                  { label: 'Menstrual', color: '#fca5a5' },
+                  { label: 'Follicular', color: '#d8b4fe' },
+                  { label: 'Ovulation', color: '#fcd34d' },
+                  { label: 'Luteal',    color: '#a5b4fc' },
+                ] as const).map(p => (
+                  <div key={p.label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: p.color }} />
+                    <span style={{ fontSize: 9.5, color: 'rgba(255,255,255,0.55)', fontWeight: 700 }}>{p.label}</span>
+                  </div>
+                ))}
               </div>
             )}
           </div>
-        </div>
-      </div>
-      )}
+        );
+      })()}
 
       {/* ── Fertile window (Trying to conceive goal) ── */}
       {ttcMode && !paused && !pcosMode && hasCycles && predictions && (
