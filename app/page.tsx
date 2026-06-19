@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -105,6 +105,61 @@ export default function HomePage() {
       return next;
     });
   }
+
+  // ── Pull-to-refresh ──
+  const [pullY, setPullY] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const refreshingRef = useRef(false);
+  const PULL_THRESHOLD = 65;
+
+  useEffect(() => {
+    let startY = 0;
+    let active = false;
+
+    function onStart(e: TouchEvent) {
+      if (window.scrollY === 0) { startY = e.touches[0].clientY; active = true; }
+    }
+    function onMove(e: TouchEvent) {
+      if (!active) return;
+      const dy = e.touches[0].clientY - startY;
+      if (dy > 4) {
+        e.preventDefault(); // suppress native pull-to-refresh
+        setPullY(Math.min(dy * 0.48, PULL_THRESHOLD + 12));
+      } else if (dy < 0) {
+        active = false;
+        setPullY(0);
+      }
+    }
+    function onEnd() {
+      if (!active) return;
+      active = false;
+      startY = 0;
+      setPullY(prev => {
+        if (prev >= PULL_THRESHOLD && !refreshingRef.current) {
+          refreshingRef.current = true;
+          setRefreshing(true);
+          setData(sanitize(loadData()));
+          fetchFromSheet().then(d => {
+            setData(d);
+            refreshingRef.current = false;
+            setRefreshing(false);
+            setPullY(0);
+          });
+          return 44; // hold indicator visible during fetch
+        }
+        return 0;
+      });
+    }
+
+    window.addEventListener('touchstart', onStart, { passive: true });
+    window.addEventListener('touchmove', onMove, { passive: false });
+    window.addEventListener('touchend', onEnd, { passive: true });
+    return () => {
+      window.removeEventListener('touchstart', onStart);
+      window.removeEventListener('touchmove', onMove);
+      window.removeEventListener('touchend', onEnd);
+    };
+  }, []);
 
   function toggleDone(i: number) {
     setDone((prev) => {
@@ -247,6 +302,31 @@ export default function HomePage() {
           <LogoutButton />
         </div>
       </div>
+
+      {/* ── Pull-to-refresh indicator ── */}
+      {pullY > 6 && (
+        <div style={{
+          position: 'fixed', top: 62, left: '50%', zIndex: 99,
+          transform: `translateX(-50%) translateY(${Math.min(pullY - 6, 38)}px)`,
+          opacity: Math.min(pullY / PULL_THRESHOLD, 1),
+          transition: refreshing ? 'opacity 0.3s' : 'none',
+          display: 'flex', alignItems: 'center', gap: 8,
+          background: 'rgba(255,255,255,0.92)',
+          backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+          border: '1px solid rgba(165,106,189,0.25)',
+          borderRadius: 999, padding: '7px 16px',
+          boxShadow: '0 4px 20px rgba(110,52,130,0.18)',
+          fontFamily: 'var(--font-outfit)', fontSize: 13, fontWeight: 600, color: '#6E3482',
+          pointerEvents: 'none',
+        }}>
+          <span style={{
+            fontSize: 16, display: 'inline-block',
+            animation: refreshing ? 'spinSlow .75s linear infinite' : undefined,
+            transform: refreshing ? undefined : `rotate(${Math.min(pullY / PULL_THRESHOLD, 1) * 270}deg)`,
+          }}>🌸</span>
+          {refreshing ? 'Refreshing…' : pullY >= PULL_THRESHOLD ? 'Release to refresh' : 'Pull to refresh'}
+        </div>
+      )}
 
       {/* ── Month + week strip ── */}
       <p className="anim-rise" style={{ margin: '0 0 12px', textAlign: 'center', fontSize: 15, fontWeight: 700, color: '#1C0B2E' }}>
