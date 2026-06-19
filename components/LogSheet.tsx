@@ -195,9 +195,9 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
             <p style={LABEL}>
               Symptoms <span style={{ fontWeight: 600, textTransform: 'none', color: '#8A6A9A' }}>· select all that apply</span>
             </p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 7 }}>
               {SYMPTOM_OPTIONS.map((opt) => (
-                <button key={opt.value} onClick={() => toggleSymptom(opt.value)} style={chipStyle((form.symptoms ?? []).includes(opt.value))}>
+                <button key={opt.value} onClick={() => toggleSymptom(opt.value)} style={{ ...chipStyle((form.symptoms ?? []).includes(opt.value)), width: '100%', justifyContent: 'center' }}>
                   <span>{opt.emoji}</span><span>{opt.label}</span>
                 </button>
               ))}

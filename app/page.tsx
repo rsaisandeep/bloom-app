@@ -258,7 +258,7 @@ export default function HomePage() {
               }}>
                 {d.getDate()}
                 {hasLog && !isToday && (
-                  <div style={{ position: 'absolute', bottom: 3, width: 4, height: 4, borderRadius: '50%', background: '#A56ABD' }} />
+                  <div style={{ position: 'absolute', bottom: 3, width: 6, height: 6, borderRadius: '50%', background: '#A56ABD' }} />
                 )}
               </div>
               <span style={{ fontSize: 10, fontWeight: isToday ? 700 : 500, color: isToday ? '#6E3482' : '#9CA3AF', letterSpacing: 0.3 }}>
@@ -294,7 +294,10 @@ export default function HomePage() {
         boxShadow: '0 14px 44px rgba(110,52,130,0.35)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-          <div style={{ position: 'relative', flexShrink: 0 }}>
+          <div
+            onClick={!hasCycles && loaded ? () => router.push('/onboarding') : undefined}
+            style={{ position: 'relative', flexShrink: 0, cursor: !hasCycles && loaded ? 'pointer' : 'default' }}
+          >
             <svg width="120" height="120" style={{ display: 'block', transform: 'rotate(-90deg)' }}>
               <defs>
                 <linearGradient id="phaseGrad" x1="0%" y1="0%" x2="100%" y2="100%">

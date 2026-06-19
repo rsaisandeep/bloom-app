@@ -1,4 +1,5 @@
 'use client';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -49,6 +50,17 @@ const TABS = [
 
 export default function BottomNav() {
   const path = usePathname();
+  const [readVisited, setReadVisited] = useState(true);
+
+  useEffect(() => {
+    if (path === '/read') {
+      sessionStorage.setItem('bloom_read_visited', 'true');
+      setReadVisited(true);
+    } else {
+      setReadVisited(sessionStorage.getItem('bloom_read_visited') === 'true');
+    }
+  }, [path]);
+
   return (
     <nav style={{
       position: 'fixed',
@@ -69,12 +81,22 @@ export default function BottomNav() {
           return (
             <Link key={href} href={href} style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center',
-              gap: 4, padding: '6px 14px', textDecoration: 'none', position: 'relative',
+              gap: 4, padding: '10px 14px', textDecoration: 'none', position: 'relative',
               borderRadius: 18,
               background: active ? 'linear-gradient(135deg,rgba(165,106,189,0.20),rgba(110,52,130,0.10))' : 'transparent',
               transition: 'background .3s cubic-bezier(.34,1.4,.64,1)',
             }}>
-              <Icon c={c} />
+              <span style={{ position: 'relative', display: 'flex' }}>
+                <Icon c={c} />
+                {href === '/read' && !readVisited && (
+                  <span style={{
+                    position: 'absolute', top: -2, right: -4,
+                    width: 8, height: 8, borderRadius: '50%',
+                    background: '#E53E3E',
+                    border: '1.5px solid rgba(250,246,252,0.95)',
+                  }} />
+                )}
+              </span>
               <span style={{
                 fontSize: 10, fontWeight: active ? 800 : 600,
                 color: c, letterSpacing: 0.2, fontFamily: 'var(--font-outfit)',

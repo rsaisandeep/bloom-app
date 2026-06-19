@@ -84,7 +84,7 @@ export default function CalendarPage() {
       {/* Calendar */}
       <div className="glass-card" style={{ padding: "14px 14px 16px", marginBottom: 14 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", marginBottom: 8 }}>
-          {["S","M","T","W","T","F","S"].map((d, i) => (
+          {["Su","Mo","Tu","We","Th","Fr","Sa"].map((d, i) => (
             <div key={i} style={{ textAlign: "center", fontSize: ".68rem", fontWeight: 800, color: "#8A6A9A", padding: "4px 0" }}>{d}</div>
           ))}
         </div>

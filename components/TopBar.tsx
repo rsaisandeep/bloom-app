@@ -16,6 +16,7 @@ export default function TopBar({ title }: { title?: string }) {
       background: 'rgba(238,232,245,0.88)',
       backdropFilter: 'blur(20px) saturate(150%)',
       WebkitBackdropFilter: 'blur(20px) saturate(150%)',
+      borderBottom: '1px solid rgba(165,106,189,0.12)',
     }}>
       <Hamburger username={username} />
       {title && (
