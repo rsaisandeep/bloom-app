@@ -87,23 +87,22 @@ export async function saveToSheet(data: BloomData): Promise<boolean> {
   if (!userId) return true;
 
   try {
-    // Replace cycles (handles deletions)
-    await supabase.from('cycles').delete().eq('user_id', userId);
-    if (data.cycles.length > 0) {
-      const cycleRows = data.cycles.map((c) => ({
-        cycle_id: c.id,
-        user_id: userId,
-        name: c.name ?? null,
-        start_date: c.startDate,
-        period_end_date: c.periodEndDate ?? null,
-        period_end_at: c.periodEndAt ?? null,
-        cycle_length: c.cycleLength ?? null,
-        period_length: c.periodLength ?? null,
-        period_end_source: c.period_end_source ?? null,
-      }));
-      const { error } = await supabase.from('cycles').insert(cycleRows);
-      // If the period_end_at / name columns aren't migrated yet, retry without
-      // them so cycle saving never breaks. (Run the migration to persist them.)
+    // Upsert cycles first (no data-loss window if the network drops mid-save),
+    // then delete any rows that were removed locally.
+    const cycleRows = data.cycles.map((c) => ({
+      cycle_id: c.id,
+      user_id: userId,
+      name: c.name ?? null,
+      start_date: c.startDate,
+      period_end_date: c.periodEndDate ?? null,
+      period_end_at: c.periodEndAt ?? null,
+      cycle_length: c.cycleLength ?? null,
+      period_length: c.periodLength ?? null,
+      period_end_source: c.period_end_source ?? null,
+    }));
+    if (cycleRows.length > 0) {
+      const { error } = await supabase.from('cycles').upsert(cycleRows, { onConflict: 'cycle_id' });
+      // If optional columns aren't migrated yet, retry without them.
       if (error) {
         const stripped = cycleRows.map((r) => {
           const c: Record<string, unknown> = { ...r };
@@ -112,8 +111,15 @@ export async function saveToSheet(data: BloomData): Promise<boolean> {
           delete c.period_end_source;
           return c;
         });
-        await supabase.from('cycles').insert(stripped);
+        await supabase.from('cycles').upsert(stripped, { onConflict: 'cycle_id' });
       }
+    }
+    // Prune cycles deleted locally.
+    const keepIds = cycleRows.map((r) => r.cycle_id);
+    if (keepIds.length > 0) {
+      await supabase.from('cycles').delete().eq('user_id', userId).not('cycle_id', 'in', `(${keepIds.join(',')})`);
+    } else {
+      await supabase.from('cycles').delete().eq('user_id', userId);
     }
 
     // Upsert logs (keyed by user+date, never deleted)

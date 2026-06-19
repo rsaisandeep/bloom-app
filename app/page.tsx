@@ -9,7 +9,7 @@ import {
 } from '@/lib/cycle';
 import { getActionItems, getActionGroups } from '@/lib/actions';
 import { fetchFromSheet, sanitize } from '@/lib/data';
-import { localDateStr } from '@/lib/day';
+import { localDateStr, appDayKey } from '@/lib/day';
 import { useAppDay } from '@/lib/useAppDay';
 import Hamburger from '@/components/Hamburger';
 import InfoModal from '@/components/InfoModal';
@@ -49,7 +49,16 @@ export default function HomePage() {
   const [username, setUsername] = useState('');
   const [done, setDone] = useState<number[]>([]);
   const [showLog, setShowLog] = useState(false);
-  const [dismissedNotifs, setDismissedNotifs] = useState<Set<string>>(new Set());
+  const [loaded, setLoaded] = useState(false);
+  // Lazy-init from sessionStorage to avoid a one-frame flash where dismissed
+  // notifications reappear before the useEffect hydration fires.
+  const [dismissedNotifs, setDismissedNotifs] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set();
+    try {
+      const raw = sessionStorage.getItem(`bloom_notif_${appDayKey()}`);
+      return raw ? new Set(raw.split(',').filter(Boolean)) : new Set();
+    } catch { return new Set(); }
+  });
 
   const todayKey = useAppDay();
 
@@ -62,12 +71,13 @@ export default function HomePage() {
     if (!cached.settings.onboardingComplete) {
       fetchFromSheet().then(d => {
         if (!d.settings.onboardingComplete) router.push('/onboarding');
-        else setData(d);
+        else { setData(d); setLoaded(true); }
       });
       return;
     }
     setData(cached);
-    fetchFromSheet().then(setData);
+    setLoaded(true);
+    fetchFromSheet().then(d => { setData(d); });
   }, [router]);
 
   // Reset the focus checklist whenever the logical day changes (incl. live 5 AM rollover).
@@ -141,9 +151,6 @@ export default function HomePage() {
     if (paused || !hasCycles) return null;
     const MS_DAY = 86400000;
     const candidates: { type: NotifType; message: string }[] = [];
-
-    if (lateInfo && lateInfo.daysLate >= 3)
-      candidates.push({ type: 'late_period', message: 'Your period is 3+ days late. Log it if it started, or check in tomorrow.' });
 
     if (dayOfCycle > 40 && phase !== 'menstrual')
       candidates.push({ type: 'long_cycle', message: 'Cycle running long (40+ days). Consider logging or checking in with a doctor.' });
@@ -287,14 +294,16 @@ export default function HomePage() {
             </svg>
             <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
               <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', fontWeight: 600, letterSpacing: 0.5 }}>DAY</span>
-              <span style={{ fontSize: 30, color: '#fff', fontWeight: 800, lineHeight: 1.1 }}>{hasCycles ? dayOfCycle : '?'}</span>
+              <span style={{ fontSize: 30, color: '#fff', fontWeight: 800, lineHeight: 1.1, opacity: loaded ? 1 : 0.35, transition: 'opacity .3s' }}>
+                {!loaded ? '–' : hasCycles ? dayOfCycle : '?'}
+              </span>
             </div>
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ margin: '0 0 2px', fontSize: 10, color: 'rgba(255,255,255,0.5)', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>CURRENT PHASE</p>
             <p style={{ margin: '0 0 5px', fontSize: 18, color: '#fff', fontWeight: 800, lineHeight: 1.2 }}>{meta.emoji} {meta.label}</p>
             <p style={{ margin: '0 0 14px', fontSize: 12, color: 'rgba(255,255,255,0.60)', lineHeight: 1.5 }}>
-              {hasCycles ? meta.description : 'Add your last period date to unlock predictions.'}
+              {!loaded ? '' : hasCycles ? meta.description : 'Add your last period date to unlock predictions.'}
             </p>
             {hasCycles && predictions ? (
               <div className="pill" style={{ background: 'rgba(255,255,255,0.14)', padding: '7px 14px', display: 'inline-flex', alignItems: 'center', gap: 6, maxWidth: '100%' }}>

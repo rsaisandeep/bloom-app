@@ -58,7 +58,7 @@ export async function GET(req: Request) {
   if (periodSubs?.length) {
     const userIds = [...new Set(periodSubs.map(s => s.user_id))];
 
-    // Get each user's last 3 completed cycles to estimate avg cycle length
+    // Get each user's last 6 completed cycles (matches client recency window)
     const { data: allCycles } = await db
       .from('cycles')
       .select('user_id, start_date, cycle_length')
@@ -66,12 +66,20 @@ export async function GET(req: Request) {
       .not('cycle_length', 'is', null)
       .order('start_date', { ascending: false });
 
-    // Group by user and compute prediction
+    // Group by user (newest-first), keep up to 6
     const cyclesByUser = new Map<string, { start_date: string; cycle_length: number }[]>();
     for (const c of allCycles ?? []) {
       const arr = cyclesByUser.get(c.user_id) ?? [];
-      if (arr.length < 3) arr.push(c);
+      if (arr.length < 6) arr.push(c);
       cyclesByUser.set(c.user_id, arr);
+    }
+
+    // Recency-weighted mean matching lib/cycle.ts — oldest entry gets weight 1,
+    // newest gets weight n, so recent cycles dominate the prediction.
+    function recencyWeightedMean(lens: number[]): number {
+      let wsum = 0, vsum = 0;
+      lens.forEach((v, i) => { const w = i + 1; wsum += w; vsum += v * w; });
+      return vsum / wsum;
     }
 
     // Get latest cycle start per user (may not have cycle_length yet — current cycle)
@@ -94,7 +102,9 @@ export async function GET(req: Request) {
         const latestStart = latestByUser.get(sub.user_id);
         if (!cycles?.length || !latestStart) { results.periodSoon.skipped++; return; }
 
-        const avgLength = Math.round(cycles.reduce((s, c) => s + c.cycle_length, 0) / cycles.length);
+        // Cycles are newest-first; reverse to oldest-first for recency weighting
+        const lens = [...cycles].reverse().map(c => c.cycle_length);
+        const avgLength = Math.round(recencyWeightedMean(lens));
         const lastStartMs = new Date(latestStart).getTime();
         const daysSinceLast = Math.floor((todayMs - lastStartMs) / 86400000);
 

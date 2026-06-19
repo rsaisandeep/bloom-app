@@ -169,11 +169,13 @@ export function needsPeriodEnd(data: BloomData): boolean {
 }
 
 // A flow log only starts a NEW cycle if the last period began long enough ago
-// (avoids re-triggering mid-period or on spotting).
+// (avoids re-triggering mid-period or on spotting). Threshold matches
+// getActivePeriodCycle so there's no gap where a cycle is neither "active" nor
+// "new".
 export function isNewPeriodStart(data: BloomData, date: string): boolean {
   if (data.cycles.length === 0) return true;
   const last = data.cycles[data.cycles.length - 1];
-  return daysBetween(last.startDate, date) > 12;
+  return daysBetween(last.startDate, date) > Math.max(12, getAveragePeriodLength(data));
 }
 
 // Recompute cycle lengths (and fill missing period lengths) after any insert/delete.
@@ -190,6 +192,7 @@ function recomputeCycles(data: BloomData) {
 // Insert a period start at any date (today or back-dated). Chronologically
 // correct and idempotent — ignores a duplicate within a day of an existing one.
 export function addPeriodStart(date: string, username = "me") {
+  if (date > todayLocal()) return;
   const data = loadData();
   if (data.cycles.some((c) => Math.abs(daysBetween(c.startDate, date)) <= 1)) return;
   data.cycles.push({ id: `${username}_${date}`, startDate: date, name: periodName(date) });
@@ -214,12 +217,13 @@ export function editPeriodStart(id: string, newDate: string, username = "me") {
   syncAfterSave();
 }
 
-// The currently-active period (started within the last ~10 days), if any.
+// The currently-active period, if any. Window uses average period length so
+// users with longer-than-10-day periods can still set an end date.
 export function getActivePeriodCycle(data: BloomData): Cycle | null {
   if (data.cycles.length === 0) return null;
   const last = data.cycles[data.cycles.length - 1];
   const days = daysBetween(last.startDate, todayLocal());
-  return days >= 0 && days <= 10 ? last : null;
+  return days >= 0 && days <= Math.max(12, getAveragePeriodLength(data)) ? last : null;
 }
 
 export function deleteCycle(id: string) {
@@ -378,7 +382,13 @@ export function getPredictions(data: BloomData) {
   const projectedLength = Math.round(avgLength + bias); // self-corrected forecast length
   const start = new Date(last.startDate);
   const nextPeriod = new Date(start); nextPeriod.setDate(start.getDate() + projectedLength);
-  const ovulation = new Date(nextPeriod); ovulation.setDate(nextPeriod.getDate() - 14);
+  // Use the same ovulation-day formula as getCurrentPhase so phase labels and
+  // predictions agree: Math.max(periodLen+3, cycleLen-14).
+  const periodLen = last.periodEndDate
+    ? daysBetween(last.startDate, last.periodEndDate) + 1
+    : (last.periodLength ?? getDefaultPeriodLength(data));
+  const ovDayOfCycle = Math.max(periodLen + 3, projectedLength - 14);
+  const ovulation = new Date(start); ovulation.setDate(start.getDate() + ovDayOfCycle - 1);
   const fertileStart = new Date(ovulation); fertileStart.setDate(ovulation.getDate() - 2);
   const fertileEnd = new Date(ovulation); fertileEnd.setDate(ovulation.getDate() + 2);
   const today = new Date();

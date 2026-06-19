@@ -47,6 +47,7 @@ export default function PeriodStartModal({
   const [activeId, setActiveId] = useState<string | null>(null); // null = "New period"
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [endDateModified, setEndDateModified] = useState(false); // true if user edited the end date
   const [saving, setSaving] = useState(false);
   const [fetching, setFetching] = useState(false);
   const today = new Date().toISOString().slice(0, 10);
@@ -57,6 +58,7 @@ export default function PeriodStartModal({
     setFetching(true);
     setStartDate('');
     setEndDate('');
+    setEndDateModified(false);
     setActiveId(null);
     setCycles([]);
     setOpen(true);
@@ -105,7 +107,9 @@ export default function PeriodStartModal({
       // editPeriodStart/addPeriodStart key the cycle id off the start date.
       const targetId = `${uname}_${startDate}`;
       if (endDate && endDate >= startDate) {
-        setPeriodEnd(endDate, targetId, endSource);
+        // If the user changed the auto-filled date, treat it as a manual entry.
+        const resolvedSource = endSource === 'computer' && endDateModified ? 'manual' : endSource;
+        setPeriodEnd(endDate, targetId, resolvedSource);
       } else {
         clearPeriodEnd(targetId); // clears any previously saved end date
       }
@@ -278,7 +282,7 @@ export default function PeriodStartModal({
                 max={today}
                 value={endDate}
                 disabled={fetching || !startDate}
-                onChange={(e) => setEndDate(e.target.value)}
+                onChange={(e) => { setEndDate(e.target.value); setEndDateModified(true); }}
                 style={{ ...inputStyle, color: endDate ? '#1C0B2E' : '#A99BB5', opacity: (fetching || !startDate) ? 0.5 : 1 }}
               />
               {endDate && !fetching && <XBtn onClear={() => setEndDate('')} />}
