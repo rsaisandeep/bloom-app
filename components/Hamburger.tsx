@@ -10,8 +10,12 @@ export default function Hamburger({ username }: { username: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [readVisited, setReadVisited] = useState(true); // true = no badge (safe default before hydration)
   const { canInstall, isIos, isIosSafari, installable, promptInstall } = useInstall();
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+    setReadVisited(sessionStorage.getItem('bloom_read_visited') === 'true');
+  }, []);
 
   function handleInstall() {
     if (canInstall) { promptInstall(); }
@@ -22,7 +26,15 @@ export default function Hamburger({ username }: { username: string }) {
     apiLogout(); // signs out of Supabase + clears app cache, then redirects to /login
   }
 
+  function handleReadNav() {
+    setOpen(false);
+    sessionStorage.setItem('bloom_read_visited', 'true');
+    setReadVisited(true);
+    router.push('/read');
+  }
+
   const items = [
+    { emoji: '📖', label: 'Read', sub: 'Articles & cycle guides', onClick: handleReadNav, badge: !readVisited },
     { emoji: '👤', label: 'Profile', sub: 'Your account', onClick: () => { setOpen(false); router.push('/profile'); } },
   ];
 
@@ -96,7 +108,17 @@ export default function Hamburger({ username }: { username: string }) {
                   padding: '13px 16px', borderRadius: 18, cursor: 'pointer',
                   fontFamily: 'var(--font-outfit)',
                 }}>
-                  <span style={{ fontSize: 20 }}>{it.emoji}</span>
+                  <span style={{ position: 'relative', fontSize: 20, flexShrink: 0 }}>
+                    {it.emoji}
+                    {it.badge && (
+                      <span style={{
+                        position: 'absolute', top: -2, right: -4,
+                        width: 8, height: 8, borderRadius: '50%',
+                        background: '#E53E3E',
+                        border: '1.5px solid rgba(255,255,255,0.9)',
+                      }} />
+                    )}
+                  </span>
                   <div>
                     <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#1C0B2E' }}>{it.label}</p>
                     <p style={{ margin: '1px 0 0', fontSize: 11, color: '#8A6A9A' }}>{it.sub}</p>

@@ -27,6 +27,7 @@ export default function ReadPage() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   useEffect(() => {
+    sessionStorage.setItem('bloom_read_visited', 'true');
     fetchFromSheet().then((data) => {
       const { phase } = getCurrentPhase(data);
       setCurrentSlug(PHASE_SLUG[phase]);
