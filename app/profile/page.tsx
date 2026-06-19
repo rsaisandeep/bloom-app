@@ -38,6 +38,10 @@ export default function ProfilePage() {
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const [biometricSupported, setBiometricSupported] = useState(false);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [biometricLoading, setBiometricLoading] = useState(false);
+  const [biometricError, setBiometricError] = useState('');
   const { status: notifStatus, subscribe: notifSubscribe, unsubscribe: notifUnsubscribe } = usePushNotifications();
   const [categories, setCategories] = useState<string[]>(['log_reminder', 'period_soon', 'cycle_update']);
 
@@ -102,7 +106,59 @@ export default function ProfilePage() {
     if (u) setUsername(u);
     syncLocal();                          // instant from cache
     fetchFromSheet().then(syncLocal);     // then sheet truth
+
+    // Biometric support detection (client-only)
+    if (typeof window !== 'undefined' && navigator.credentials && window.PublicKeyCredential) {
+      setBiometricSupported(true);
+      setBiometricEnabled(localStorage.getItem('bloom_biometric_enabled') === 'true');
+    }
   }, []);
+
+  async function enableBiometric() {
+    setBiometricLoading(true);
+    setBiometricError('');
+    try {
+      const u = localStorage.getItem('bloom_username') || 'bloom-user';
+      const credential = await navigator.credentials.create({
+        publicKey: {
+          challenge: crypto.getRandomValues(new Uint8Array(32)),
+          rp: { name: 'Bloom', id: window.location.hostname },
+          user: {
+            id: new TextEncoder().encode(u),
+            name: u,
+            displayName: u,
+          },
+          pubKeyCredParams: [
+            { alg: -7, type: 'public-key' },
+            { alg: -257, type: 'public-key' },
+          ],
+          authenticatorSelection: {
+            authenticatorAttachment: 'platform',
+            userVerification: 'required',
+          },
+          timeout: 60000,
+        },
+      }) as PublicKeyCredential | null;
+      if (!credential) throw new Error('No credential returned');
+      const idB64 = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
+      localStorage.setItem('bloom_biometric_credential_id', idB64);
+      localStorage.setItem('bloom_biometric_enabled', 'true');
+      sessionStorage.setItem('bloom_biometric_verified', 'true');
+      setBiometricEnabled(true);
+    } catch (e) {
+      setBiometricError(e instanceof Error ? e.message : 'Registration failed or cancelled');
+    } finally {
+      setBiometricLoading(false);
+    }
+  }
+
+  function disableBiometric() {
+    localStorage.removeItem('bloom_biometric_credential_id');
+    localStorage.removeItem('bloom_biometric_enabled');
+    sessionStorage.removeItem('bloom_biometric_verified');
+    setBiometricEnabled(false);
+    setBiometricError('');
+  }
 
   function togglePcos() {
     const next = !pcos;
@@ -322,6 +378,50 @@ export default function ProfilePage() {
         </div>
       )}
 
+      {/* Biometric app lock */}
+      {biometricSupported && (
+        <div className="glass-card" style={{ padding: '16px 18px', marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, flex: 1 }}>
+              <span style={{ fontSize: 18, marginTop: 1 }}>🔒</span>
+              <div>
+                <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#1C0B2E' }}>App lock (Face ID / Touch ID)</p>
+                <p style={{ margin: '2px 0 0', fontSize: 12, color: '#8A6A9A', lineHeight: 1.45 }}>
+                  {biometricEnabled ? 'Biometric lock is on — required on next app open.' : 'Require biometric verification when opening Bloom.'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={biometricEnabled ? disableBiometric : enableBiometric}
+              disabled={biometricLoading}
+              role="switch"
+              aria-checked={biometricEnabled}
+              aria-label="App lock"
+              style={{
+                width: 50, height: 30, borderRadius: 999, border: 'none',
+                cursor: biometricLoading ? 'default' : 'pointer',
+                padding: 3, flexShrink: 0,
+                background: biometricEnabled ? 'linear-gradient(135deg,#6E3482,#A56ABD)' : 'rgba(165,106,189,0.25)',
+                transition: 'background .25s cubic-bezier(.34,1.4,.64,1)',
+                boxShadow: biometricEnabled ? '0 4px 12px rgba(110,52,130,0.3)' : 'none',
+                opacity: biometricLoading ? 0.6 : 1,
+              }}>
+              <span style={{
+                display: 'block', width: 24, height: 24, borderRadius: '50%', background: '#fff',
+                transform: biometricEnabled ? 'translateX(20px)' : 'translateX(0)',
+                transition: 'transform .25s cubic-bezier(.34,1.56,.64,1)',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+              }} />
+            </button>
+          </div>
+          {biometricError && (
+            <p style={{ margin: '10px 0 0', fontSize: 12, color: '#dc2626', lineHeight: 1.4 }}>
+              {biometricError}
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Your goals */}
       <div className="glass-card" style={{ padding: '16px 18px', marginBottom: 12 }}>
         <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 700, color: '#1C0B2E' }}>Your goals</p>
@@ -373,35 +473,37 @@ export default function ProfilePage() {
 
       {/* Cycle history */}
       {cycles.length > 0 && (
-        <div className="glass-card" style={{ padding: '14px 18px', marginBottom: 12 }}>
+        <div className="glass-card" style={{ padding: '14px 18px', marginBottom: 12, overflow: 'visible' }}>
           <p style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 800, color: '#1C0B2E' }}>Cycle history</p>
-          {cycles.map((c, i) => (
-            <div key={c.id} style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '10px 0', borderBottom: i < cycles.length - 1 ? '1px solid rgba(165,106,189,0.12)' : 'none',
-            }}>
-              <div>
-                <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#1C0B2E' }}>
-                  {fmt(c.startDate)}
-                  {i === 0 && <span style={{ fontSize: 11, fontWeight: 700, color: '#6E3482', marginLeft: 8 }}>current</span>}
-                  {isLikelySkipped(c.cycleLength) && <span style={{ fontSize: 11, fontWeight: 700, color: '#d97706', marginLeft: 8 }}>⚠ skipped?</span>}
-                </p>
-                <p style={{ margin: '1px 0 0', fontSize: 12, color: '#8A6A9A' }}>
-                  {c.cycleLength ? `${c.cycleLength}-day cycle` : 'in progress'}
-                  {c.periodLength ? ` · ${c.periodLength}-day period` : ''}
-                </p>
-              </div>
-              <button onClick={() => removeCycle(c.id)} aria-label="Delete cycle" style={{
-                width: 32, height: 32, borderRadius: 10, flexShrink: 0, cursor: 'pointer',
-                border: '1px solid rgba(220,38,38,0.2)', background: 'rgba(252,232,232,0.5)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
+          <div style={{ maxHeight: 320, overflowY: 'auto', overflowX: 'hidden' }}>
+            {cycles.map((c, i) => (
+              <div key={c.id} style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '10px 0', borderBottom: i < cycles.length - 1 ? '1px solid rgba(165,106,189,0.12)' : 'none',
               }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                  <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m2 0v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6" stroke="#dc2626" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            </div>
-          ))}
+                <div>
+                  <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#1C0B2E' }}>
+                    {fmt(c.startDate)}
+                    {i === 0 && <span style={{ fontSize: 11, fontWeight: 700, color: '#6E3482', marginLeft: 8 }}>current</span>}
+                    {isLikelySkipped(c.cycleLength) && <span style={{ fontSize: 11, fontWeight: 700, color: '#d97706', marginLeft: 8 }}>⚠ skipped?</span>}
+                  </p>
+                  <p style={{ margin: '1px 0 0', fontSize: 12, color: '#8A6A9A' }}>
+                    {c.cycleLength ? `${c.cycleLength}-day cycle` : 'in progress'}
+                    {c.periodLength ? ` · ${c.periodLength}-day period` : ''}
+                  </p>
+                </div>
+                <button onClick={() => removeCycle(c.id)} aria-label="Delete cycle" style={{
+                  width: 32, height: 32, borderRadius: 10, flexShrink: 0, cursor: 'pointer',
+                  border: '1px solid rgba(220,38,38,0.2)', background: 'rgba(252,232,232,0.5)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                    <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m2 0v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6" stroke="#dc2626" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

@@ -107,12 +107,96 @@ function symptomOverrides(log?: DayLog): ActionItem[] {
 
   // Multi-select symptoms — each tagged with the specific symptom it targets
   const sx = log.symptoms ?? [];
-  if (sx.includes('headache')) out.push({ group: 'Headache', icon: '💧', title: 'Hydrate + magnesium', sub: 'Common menstrual-migraine triggers' });
-  if (sx.includes('acne')) out.push({ group: 'Acne', icon: '🧴', title: 'Gentle skincare', sub: 'Hormonal breakouts ease post-period — avoid over-scrubbing' });
-  if (sx.includes('backache')) out.push({ group: 'Backache', icon: '🔥', title: 'Heat on lower back', sub: '15–20 min — relaxes referred uterine pain' });
-  if (sx.includes('tender_breasts')) out.push({ group: 'Tender breasts', icon: '👕', title: 'Supportive bra + lower caffeine', sub: 'Eases luteal breast tenderness' });
-  if (sx.includes('nausea')) out.push({ group: 'Nausea', icon: '🫚', title: 'Ginger + small meals', sub: 'Settles prostaglandin-driven nausea' });
-  if (sx.includes('fatigue')) out.push({ group: 'Fatigue', icon: '🫘', title: 'Iron + B12', sub: 'Pair with vitamin C; common fatigue driver' });
+
+  if (sx.includes('headache')) {
+    out.push({ group: 'Headache', icon: '💧', title: 'Hydrate now', sub: 'Dehydration is the fastest headache trigger — 500 ml water' });
+    out.push({ group: 'Headache', icon: '🌰', title: 'Magnesium-rich snack', sub: 'Pumpkin seeds, dark chocolate — low Mg spikes menstrual migraines' });
+    out.push({ group: 'Headache', icon: '🧊', title: 'Cold compress on forehead', sub: '10–15 min — constricts vessels, blunts migraine onset' });
+  }
+
+  if (sx.includes('acne')) {
+    out.push({ group: 'Acne', icon: '🧴', title: 'Gentle cleanser only', sub: 'Hormonal breakouts — over-scrubbing worsens inflammation' });
+    out.push({ group: 'Acne', icon: '🚫', title: 'Avoid touching your face', sub: 'High-androgen phase triggers sebum; hands transfer bacteria' });
+    out.push({ group: 'Acne', icon: '🥬', title: 'Cut dairy & high-GI foods', sub: 'Both raise IGF-1, which amplifies hormonal acne' });
+  }
+
+  if (sx.includes('backache')) {
+    out.push({ group: 'Backache', icon: '🔥', title: 'Heat pad on lower back', sub: '15–20 min — relaxes referred uterine pain' });
+    out.push({ group: 'Backache', icon: '🧘', title: 'Child pose + cat-cow', sub: '5 min of these two stretches relieves lumbar tension quickly' });
+    out.push({ group: 'Backache', icon: '🐟', title: 'Omega-3 today', sub: 'Anti-inflammatory — reduces prostaglandin-driven back pain' });
+  }
+
+  if (sx.includes('tender_breasts')) {
+    out.push({ group: 'Tender breasts', icon: '👕', title: 'Supportive bra', sub: 'Reduce movement — luteal breast tenderness peaks before period' });
+    out.push({ group: 'Tender breasts', icon: '☕', title: 'Lower caffeine', sub: 'Methylxanthines in caffeine worsen breast cyst tenderness' });
+    out.push({ group: 'Tender breasts', icon: '🌰', title: 'Vitamin E + magnesium', sub: 'Both shown to reduce cyclic mastalgia in trials' });
+  }
+
+  if (sx.includes('nausea')) {
+    out.push({ group: 'Nausea', icon: '🫚', title: 'Ginger + small meals', sub: 'Settles prostaglandin-driven nausea; 1 g ginger beats placebo' });
+    out.push({ group: 'Nausea', icon: '🍋', title: 'Cold water + lemon', sub: 'Sipping cold citrus water calms nausea faster than dry eating' });
+    out.push({ group: 'Nausea', icon: '🍞', title: 'Bland carb snack', sub: 'Plain crackers or toast stabilise blood sugar that worsens nausea' });
+  }
+
+  if (sx.includes('fatigue')) {
+    out.push({ group: 'Fatigue', icon: '🫘', title: 'Iron + B12', sub: 'Pair with vitamin C; most common menstrual fatigue driver' });
+    out.push({ group: 'Fatigue', icon: '🛌', title: '10-min rest, not full stop', sub: 'Light movement beats total rest for restoring energy' });
+    out.push({ group: 'Fatigue', icon: '🍠', title: 'Complex carbs now', sub: 'Sweet potato or oats sustain energy without the crash' });
+  }
+
+  if (sx.includes('dizziness')) {
+    out.push({ group: 'Dizziness', icon: '🫘', title: 'Increase iron-rich foods', sub: 'Heavy flow lowers ferritin → dizziness; lentils + vitamin C' });
+    out.push({ group: 'Dizziness', icon: '💧', title: 'Hydrate and sit slowly', sub: 'Orthostatic dizziness is common during menstruation — rise gradually' });
+    out.push({ group: 'Dizziness', icon: '🧂', title: 'Light salty snack', sub: 'A pinch of sodium helps blood pressure stabilise quickly' });
+  }
+
+  if (sx.includes('hot_flashes')) {
+    out.push({ group: 'Hot flashes', icon: '👕', title: 'Wear breathable layers', sub: 'Easy to remove — hot flashes peak around ovulation with LH surge' });
+    out.push({ group: 'Hot flashes', icon: '❄️', title: 'Cool water on wrists', sub: 'Pulse-point cooling drops core temp in ~30 sec' });
+    out.push({ group: 'Hot flashes', icon: '🌡️', title: 'This may be ovulation', sub: 'Temp spikes 0.2–0.5°C at ovulation — log it as a fertility signal' });
+  }
+
+  if (sx.includes('chills')) {
+    out.push({ group: 'Chills', icon: '🌡️', title: 'Post-ovulation temp drop is normal', sub: 'BBT falls slightly before period; chills can accompany it' });
+    out.push({ group: 'Chills', icon: '🧣', title: 'Layer up + warm drink', sub: 'Your basal temp dips in late luteal — body is not fighting an illness' });
+    out.push({ group: 'Chills', icon: '🛁', title: 'Warm bath or shower', sub: 'Raises skin temp, reduces the perceived cold sensation' });
+  }
+
+  if (sx.includes('diarrhea')) {
+    out.push({ group: 'Diarrhea', icon: '⚡', title: 'Electrolyte drink', sub: 'Prostaglandins cause GI motility in menstrual phase — replace salts' });
+    out.push({ group: 'Diarrhea', icon: '🍌', title: 'BRAT foods today', sub: 'Banana, rice, applesauce, toast — gentle on a reactive gut' });
+    out.push({ group: 'Diarrhea', icon: '🌡️', title: 'This is menstrual, not a bug', sub: 'High prostaglandins act on the bowel — usually resolves in 1–2 days' });
+  }
+
+  if (sx.includes('constipation')) {
+    out.push({ group: 'Constipation', icon: '🥦', title: 'Increase fibre today', sub: 'Progesterone slows motility in luteal phase; veggies + beans help' });
+    out.push({ group: 'Constipation', icon: '💧', title: 'Drink 2.5 L water', sub: 'Fibre needs water to work — dehydration worsens constipation' });
+    out.push({ group: 'Constipation', icon: '🚶', title: 'Walk 20 min', sub: 'Physical movement is one of the fastest ways to stimulate the bowel' });
+  }
+
+  if (sx.includes('joint_pain')) {
+    out.push({ group: 'Joint pain', icon: '🍛', title: 'Anti-inflammatory foods', sub: 'Turmeric (curcumin) + omega-3 reduce cytokine-driven joint pain' });
+    out.push({ group: 'Joint pain', icon: '🔥', title: 'Warm compress on joints', sub: 'Increases circulation and reduces stiffness within minutes' });
+    out.push({ group: 'Joint pain', icon: '🧘', title: 'Gentle range-of-motion', sub: 'Slow joint circles maintain mobility without stressing inflamed tissue' });
+  }
+
+  if (sx.includes('pelvic_pain')) {
+    out.push({ group: 'Pelvic pain', icon: '🔥', title: 'Heat pad on lower abdomen', sub: '15–20 min — relaxes smooth muscle, rivals ibuprofen for mild pain' });
+    out.push({ group: 'Pelvic pain', icon: '🧘', title: 'Knees-to-chest pose', sub: 'Releases pelvic floor tension; hold 60 sec each side' });
+    out.push({ group: 'Pelvic pain', icon: '📋', title: 'Log pain timing & cycle day', sub: 'Mid-cycle pelvic pain = mittelschmerz; recurring = worth flagging to a doctor' });
+  }
+
+  if (sx.includes('leg_cramps')) {
+    out.push({ group: 'Leg cramps', icon: '🍌', title: 'Potassium + magnesium', sub: 'Bananas and pumpkin seeds replace electrolytes lost during menstruation' });
+    out.push({ group: 'Leg cramps', icon: '💧', title: 'Hydrate well today', sub: 'Dehydration concentrates prostaglandins and worsens muscle cramping' });
+    out.push({ group: 'Leg cramps', icon: '🦵', title: 'Calf stretch against a wall', sub: '30-sec hold, 3 reps — immediate relief for cramp tightness' });
+  }
+
+  if (sx.includes('low_libido')) {
+    out.push({ group: 'Low libido', icon: '🌡️', title: 'This is phase-normal', sub: 'Libido drops in late luteal & menstrual phase as progesterone peaks' });
+    out.push({ group: 'Low libido', icon: '🧘', title: 'Prioritise rest today', sub: 'Fatigue and stress are the top suppressors of libido — recovery helps' });
+    out.push({ group: 'Low libido', icon: '🌱', title: 'Expect a rebound at follicular', sub: 'Rising estrogen post-period typically restores desire within days' });
+  }
 
   return out;
 }

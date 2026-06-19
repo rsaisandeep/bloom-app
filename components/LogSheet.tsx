@@ -40,6 +40,9 @@ const SYMPTOM_OPTIONS: Option[] = [
   {value:'diarrhea',label:'Diarrhea',emoji:'💩'},
   {value:'constipation',label:'Constipation',emoji:'🧱'},
   {value:'joint_pain',label:'Joint pain',emoji:'🦴'},
+  {value:'pelvic_pain',label:'Pelvic pain',emoji:'🫁'},
+  {value:'leg_cramps',label:'Leg cramps',emoji:'🦵'},
+  {value:'low_libido',label:'Low libido',emoji:'💤'},
 ];
 const DEFAULTS: Partial<DayLog> = { cramps:'none', energy:'medium', mood:'calm', bloating:'none', sleep:'good', cravings:'none', flow:'none', cervicalMucus:'none', sex:'none', ovulationTest:'none', pregnancyTest:'none', pill:'none', symptoms:[] };
 

@@ -198,6 +198,20 @@ export default function HomePage() {
   const [c1, c2] = RING_COLORS[phase];
   const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
+  // Consecutive-day logging streak (ending today; requires today's log to count).
+  const streak = (() => {
+    const logDates = new Set(data.logs.map(l => l.date));
+    let count = 0;
+    const d = new Date(todayStr + 'T00:00:00');
+    while (true) {
+      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      if (!logDates.has(key)) break;
+      count++;
+      d.setDate(d.getDate() - 1);
+    }
+    return count;
+  })();
+
   // Predefined reminder-style action items based on phase + today's symptoms,
   // grouped by what each task targets (a check-in symptom, fertility, or phase).
   const actions = getActionItems(phase, todayLog, goals);
@@ -470,6 +484,13 @@ export default function HomePage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{ fontSize: 15 }}>✅</span>
             <span style={{ fontSize: 13, fontWeight: 600, color: '#6E3482' }}>Logged today</span>
+            {streak >= 2 && (
+              <span style={{
+                fontSize: 11, fontWeight: 700, color: '#A56ABD',
+                background: 'rgba(165,106,189,0.12)', borderRadius: 999,
+                padding: '2px 8px', marginLeft: 2,
+              }}>{streak}-day streak</span>
+            )}
           </div>
           <button onClick={() => setShowLog(true)} style={{
             background: 'none', border: 'none', cursor: 'pointer', padding: '4px 10px',
