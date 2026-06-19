@@ -4,6 +4,7 @@ import "./globals.css";
 import AuthGuard from "@/components/AuthGuard";
 import NavWrapper from "@/components/NavWrapper";
 import InstallPrompt from "@/components/InstallPrompt";
+import PullToRefresh from "@/components/PullToRefresh";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -35,7 +36,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-full flex flex-col max-w-md mx-auto relative">
         <AuthGuard>
           <NavWrapper />
-          <main className="flex-1" style={{ paddingBottom: 'calc(110px + env(safe-area-inset-bottom))' }}>{children}</main>
+          <PullToRefresh>
+            <main className="flex-1" style={{ paddingBottom: 'calc(110px + env(safe-area-inset-bottom))' }}>{children}</main>
+          </PullToRefresh>
           <InstallPrompt />
         </AuthGuard>
       </body>

@@ -17,6 +17,11 @@ export default function CalendarPage() {
   // Month currently shown (1st of month). Starts on the real current month.
   const [view, setView] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
   useEffect(() => { fetchFromSheet().then(setData); }, []);
+  useEffect(() => {
+    function onRefresh() { fetchFromSheet().then(setData); }
+    window.addEventListener('bloom:refresh', onRefresh);
+    return () => window.removeEventListener('bloom:refresh', onRefresh);
+  }, []);
 
   const today = new Date();
   const year = view.getFullYear(), month = view.getMonth();

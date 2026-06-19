@@ -275,6 +275,11 @@ export default function ReportsPage() {
   const [hasLog, setHasLog] = useState(false);
   const [showLog, setShowLog] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  useEffect(() => {
+    function onRefresh() { setRefreshKey(k => k + 1); }
+    window.addEventListener('bloom:refresh', onRefresh);
+    return () => window.removeEventListener('bloom:refresh', onRefresh);
+  }, []);
 
   async function loadRecs(log: DayLog, p: Phase) {
     // Cache key: date + phase + core symptom fields (mood/energy/cramps).
