@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { loadData, saveLog, startPeriod, isNewPeriodStart, type DayLog } from '@/lib/cycle';
+import { loadData, saveLog, startPeriod, isNewPeriodStart, getCurrentPhase, type DayLog, type Phase } from '@/lib/cycle';
 import { appDayKey } from '@/lib/day';
 import { fetchFromSheet, saveToSheet } from '@/lib/data';
 
@@ -46,6 +46,16 @@ const SYMPTOM_OPTIONS: Option[] = [
 ];
 const DEFAULTS: Partial<DayLog> = { cramps:'none', energy:'medium', mood:'calm', bloating:'none', sleep:'good', cravings:'none', flow:'none', cervicalMucus:'none', sex:'none', ovulationTest:'none', pregnancyTest:'none', pill:'none', symptoms:[] };
 
+// Phase-aware field filtering
+const PHASE_KEYS: Record<Phase, Set<string>> = {
+  menstrual:  new Set(['flow','cramps','bloating','mood','energy','sleep','cravings','symptoms']),
+  follicular: new Set(['energy','mood','cervicalMucus','bbt','symptoms']),
+  ovulation:  new Set(['cervicalMucus','bbt','ovulationTest','energy','mood','symptoms']),
+  luteal:     new Set(['cramps','bloating','mood','energy','cravings','sleep','symptoms']),
+};
+const MORNING_KEYS = new Set(['bbt','energy','mood','cervicalMucus','pill']);
+const EVENING_KEYS = new Set(['flow','cramps','bloating','sleep','cravings','symptoms','ovulationTest']);
+
 interface LogSheetProps {
   open: boolean;
   onClose: () => void;
@@ -62,6 +72,21 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [showMore, setShowMore] = useState(false);
+  const [phase, setPhase] = useState<Phase>('follicular');
+
+  const isMorning = new Date().getHours() < 12;
+  const phaseKeys = PHASE_KEYS[phase];
+  const timeKeys = isMorning ? MORNING_KEYS : EVENING_KEYS;
+  const primaryKeys = new Set([...phaseKeys].filter(k => timeKeys.has(k)));
+  // pill: show in morning primary only if previously logged
+  if (isMorning && form.pill && form.pill !== 'none') primaryKeys.add('pill');
+
+  const primaryCoreFields = CORE_FIELDS.filter(f => primaryKeys.has(f.key as string));
+  const secondaryCoreFields = CORE_FIELDS.filter(f => !primaryKeys.has(f.key as string));
+  const bbtPrimary = isMorning && (phase === 'follicular' || phase === 'ovulation');
+  const ovTestPrimary = !isMorning && phase === 'ovulation';
+  const cmPrimary = primaryKeys.has('cervicalMucus');
+  const symptomsPrimary = primaryKeys.has('symptoms');
 
   // Reveal the advanced section automatically when a log already has data there.
   function hasMoreData(l: Partial<DayLog>): boolean {
@@ -74,11 +99,14 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
     if (!open) return;
     setSaved(false);
     setSaving(false);
-    const cached = loadData().logs.find((l) => l.date === date);
+    const cachedData = loadData();
+    const cached = cachedData.logs.find((l) => l.date === date);
     const initial = cached ?? DEFAULTS;
     setForm(initial);
     setShowMore(hasMoreData(initial));
+    setPhase(getCurrentPhase(cachedData).phase);
     fetchFromSheet().then((data) => {
+      setPhase(getCurrentPhase(data).phase);
       const existing = data.logs.find((l) => l.date === date);
       if (existing) { setForm(existing); if (hasMoreData(existing)) setShowMore(true); }
     });
@@ -172,7 +200,11 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
               <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#1C0B2E' }}>
                 {isToday ? "Today's Check-in" : 'Edit Log'}
               </h2>
-              {!isToday && (
+              {isToday ? (
+                <p style={{ margin: '2px 0 0', fontSize: 12, color: '#8A6A9A' }}>
+                  {isMorning ? '🌅 Morning check-in' : '🌙 Evening check-in'}
+                </p>
+              ) : (
                 <p style={{ margin: '2px 0 0', fontSize: 12, color: '#8A6A9A' }}>
                   {new Date(date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
                 </p>
@@ -188,23 +220,57 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
 
         {/* Form */}
         <div style={{ padding: '10px 16px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {CORE_FIELDS.map(fieldCard)}
+          {primaryCoreFields.map(fieldCard)}
 
-          {/* Symptoms — multi-select + custom */}
-          <div className="glass-card" style={{ padding: '14px 14px 12px' }}>
-            <p style={LABEL}>
-              Symptoms <span style={{ fontWeight: 600, textTransform: 'none', color: '#8A6A9A' }}>· select all that apply</span>
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 7 }}>
-              {SYMPTOM_OPTIONS.map((opt) => (
-                <button key={opt.value} onClick={() => toggleSymptom(opt.value)} style={{ ...chipStyle((form.symptoms ?? []).includes(opt.value)), width: '100%', justifyContent: 'center' }}>
-                  <span>{opt.emoji}</span><span>{opt.label}</span>
-                </button>
-              ))}
+          {/* Cervical mucus — primary when morning + follicular/ovulation */}
+          {cmPrimary && fieldCard(MORE_FIELDS[0])}
+
+          {/* BBT — primary when morning + follicular/ovulation */}
+          {bbtPrimary && (
+            <div className="glass-card" style={{ padding: '14px 14px 12px' }}>
+              <p style={LABEL}>
+                Basal Body Temp <span style={{ fontWeight: 600, textTransform: 'none', color: '#8A6A9A' }}>· measure before getting up</span>
+              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input
+                  type="number" inputMode="decimal" step="0.01" min="34" max="42"
+                  value={form.bbt ?? ''}
+                  onChange={(e) => setForm((f) => ({ ...f, bbt: e.target.value === '' ? undefined : Number(e.target.value) }))}
+                  placeholder="36.55"
+                  style={{
+                    width: 120, padding: '10px 12px', borderRadius: 12, fontSize: '.95rem', fontWeight: 700,
+                    border: '1px solid var(--glass-border-dim)', background: 'rgba(255,255,255,0.55)',
+                    color: '#1C0B2E', fontFamily: 'inherit', outline: 'none',
+                  }}
+                />
+                <span style={{ fontSize: '.85rem', fontWeight: 700, color: '#8A6A9A' }}>°C</span>
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Add more (optional) — fertility, contraception, body metrics */}
+          {/* Ovulation test — primary when evening + ovulation */}
+          {ovTestPrimary && fieldCard(MORE_FIELDS[2])}
+
+          {/* Pill — primary when morning + previously logged */}
+          {isMorning && form.pill && form.pill !== 'none' && fieldCard(MORE_FIELDS[4])}
+
+          {/* Symptoms — primary in evening; otherwise moved to expander */}
+          {symptomsPrimary && (
+            <div className="glass-card" style={{ padding: '14px 14px 12px' }}>
+              <p style={LABEL}>
+                Symptoms <span style={{ fontWeight: 600, textTransform: 'none', color: '#8A6A9A' }}>· select all that apply</span>
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 7 }}>
+                {SYMPTOM_OPTIONS.map((opt) => (
+                  <button key={opt.value} onClick={() => toggleSymptom(opt.value)} style={{ ...chipStyle((form.symptoms ?? []).includes(opt.value)), width: '100%', justifyContent: 'center' }}>
+                    <span>{opt.emoji}</span><span>{opt.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Add more (optional) — secondary phase fields + fertility, contraception, body metrics */}
           <button onClick={() => setShowMore((s) => !s)} className="glass-card" style={{
             padding: '13px 16px', textAlign: 'left', cursor: 'pointer', width: '100%',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -216,28 +282,55 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
 
           {showMore && (
             <>
-              {MORE_FIELDS.map(fieldCard)}
+              {/* Secondary core fields not shown in primary */}
+              {secondaryCoreFields.map(fieldCard)}
 
-              {/* Basal body temperature */}
-              <div className="glass-card" style={{ padding: '14px 14px 12px' }}>
-                <p style={LABEL}>
-                  Basal Body Temp <span style={{ fontWeight: 600, textTransform: 'none', color: '#8A6A9A' }}>· measure before getting up</span>
-                </p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <input
-                    type="number" inputMode="decimal" step="0.01" min="34" max="42"
-                    value={form.bbt ?? ''}
-                    onChange={(e) => setForm((f) => ({ ...f, bbt: e.target.value === '' ? undefined : Number(e.target.value) }))}
-                    placeholder="36.55"
-                    style={{
-                      width: 120, padding: '10px 12px', borderRadius: 12, fontSize: '.95rem', fontWeight: 700,
-                      border: '1px solid var(--glass-border-dim)', background: 'rgba(255,255,255,0.55)',
-                      color: '#1C0B2E', fontFamily: 'inherit', outline: 'none',
-                    }}
-                  />
-                  <span style={{ fontSize: '.85rem', fontWeight: 700, color: '#8A6A9A' }}>°C</span>
+              {/* Symptoms moved here when in morning (not in primary) */}
+              {!symptomsPrimary && (
+                <div className="glass-card" style={{ padding: '14px 14px 12px' }}>
+                  <p style={LABEL}>
+                    Symptoms <span style={{ fontWeight: 600, textTransform: 'none', color: '#8A6A9A' }}>· select all that apply</span>
+                  </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 7 }}>
+                    {SYMPTOM_OPTIONS.map((opt) => (
+                      <button key={opt.value} onClick={() => toggleSymptom(opt.value)} style={{ ...chipStyle((form.symptoms ?? []).includes(opt.value)), width: '100%', justifyContent: 'center' }}>
+                        <span>{opt.emoji}</span><span>{opt.label}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* MORE_FIELDS not already shown in primary */}
+              {MORE_FIELDS.filter((f, i) => {
+                if (i === 0 && cmPrimary) return false;   // cervicalMucus
+                if (i === 2 && ovTestPrimary) return false; // ovulationTest
+                if (i === 4 && isMorning && form.pill && form.pill !== 'none') return false; // pill
+                return true;
+              }).map(fieldCard)}
+
+              {/* Basal body temperature — only when not already in primary */}
+              {!bbtPrimary && (
+                <div className="glass-card" style={{ padding: '14px 14px 12px' }}>
+                  <p style={LABEL}>
+                    Basal Body Temp <span style={{ fontWeight: 600, textTransform: 'none', color: '#8A6A9A' }}>· measure before getting up</span>
+                  </p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <input
+                      type="number" inputMode="decimal" step="0.01" min="34" max="42"
+                      value={form.bbt ?? ''}
+                      onChange={(e) => setForm((f) => ({ ...f, bbt: e.target.value === '' ? undefined : Number(e.target.value) }))}
+                      placeholder="36.55"
+                      style={{
+                        width: 120, padding: '10px 12px', borderRadius: 12, fontSize: '.95rem', fontWeight: 700,
+                        border: '1px solid var(--glass-border-dim)', background: 'rgba(255,255,255,0.55)',
+                        color: '#1C0B2E', fontFamily: 'inherit', outline: 'none',
+                      }}
+                    />
+                    <span style={{ fontSize: '.85rem', fontWeight: 700, color: '#8A6A9A' }}>°C</span>
+                  </div>
+                </div>
+              )}
 
               {/* Water intake — stepper */}
               <div className="glass-card" style={{ padding: '14px 14px 12px' }}>
