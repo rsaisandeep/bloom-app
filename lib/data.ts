@@ -47,6 +47,7 @@ export async function fetchFromSheet(): Promise<BloomData> {
         periodEndAt: c.period_end_at ?? undefined,
         cycleLength: c.cycle_length ?? undefined,
         periodLength: c.period_length ?? undefined,
+        period_end_source: (c.period_end_source as 'manual' | 'computer' | null) ?? undefined,
       })),
       logs: (logs ?? []).map((l) => ({
         date: l.date,
@@ -98,6 +99,7 @@ export async function saveToSheet(data: BloomData): Promise<boolean> {
         period_end_at: c.periodEndAt ?? null,
         cycle_length: c.cycleLength ?? null,
         period_length: c.periodLength ?? null,
+        period_end_source: c.period_end_source ?? null,
       }));
       const { error } = await supabase.from('cycles').insert(cycleRows);
       // If the period_end_at / name columns aren't migrated yet, retry without
@@ -107,6 +109,7 @@ export async function saveToSheet(data: BloomData): Promise<boolean> {
           const c: Record<string, unknown> = { ...r };
           delete c.period_end_at;
           delete c.name;
+          delete c.period_end_source;
           return c;
         });
         await supabase.from('cycles').insert(stripped);
