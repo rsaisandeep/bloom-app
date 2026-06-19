@@ -44,7 +44,6 @@ export default function PullToRefresh({ children }: { children: ReactNode }) {
       if (!active) return;
       active = false;
       startY = 0;
-      setSnap(true);
 
       setPullY(prev => {
         if (prev >= THRESHOLD && !busyRef.current) {
@@ -54,11 +53,14 @@ export default function PullToRefresh({ children }: { children: ReactNode }) {
           setTimeout(() => {
             busyRef.current = false;
             setRefreshing(false);
+            // Only NOW snap back — after refresh is done
             setSnap(true);
             setPullY(0);
           }, 1500);
-          return HOLD_Y;
+          return prev; // freeze in place — no upward movement until refresh completes
         }
+        // Below threshold: snap back immediately
+        setSnap(true);
         return 0;
       });
     };
@@ -76,8 +78,8 @@ export default function PullToRefresh({ children }: { children: ReactNode }) {
   if (disabled) return <>{children}</>;
 
   const progress = Math.min(pullY / THRESHOLD, 1);
-  // Flower sits centered in the gap: gap = pullY, center = pullY/2, offset for 30px icon = -15
-  const flowerY = refreshing ? HOLD_Y / 2 - 15 : Math.max(pullY / 2 - 15, -20);
+  // Flower centered in gap — gap = pullY (frozen at release pos while refreshing)
+  const flowerY = Math.max(pullY / 2 - 15, -20);
   const showFlower = pullY > 5 || refreshing;
 
   return (
