@@ -1,30 +1,30 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { loadData, saveLog, startPeriod, isNewPeriodStart, getCurrentPhase, type DayLog, type Phase } from '@/lib/cycle';
 import { appDayKey } from '@/lib/day';
 import { fetchFromSheet, saveToSheet } from '@/lib/data';
+import { SYMPTOM_ARTICLE } from '@/lib/symptomArticles';
 
 type Option = { value: string; label: string; emoji: string };
 type Field = { key: keyof DayLog; label: string; options: Option[] };
 
-// Always-visible everyday fields.
-const CORE_FIELDS: Field[] = [
-  { key: 'flow',     label: 'Flow Today',         options: [{value:'none',label:'None',emoji:'⬜'},{value:'light',label:'Light',emoji:'🩸'},{value:'medium',label:'Medium',emoji:'🩸🩸'},{value:'heavy',label:'Heavy',emoji:'🩸🩸🩸'}] },
-  { key: 'cramps',   label: 'Cramps',             options: [{value:'none',label:'None',emoji:'😌'},{value:'mild',label:'Mild',emoji:'😐'},{value:'moderate',label:'Moderate',emoji:'😣'},{value:'severe',label:'Severe',emoji:'😫'}] },
-  { key: 'mood',     label: 'Mood',               options: [{value:'happy',label:'Happy',emoji:'😊'},{value:'calm',label:'Calm',emoji:'😌'},{value:'energetic',label:'Energetic',emoji:'⚡'},{value:'anxious',label:'Anxious',emoji:'😰'},{value:'irritable',label:'Irritable',emoji:'😤'},{value:'sad',label:'Sad',emoji:'😢'},{value:'fatigued',label:'Fatigued',emoji:'😴'}] },
-  { key: 'energy',   label: 'Energy Level',       options: [{value:'high',label:'High',emoji:'🔋'},{value:'medium',label:'Medium',emoji:'🔆'},{value:'low',label:'Low',emoji:'🪫'},{value:'exhausted',label:'Exhausted',emoji:'💤'}] },
-  { key: 'bloating', label: 'Bloating',           options: [{value:'none',label:'None',emoji:'✅'},{value:'mild',label:'Mild',emoji:'😤'},{value:'severe',label:'Severe',emoji:'🫃'}] },
-  { key: 'sleep',    label: "Last Night's Sleep", options: [{value:'good',label:'Good',emoji:'😴'},{value:'poor',label:'Poor',emoji:'😪'},{value:'insomnia',label:'Insomnia',emoji:'👀'}] },
-  { key: 'cravings', label: 'Cravings',           options: [{value:'none',label:'None',emoji:'🙅'},{value:'sweet',label:'Sweet',emoji:'🍫'},{value:'salty',label:'Salty',emoji:'🧂'},{value:'everything',label:'Everything',emoji:'🍕'}] },
+const FLOW_FIELDS: Field[] = [
+  { key: 'flow',          label: 'Flow Today',          options: [{value:'none',label:'None',emoji:'⬜'},{value:'light',label:'Light',emoji:'🩸'},{value:'medium',label:'Medium',emoji:'🩸🩸'},{value:'heavy',label:'Heavy',emoji:'🩸🩸🩸'}] },
+  { key: 'cramps',        label: 'Cramps',              options: [{value:'none',label:'None',emoji:'😌'},{value:'mild',label:'Mild',emoji:'😐'},{value:'moderate',label:'Moderate',emoji:'😣'},{value:'severe',label:'Severe',emoji:'😫'}] },
+  { key: 'bloating',      label: 'Bloating',            options: [{value:'none',label:'None',emoji:'✅'},{value:'mild',label:'Mild',emoji:'😤'},{value:'severe',label:'Severe',emoji:'🫃'}] },
+  { key: 'cervicalMucus', label: 'Cervical Mucus',      options: [{value:'none',label:'None',emoji:'⬜'},{value:'dry',label:'Dry',emoji:'🏜️'},{value:'sticky',label:'Sticky',emoji:'🌰'},{value:'creamy',label:'Creamy',emoji:'🥛'},{value:'watery',label:'Watery',emoji:'💧'},{value:'eggwhite',label:'Egg white',emoji:'🥚'},{value:'spotting',label:'Spotting',emoji:'🩸'}] },
+  { key: 'sex',           label: 'Sexual Activity',     options: [{value:'none',label:'None',emoji:'⬜'},{value:'protected',label:'Protected',emoji:'🛡️'},{value:'unprotected',label:'Unprotected',emoji:'❤️'}] },
+  { key: 'ovulationTest', label: 'Ovulation Test (LH)', options: [{value:'none',label:'Not taken',emoji:'⬜'},{value:'negative',label:'Negative',emoji:'➖'},{value:'positive',label:'Positive',emoji:'➕'}] },
+  { key: 'pregnancyTest', label: 'Pregnancy Test',      options: [{value:'none',label:'Not taken',emoji:'⬜'},{value:'negative',label:'Negative',emoji:'➖'},{value:'positive',label:'Positive',emoji:'➕'}] },
+  { key: 'pill',          label: 'Birth Control Pill',  options: [{value:'none',label:'N/A',emoji:'⬜'},{value:'taken',label:'Taken',emoji:'✅'},{value:'missed',label:'Missed',emoji:'❌'}] },
 ];
 
-// Tucked under "Add more" for users tracking fertility / contraception.
-const MORE_FIELDS: Field[] = [
-  { key: 'cervicalMucus', label: 'Cervical Mucus', options: [{value:'none',label:'None',emoji:'⬜'},{value:'dry',label:'Dry',emoji:'🏜️'},{value:'sticky',label:'Sticky',emoji:'🌰'},{value:'creamy',label:'Creamy',emoji:'🥛'},{value:'watery',label:'Watery',emoji:'💧'},{value:'eggwhite',label:'Egg white',emoji:'🥚'},{value:'spotting',label:'Spotting',emoji:'🩸'}] },
-  { key: 'sex', label: 'Sexual Activity', options: [{value:'none',label:'None',emoji:'⬜'},{value:'protected',label:'Protected',emoji:'🛡️'},{value:'unprotected',label:'Unprotected',emoji:'❤️'}] },
-  { key: 'ovulationTest', label: 'Ovulation Test (LH)', options: [{value:'none',label:'Not taken',emoji:'⬜'},{value:'negative',label:'Negative',emoji:'➖'},{value:'positive',label:'Positive',emoji:'➕'}] },
-  { key: 'pregnancyTest', label: 'Pregnancy Test', options: [{value:'none',label:'Not taken',emoji:'⬜'},{value:'negative',label:'Negative',emoji:'➖'},{value:'positive',label:'Positive',emoji:'➕'}] },
-  { key: 'pill', label: 'Birth Control Pill', options: [{value:'none',label:'N/A',emoji:'⬜'},{value:'taken',label:'Taken',emoji:'✅'},{value:'missed',label:'Missed',emoji:'❌'}] },
+const WELLBEING_FIELDS: Field[] = [
+  { key: 'mood',     label: 'Mood',               options: [{value:'happy',label:'Happy',emoji:'😊'},{value:'calm',label:'Calm',emoji:'😌'},{value:'energetic',label:'Energetic',emoji:'⚡'},{value:'anxious',label:'Anxious',emoji:'😰'},{value:'irritable',label:'Irritable',emoji:'😤'},{value:'sad',label:'Sad',emoji:'😢'},{value:'fatigued',label:'Fatigued',emoji:'😴'}] },
+  { key: 'energy',   label: 'Energy Level',       options: [{value:'high',label:'High',emoji:'🔋'},{value:'medium',label:'Medium',emoji:'🔆'},{value:'low',label:'Low',emoji:'🪫'},{value:'exhausted',label:'Exhausted',emoji:'💤'}] },
+  { key: 'sleep',    label: "Last Night's Sleep", options: [{value:'good',label:'Good',emoji:'😴'},{value:'poor',label:'Poor',emoji:'😪'},{value:'insomnia',label:'Insomnia',emoji:'👀'}] },
+  { key: 'cravings', label: 'Cravings',           options: [{value:'none',label:'None',emoji:'🙅'},{value:'sweet',label:'Sweet',emoji:'🍫'},{value:'salty',label:'Salty',emoji:'🧂'},{value:'everything',label:'Everything',emoji:'🍕'}] },
 ];
 
 const SYMPTOM_OPTIONS: Option[] = [
@@ -44,71 +44,62 @@ const SYMPTOM_OPTIONS: Option[] = [
   {value:'leg_cramps',label:'Leg cramps',emoji:'🦵'},
   {value:'low_libido',label:'Low libido',emoji:'💤'},
 ];
-const DEFAULTS: Partial<DayLog> = { cramps:'none', energy:'medium', mood:'calm', bloating:'none', sleep:'good', cravings:'none', flow:'none', cervicalMucus:'none', sex:'none', ovulationTest:'none', pregnancyTest:'none', pill:'none', symptoms:[] };
 
-// Phase-aware field filtering
-const PHASE_KEYS: Record<Phase, Set<string>> = {
-  menstrual:  new Set(['flow','cramps','bloating','mood','energy','sleep','cravings','symptoms']),
-  follicular: new Set(['energy','mood','cervicalMucus','bbt','symptoms']),
-  ovulation:  new Set(['cervicalMucus','bbt','ovulationTest','energy','mood','symptoms']),
-  luteal:     new Set(['cramps','bloating','mood','energy','cravings','sleep','symptoms']),
+const DEFAULTS: Partial<DayLog> = {
+  cramps: 'none', energy: 'medium', mood: 'calm', bloating: 'none',
+  sleep: 'good', cravings: 'none', flow: 'none', cervicalMucus: 'none',
+  sex: 'none', ovulationTest: 'none', pregnancyTest: 'none', pill: 'none', symptoms: [],
 };
-const MORNING_KEYS = new Set(['bbt','energy','mood','cervicalMucus','pill']);
-const EVENING_KEYS = new Set(['flow','cramps','bloating','sleep','cravings','symptoms','ovulationTest']);
+
+// Active chip color varies with cycle phase
+const PHASE_CHIP: Record<Phase, { bg: string; border: string; color: string; shadow: string }> = {
+  menstrual:  { bg: 'rgba(244,63,94,0.13)',  border: 'rgba(244,63,94,0.5)',  color: '#be123c', shadow: '0 0 0 2px rgba(244,63,94,0.18)'  },
+  follicular: { bg: 'rgba(124,58,237,0.12)', border: 'rgba(124,58,237,0.5)', color: '#6d28d9', shadow: '0 0 0 2px rgba(124,58,237,0.18)' },
+  ovulation:  { bg: 'rgba(217,119,6,0.12)',  border: 'rgba(217,119,6,0.5)',  color: '#b45309', shadow: '0 0 0 2px rgba(217,119,6,0.18)'  },
+  luteal:     { bg: 'rgba(79,70,229,0.12)',  border: 'rgba(79,70,229,0.5)',  color: '#4338ca', shadow: '0 0 0 2px rgba(79,70,229,0.18)'  },
+};
+
+type Tab = 'flow' | 'symptoms' | 'wellbeing';
+const TABS: { id: Tab; label: string; emoji: string }[] = [
+  { id: 'flow',      label: 'Flow',      emoji: '🩸' },
+  { id: 'symptoms',  label: 'Symptoms',  emoji: '💊' },
+  { id: 'wellbeing', label: 'Wellbeing', emoji: '✨' },
+];
 
 interface LogSheetProps {
   open: boolean;
   onClose: () => void;
   onSaved?: () => void;
-  /** Specific date to log (e.g. from calendar). Defaults to today. */
   date?: string;
 }
 
 export default function LogSheet({ open, onClose, onSaved, date: dateProp }: LogSheetProps) {
+  const router = useRouter();
   const today = appDayKey();
   const date = dateProp ?? today;
   const isToday = date === today;
   const [form, setForm] = useState<Partial<DayLog>>(DEFAULTS);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [showMore, setShowMore] = useState(false);
   const [phase, setPhase] = useState<Phase>('follicular');
-
+  const [tab, setTab] = useState<Tab>('flow');
+  const [symptomSearch, setSymptomSearch] = useState('');
   const isMorning = new Date().getHours() < 12;
-  const phaseKeys = PHASE_KEYS[phase];
-  const timeKeys = isMorning ? MORNING_KEYS : EVENING_KEYS;
-  const primaryKeys = new Set([...phaseKeys].filter(k => timeKeys.has(k)));
-  // pill: show in morning primary only if previously logged
-  if (isMorning && form.pill && form.pill !== 'none') primaryKeys.add('pill');
-
-  const primaryCoreFields = CORE_FIELDS.filter(f => primaryKeys.has(f.key as string));
-  const secondaryCoreFields = CORE_FIELDS.filter(f => !primaryKeys.has(f.key as string));
-  const bbtPrimary = isMorning && (phase === 'follicular' || phase === 'ovulation');
-  const ovTestPrimary = !isMorning && phase === 'ovulation';
-  const cmPrimary = primaryKeys.has('cervicalMucus');
-  const symptomsPrimary = primaryKeys.has('symptoms');
-
-  // Reveal the advanced section automatically when a log already has data there.
-  function hasMoreData(l: Partial<DayLog>): boolean {
-    return (l.cervicalMucus && l.cervicalMucus !== 'none') || (l.sex && l.sex !== 'none') ||
-      (l.ovulationTest && l.ovulationTest !== 'none') || (l.pregnancyTest && l.pregnancyTest !== 'none') ||
-      (l.pill && l.pill !== 'none') || l.bbt != null || l.water != null || l.weight != null || false;
-  }
 
   useEffect(() => {
     if (!open) return;
     setSaved(false);
     setSaving(false);
+    setTab('flow');
+    setSymptomSearch('');
     const cachedData = loadData();
     const cached = cachedData.logs.find((l) => l.date === date);
-    const initial = cached ?? DEFAULTS;
-    setForm(initial);
-    setShowMore(hasMoreData(initial));
+    setForm(cached ?? DEFAULTS);
     setPhase(getCurrentPhase(cachedData).phase);
     fetchFromSheet().then((data) => {
       setPhase(getCurrentPhase(data).phase);
       const existing = data.logs.find((l) => l.date === date);
-      if (existing) { setForm(existing); if (hasMoreData(existing)) setShowMore(true); }
+      if (existing) setForm(existing);
     });
   }, [open, date]);
 
@@ -135,18 +126,39 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
     });
   }
 
-  const LABEL = { margin: '0 0 10px', fontSize: '.72rem', fontWeight: 800, color: '#1C0B2E', letterSpacing: '.1px', textTransform: 'uppercase' as const };
-  const chipStyle = (active: boolean) => ({
+  function openArticle(slug: string) {
+    onClose();
+    router.push(`/read?open=${slug}`);
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    const log = { ...DEFAULTS, ...form, date } as DayLog;
+    saveLog(log);
+    await saveToSheet(loadData());
+    setSaved(true);
+    setTimeout(() => { onSaved?.(); onClose(); }, 500);
+  }
+
+  const pc = PHASE_CHIP[phase];
+
+  const LABEL = {
+    margin: '0 0 10px', fontSize: '.72rem', fontWeight: 800,
+    color: '#1C0B2E', letterSpacing: '.1px', textTransform: 'uppercase' as const,
+  };
+
+  const chipStyle = (active: boolean): React.CSSProperties => ({
     display: 'flex', alignItems: 'center', gap: 5,
     padding: '8px 12px', borderRadius: 12, fontSize: '.78rem', fontWeight: 700,
     cursor: 'pointer', transition: 'all .18s cubic-bezier(.22,.61,.36,1)',
-    border: active ? '1px solid rgba(110,52,130,0.5)' : '1px solid var(--glass-border-dim)',
-    background: active ? 'rgba(110,52,130,0.12)' : 'rgba(255,255,255,0.45)',
+    border: active ? `1px solid ${pc.border}` : '1px solid var(--glass-border-dim)',
+    background: active ? pc.bg : 'rgba(255,255,255,0.45)',
     backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
-    color: active ? '#6E3482' : '#1C0B2E',
-    boxShadow: active ? '0 0 0 2px rgba(110,52,130,0.2)' : '0 2px 8px rgba(0,0,0,0.04),inset 0 1px 0 rgba(255,255,255,0.8)',
+    color: active ? pc.color : '#1C0B2E',
+    boxShadow: active ? pc.shadow : '0 2px 8px rgba(0,0,0,0.04),inset 0 1px 0 rgba(255,255,255,0.8)',
     fontFamily: 'inherit',
   });
+
   const fieldCard = (field: Field) => (
     <div key={field.key} className="glass-card" style={{ padding: '14px 14px 12px' }}>
       <p style={LABEL}>{field.label}</p>
@@ -160,14 +172,9 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
     </div>
   );
 
-  async function handleSave() {
-    setSaving(true);
-    const log = { ...DEFAULTS, ...form, date } as DayLog;
-    saveLog(log);
-    await saveToSheet(loadData());
-    setSaved(true);
-    setTimeout(() => { onSaved?.(); onClose(); }, 500);
-  }
+  const filteredSymptoms = symptomSearch.trim()
+    ? SYMPTOM_OPTIONS.filter((o) => o.label.toLowerCase().includes(symptomSearch.toLowerCase()))
+    : SYMPTOM_OPTIONS;
 
   if (!open) return null;
 
@@ -175,164 +182,171 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
     <>
       <div onClick={onClose} style={{
         position: 'fixed', inset: 0, background: 'rgba(28,11,46,0.45)',
-        backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
-        zIndex: 300,
+        backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', zIndex: 300,
       }} />
       <div style={{
         position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
         width: '100%', maxWidth: 448,
         background: 'linear-gradient(180deg,#EEE8F5 0%,#E4DCF0 100%)',
-        borderRadius: '24px 24px 0 0',
-        zIndex: 301,
+        borderRadius: '24px 24px 0 0', zIndex: 301,
         maxHeight: '92dvh', overflowY: 'auto',
         animation: 'slideUp .32s cubic-bezier(.34,1.2,.64,1) both',
         paddingBottom: 'calc(20px + env(safe-area-inset-bottom))',
       }}>
-        {/* Sticky header */}
+
+        {/* Sticky header + tabs */}
         <div style={{
-          padding: '12px 16px 10px', position: 'sticky', top: 0, zIndex: 1,
-          background: 'rgba(238,232,245,0.92)', backdropFilter: 'blur(20px)',
+          position: 'sticky', top: 0, zIndex: 1,
+          background: 'rgba(238,232,245,0.96)', backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)', borderRadius: '24px 24px 0 0',
+          paddingBottom: 0,
         }}>
-          <div style={{ width: 40, height: 4, borderRadius: 999, background: 'rgba(110,52,130,0.2)', margin: '0 auto 12px' }} />
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div>
-              <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#1C0B2E' }}>
-                {isToday ? "Today's Check-in" : 'Edit Log'}
-              </h2>
-              {isToday ? (
+          <div style={{ padding: '12px 16px 10px' }}>
+            <div style={{ width: 40, height: 4, borderRadius: 999, background: 'rgba(110,52,130,0.2)', margin: '0 auto 12px' }} />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#1C0B2E' }}>
+                  {isToday ? "Today's Check-in" : 'Edit Log'}
+                </h2>
                 <p style={{ margin: '2px 0 0', fontSize: 12, color: '#8A6A9A' }}>
-                  {isMorning ? '🌅 Morning check-in' : '🌙 Evening check-in'}
+                  {isToday
+                    ? (isMorning ? '🌅 Morning check-in' : '🌙 Evening check-in')
+                    : new Date(date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
                 </p>
-              ) : (
-                <p style={{ margin: '2px 0 0', fontSize: 12, color: '#8A6A9A' }}>
-                  {new Date(date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-                </p>
-              )}
+              </div>
+              <button onClick={onClose} style={{
+                background: 'rgba(165,106,189,0.15)', border: 'none', borderRadius: 999,
+                width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', color: '#6E3482', fontSize: 16, fontFamily: 'inherit',
+              }}>✕</button>
             </div>
-            <button onClick={onClose} style={{
-              background: 'rgba(165,106,189,0.15)', border: 'none', borderRadius: 999,
-              width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', color: '#6E3482', fontSize: 16, fontFamily: 'inherit',
-            }}>✕</button>
+          </div>
+
+          {/* Tabs */}
+          <div style={{ display: 'flex', borderBottom: '1px solid rgba(165,106,189,0.15)', padding: '0 8px' }}>
+            {TABS.map((t) => (
+              <button key={t.id} onClick={() => setTab(t.id)} style={{
+                flex: 1, padding: '9px 4px 8px', border: 'none', cursor: 'pointer',
+                fontFamily: 'inherit', fontSize: '.8rem', fontWeight: 800, background: 'transparent',
+                color: tab === t.id ? pc.color : '#8A6A9A',
+                borderBottom: tab === t.id ? `2.5px solid ${pc.color}` : '2.5px solid transparent',
+                transition: 'all .2s', marginBottom: -1,
+              }}>
+                {t.emoji} {t.label}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Form */}
+        {/* Tab content */}
         <div style={{ padding: '10px 16px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {primaryCoreFields.map(fieldCard)}
 
-          {/* Cervical mucus — primary when morning + follicular/ovulation */}
-          {cmPrimary && fieldCard(MORE_FIELDS[0])}
+          {/* ── Flow tab ── */}
+          {tab === 'flow' && (
+            <>
+              {FLOW_FIELDS.map(fieldCard)}
+              <div className="glass-card" style={{ padding: '14px 14px 12px' }}>
+                <p style={LABEL}>
+                  Basal Body Temp{' '}
+                  <span style={{ fontWeight: 600, textTransform: 'none', color: '#8A6A9A' }}>· measure before getting up</span>
+                </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <input
+                    type="number" inputMode="decimal" step="0.01" min="34" max="42"
+                    value={form.bbt ?? ''}
+                    onChange={(e) => setForm((f) => ({ ...f, bbt: e.target.value === '' ? undefined : Number(e.target.value) }))}
+                    placeholder="36.55"
+                    style={{
+                      width: 120, padding: '10px 12px', borderRadius: 12, fontSize: '.95rem', fontWeight: 700,
+                      border: '1px solid var(--glass-border-dim)', background: 'rgba(255,255,255,0.55)',
+                      color: '#1C0B2E', fontFamily: 'inherit', outline: 'none',
+                    }}
+                  />
+                  <span style={{ fontSize: '.85rem', fontWeight: 700, color: '#8A6A9A' }}>°C</span>
+                </div>
+              </div>
+            </>
+          )}
 
-          {/* BBT — primary when morning + follicular/ovulation */}
-          {bbtPrimary && (
-            <div className="glass-card" style={{ padding: '14px 14px 12px' }}>
-              <p style={LABEL}>
-                Basal Body Temp <span style={{ fontWeight: 600, textTransform: 'none', color: '#8A6A9A' }}>· measure before getting up</span>
-              </p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {/* ── Symptoms tab ── */}
+          {tab === 'symptoms' && (
+            <>
+              {/* Search */}
+              <div style={{ position: 'relative' }}>
                 <input
-                  type="number" inputMode="decimal" step="0.01" min="34" max="42"
-                  value={form.bbt ?? ''}
-                  onChange={(e) => setForm((f) => ({ ...f, bbt: e.target.value === '' ? undefined : Number(e.target.value) }))}
-                  placeholder="36.55"
+                  type="text"
+                  placeholder="Search symptoms…"
+                  value={symptomSearch}
+                  onChange={(e) => setSymptomSearch(e.target.value)}
                   style={{
-                    width: 120, padding: '10px 12px', borderRadius: 12, fontSize: '.95rem', fontWeight: 700,
-                    border: '1px solid var(--glass-border-dim)', background: 'rgba(255,255,255,0.55)',
-                    color: '#1C0B2E', fontFamily: 'inherit', outline: 'none',
+                    width: '100%', padding: '10px 36px 10px 14px', borderRadius: 12,
+                    border: '1px solid var(--glass-border-dim)', background: 'rgba(255,255,255,0.7)',
+                    fontSize: '.85rem', fontWeight: 600, color: '#1C0B2E', fontFamily: 'inherit',
+                    outline: 'none', boxSizing: 'border-box',
                   }}
                 />
-                <span style={{ fontSize: '.85rem', fontWeight: 700, color: '#8A6A9A' }}>°C</span>
+                {symptomSearch && (
+                  <button onClick={() => setSymptomSearch('')} style={{
+                    position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+                    background: 'none', border: 'none', cursor: 'pointer', color: '#8A6A9A', fontSize: 14,
+                    fontFamily: 'inherit',
+                  }}>✕</button>
+                )}
               </div>
-            </div>
+
+              <div className="glass-card" style={{ padding: '14px 14px 12px' }}>
+                <p style={LABEL}>
+                  Symptoms{' '}
+                  <span style={{ fontWeight: 600, textTransform: 'none', color: '#8A6A9A' }}>· tap to log · 📖 to read</span>
+                </p>
+                {filteredSymptoms.length === 0 ? (
+                  <p style={{ fontSize: 13, color: '#8A6A9A', margin: 0, padding: '4px 0' }}>
+                    No symptoms match &ldquo;{symptomSearch}&rdquo;
+                  </p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                    {filteredSymptoms.map((opt) => {
+                      const articleSlug = SYMPTOM_ARTICLE[opt.value];
+                      const active = (form.symptoms ?? []).includes(opt.value);
+                      return (
+                        <div key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                          <button
+                            onClick={() => toggleSymptom(opt.value)}
+                            style={{ ...chipStyle(active), flex: 1, justifyContent: 'flex-start' }}
+                          >
+                            <span>{opt.emoji}</span><span>{opt.label}</span>
+                          </button>
+                          {articleSlug && (
+                            <button
+                              onClick={() => openArticle(articleSlug)}
+                              title="Read related article"
+                              style={{
+                                flexShrink: 0, width: 34, height: 34, borderRadius: 10,
+                                border: '1px solid var(--glass-border-dim)',
+                                background: 'rgba(255,255,255,0.55)', cursor: 'pointer',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: 15, fontFamily: 'inherit',
+                                transition: 'background .15s',
+                              }}
+                            >
+                              📖
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </>
           )}
 
-          {/* Ovulation test — primary when evening + ovulation */}
-          {ovTestPrimary && fieldCard(MORE_FIELDS[2])}
-
-          {/* Pill — primary when morning + previously logged */}
-          {isMorning && form.pill && form.pill !== 'none' && fieldCard(MORE_FIELDS[4])}
-
-          {/* Symptoms — primary in evening; otherwise moved to expander */}
-          {symptomsPrimary && (
-            <div className="glass-card" style={{ padding: '14px 14px 12px' }}>
-              <p style={LABEL}>
-                Symptoms <span style={{ fontWeight: 600, textTransform: 'none', color: '#8A6A9A' }}>· select all that apply</span>
-              </p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 7 }}>
-                {SYMPTOM_OPTIONS.map((opt) => (
-                  <button key={opt.value} onClick={() => toggleSymptom(opt.value)} style={{ ...chipStyle((form.symptoms ?? []).includes(opt.value)), width: '100%', justifyContent: 'center' }}>
-                    <span>{opt.emoji}</span><span>{opt.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Add more (optional) — secondary phase fields + fertility, contraception, body metrics */}
-          <button onClick={() => setShowMore((s) => !s)} className="glass-card" style={{
-            padding: '13px 16px', textAlign: 'left', cursor: 'pointer', width: '100%',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            color: '#6E3482', fontSize: '.85rem', fontWeight: 800, fontFamily: 'inherit', border: '1px solid var(--glass-border-dim)',
-          }}>
-            <span>{showMore ? 'Hide extra tracking' : 'Add more — fertility, pill, weight…'}</span>
-            <span>{showMore ? '▲' : '▼'}</span>
-          </button>
-
-          {showMore && (
+          {/* ── Wellbeing tab ── */}
+          {tab === 'wellbeing' && (
             <>
-              {/* Secondary core fields not shown in primary */}
-              {secondaryCoreFields.map(fieldCard)}
+              {WELLBEING_FIELDS.map(fieldCard)}
 
-              {/* Symptoms moved here when in morning (not in primary) */}
-              {!symptomsPrimary && (
-                <div className="glass-card" style={{ padding: '14px 14px 12px' }}>
-                  <p style={LABEL}>
-                    Symptoms <span style={{ fontWeight: 600, textTransform: 'none', color: '#8A6A9A' }}>· select all that apply</span>
-                  </p>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 7 }}>
-                    {SYMPTOM_OPTIONS.map((opt) => (
-                      <button key={opt.value} onClick={() => toggleSymptom(opt.value)} style={{ ...chipStyle((form.symptoms ?? []).includes(opt.value)), width: '100%', justifyContent: 'center' }}>
-                        <span>{opt.emoji}</span><span>{opt.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* MORE_FIELDS not already shown in primary */}
-              {MORE_FIELDS.filter((f, i) => {
-                if (i === 0 && cmPrimary) return false;   // cervicalMucus
-                if (i === 2 && ovTestPrimary) return false; // ovulationTest
-                if (i === 4 && isMorning && form.pill && form.pill !== 'none') return false; // pill
-                return true;
-              }).map(fieldCard)}
-
-              {/* Basal body temperature — only when not already in primary */}
-              {!bbtPrimary && (
-                <div className="glass-card" style={{ padding: '14px 14px 12px' }}>
-                  <p style={LABEL}>
-                    Basal Body Temp <span style={{ fontWeight: 600, textTransform: 'none', color: '#8A6A9A' }}>· measure before getting up</span>
-                  </p>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <input
-                      type="number" inputMode="decimal" step="0.01" min="34" max="42"
-                      value={form.bbt ?? ''}
-                      onChange={(e) => setForm((f) => ({ ...f, bbt: e.target.value === '' ? undefined : Number(e.target.value) }))}
-                      placeholder="36.55"
-                      style={{
-                        width: 120, padding: '10px 12px', borderRadius: 12, fontSize: '.95rem', fontWeight: 700,
-                        border: '1px solid var(--glass-border-dim)', background: 'rgba(255,255,255,0.55)',
-                        color: '#1C0B2E', fontFamily: 'inherit', outline: 'none',
-                      }}
-                    />
-                    <span style={{ fontSize: '.85rem', fontWeight: 700, color: '#8A6A9A' }}>°C</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Water intake — stepper */}
+              {/* Water stepper */}
               <div className="glass-card" style={{ padding: '14px 14px 12px' }}>
                 <p style={LABEL}>Water <span style={{ fontWeight: 600, textTransform: 'none', color: '#8A6A9A' }}>· glasses today</span></p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -368,15 +382,38 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
                   <span style={{ fontSize: '.85rem', fontWeight: 700, color: '#8A6A9A' }}>kg</span>
                 </div>
               </div>
+
+              {/* Notes */}
+              <div className="glass-card" style={{ padding: '14px 14px 12px' }}>
+                <p style={LABEL}>Notes <span style={{ fontWeight: 600, textTransform: 'none', color: '#8A6A9A' }}>· optional</span></p>
+                <textarea
+                  value={form.notes ?? ''}
+                  onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value || undefined }))}
+                  placeholder="Anything else to note…"
+                  rows={3}
+                  style={{
+                    width: '100%', padding: '10px 12px', borderRadius: 12, fontSize: '.85rem',
+                    border: '1px solid var(--glass-border-dim)', background: 'rgba(255,255,255,0.55)',
+                    color: '#1C0B2E', fontFamily: 'inherit', outline: 'none', resize: 'none',
+                    lineHeight: 1.55, boxSizing: 'border-box',
+                  }}
+                />
+              </div>
             </>
           )}
 
           <button onClick={handleSave} disabled={saving} style={{
             width: '100%', marginTop: 6, padding: '14px', border: 0,
             borderRadius: 16, fontWeight: 800, fontSize: '1rem', color: '#fff',
-            background: saved ? 'linear-gradient(135deg,#22c55e,#16a34a)' : saving ? 'rgba(110,52,130,0.5)' : 'linear-gradient(135deg,#6E3482,#49225B)',
-            boxShadow: saved ? '0 8px 24px rgba(34,197,94,0.35)' : '0 8px 24px rgba(110,52,130,0.35),inset 0 1px 0 rgba(255,255,255,0.2)',
-            cursor: saving ? 'default' : 'pointer', transition: 'all .2s cubic-bezier(.22,.61,.36,1)',
+            background: saved
+              ? 'linear-gradient(135deg,#22c55e,#16a34a)'
+              : saving ? 'rgba(110,52,130,0.5)'
+              : 'linear-gradient(135deg,#6E3482,#49225B)',
+            boxShadow: saved
+              ? '0 8px 24px rgba(34,197,94,0.35)'
+              : '0 8px 24px rgba(110,52,130,0.35),inset 0 1px 0 rgba(255,255,255,0.2)',
+            cursor: saving ? 'default' : 'pointer',
+            transition: 'all .2s cubic-bezier(.22,.61,.36,1)',
             fontFamily: 'inherit',
           }}>
             {saved ? '✓ Saved!' : saving ? 'Saving…' : isToday ? 'Save check-in →' : 'Save changes →'}

@@ -11,11 +11,14 @@ import { getActionItems, getActionGroups } from '@/lib/actions';
 import { fetchFromSheet, sanitize } from '@/lib/data';
 import { localDateStr, appDayKey } from '@/lib/day';
 import { useAppDay } from '@/lib/useAppDay';
+import { detectAnomalies, type Anomaly } from '@/lib/anomalies';
+import { getActiveNudge, dismissNudge, type Nudge } from '@/lib/nudges';
 import Hamburger from '@/components/Hamburger';
 import InfoModal from '@/components/InfoModal';
 import LogoutButton from '@/components/LogoutButton';
 import PeriodStartModal from '@/components/PeriodStartModal';
 import LogSheet from '@/components/LogSheet';
+import BloomMascot from '@/components/BloomMascot';
 
 type NotifType = 'late_period' | 'long_cycle' | 'fertile_window' | 'pms_incoming' | 'luteal_halfway' | 'logging_streak';
 const NOTIF_META: Record<NotifType, { title: string; icon: string; bg: string; border: string; iconBg: string; textColor: string }> = {
@@ -51,6 +54,8 @@ export default function HomePage() {
   const [done, setDone] = useState<number[]>([]);
   const [showLog, setShowLog] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [dismissedAnomalies, setDismissedAnomalies] = useState<Set<string>>(new Set());
+  const [nudge, setNudge] = useState<Nudge | null>(null);
   // Lazy-init from sessionStorage to avoid a one-frame flash where dismissed
   // notifications reappear before the useEffect hydration fires.
   const [dismissedNotifs, setDismissedNotifs] = useState<Set<string>>(() => {
@@ -78,7 +83,13 @@ export default function HomePage() {
     }
     setData(cached);
     setLoaded(true);
-    fetchFromSheet().then(d => { setData(d); });
+    const { phase: cachedPhase } = getCurrentPhase(cached);
+    setNudge(getActiveNudge(cached, cachedPhase));
+    fetchFromSheet().then(d => {
+      setData(d);
+      const { phase: freshPhase } = getCurrentPhase(d);
+      setNudge(getActiveNudge(d, freshPhase));
+    });
   }, [router]);
 
   // Reset the focus checklist whenever the logical day changes (incl. live 5 AM rollover).
@@ -228,7 +239,31 @@ export default function HomePage() {
   const actions = getActionItems(phase, todayLog, goals);
   const actionGroups = getActionGroups(phase, todayLog, goals);
 
-  function refresh() { setData(sanitize(loadData())); fetchFromSheet().then(setData); }
+  // For hero phase timeline
+  const periodLen = getAveragePeriodLength(data);
+  const ovDay = Math.max(periodLen + 3, avgLen - 14);
+  const menstrualPct = (periodLen / avgLen) * 100;
+  const follicularPct = Math.max(0, ((ovDay - periodLen - 2) / avgLen) * 100);
+  const ovulationPct = (3 / avgLen) * 100;
+  const lutealPct = Math.max(0, 100 - menstrualPct - follicularPct - ovulationPct);
+  const progressPct = hasCycles ? Math.min((dayOfCycle / avgLen) * 100, 100) : 0;
+
+  // Anomaly detection (client-side, session-dismissed)
+  const anomalies: Anomaly[] = hasCycles ? detectAnomalies(data).filter((a) => !dismissedAnomalies.has(a.type)) : [];
+
+  function dismissAnomaly(type: string) {
+    setDismissedAnomalies((prev) => new Set([...prev, type]));
+  }
+
+  function refresh() {
+    const d = sanitize(loadData());
+    setData(d);
+    fetchFromSheet().then((fresh) => {
+      setData(fresh);
+      const { phase } = getCurrentPhase(fresh);
+      setNudge(getActiveNudge(fresh, phase));
+    });
+  }
 
   return (
     <div style={{ minHeight: '100vh', padding: '0 16px' }}>
@@ -333,10 +368,19 @@ export default function HomePage() {
                 style={{ transition: 'stroke-dasharray .8s cubic-bezier(.34,1.2,.64,1)' }} />
             </svg>
             <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', fontWeight: 600, letterSpacing: 0.5 }}>DAY</span>
-              <span style={{ fontSize: 30, color: '#fff', fontWeight: 800, lineHeight: 1.1, opacity: loaded ? 1 : 0.35, transition: 'opacity .3s' }}>
-                {!loaded ? '–' : hasCycles ? dayOfCycle : '?'}
-              </span>
+              {!loaded ? (
+                <>
+                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', fontWeight: 600, letterSpacing: 0.5 }}>DAY</span>
+                  <span style={{ fontSize: 30, color: '#fff', fontWeight: 800, lineHeight: 1.1, opacity: 0.35 }}>–</span>
+                </>
+              ) : hasCycles ? (
+                <>
+                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', fontWeight: 600, letterSpacing: 0.5 }}>DAY</span>
+                  <span style={{ fontSize: 30, color: '#fff', fontWeight: 800, lineHeight: 1.1 }}>{dayOfCycle}</span>
+                </>
+              ) : (
+                <BloomMascot size={72} />
+              )}
             </div>
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -363,6 +407,42 @@ export default function HomePage() {
                 Set up cycle →
               </Link>
             ) : null}
+
+            {/* ── Phase timeline bar ── */}
+            {hasCycles && (
+              <div style={{ marginTop: 14 }}>
+                <div style={{ position: 'relative', height: 7, borderRadius: 999, display: 'flex', overflow: 'visible' }}>
+                  <div style={{ width: `${menstrualPct}%`,  background: '#f87171', borderRadius: '999px 0 0 999px', minWidth: 4 }} />
+                  <div style={{ width: `${follicularPct}%`, background: '#a78bfa', minWidth: follicularPct > 0 ? 4 : 0 }} />
+                  <div style={{ width: `${ovulationPct}%`, background: '#fbbf24', minWidth: 4 }} />
+                  <div style={{ flex: 1, background: '#818cf8', borderRadius: '0 999px 999px 0', minWidth: lutealPct > 0 ? 4 : 0 }} />
+                  {/* Current day marker */}
+                  <div style={{
+                    position: 'absolute',
+                    left: `${progressPct}%`,
+                    top: '50%', transform: 'translate(-50%, -50%)',
+                    width: 14, height: 14, borderRadius: '50%',
+                    background: '#fff',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.35)',
+                    border: '2px solid rgba(255,255,255,0.9)',
+                    transition: 'left .8s cubic-bezier(.34,1.2,.64,1)',
+                  }} />
+                </div>
+                <div style={{ display: 'flex', gap: 10, marginTop: 7, flexWrap: 'wrap' }}>
+                  {[
+                    { label: 'Menstrual', color: '#f87171' },
+                    { label: 'Follicular', color: '#a78bfa' },
+                    { label: 'Ovulation', color: '#fbbf24' },
+                    { label: 'Luteal', color: '#818cf8' },
+                  ].map((p) => (
+                    <div key={p.label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: p.color, flexShrink: 0 }} />
+                      <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)', fontWeight: 700, letterSpacing: 0.3 }}>{p.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -472,6 +552,32 @@ export default function HomePage() {
           >✕</button>
         </div>
       )}
+
+      {/* ── Anomaly alerts (client-side, dismissible per session) ── */}
+      {anomalies.slice(0, 1).map((a) => (
+        <div key={a.type} className="glass-card anim-float" style={{
+          padding: '14px 16px', marginBottom: 14,
+          display: 'flex', alignItems: 'center', gap: 12,
+          background: 'linear-gradient(135deg,rgba(245,158,11,0.14),rgba(217,119,6,0.08))',
+          borderColor: 'rgba(245,158,11,0.40)',
+        }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: 14, flexShrink: 0,
+            background: 'linear-gradient(135deg,#f59e0b,#d97706)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
+            boxShadow: '0 6px 16px rgba(245,158,11,0.3)',
+          }}>⚠️</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#1C0B2E' }}>{a.title}</p>
+            <p style={{ margin: '2px 0 0', fontSize: 12, color: '#b45309', lineHeight: 1.4 }}>{a.message}</p>
+          </div>
+          <button
+            onClick={() => dismissAnomaly(a.type)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#A99BB5', fontSize: 16, padding: '4px 6px', flexShrink: 0, fontFamily: 'var(--font-outfit)' }}
+            aria-label="Dismiss"
+          >✕</button>
+        </div>
+      ))}
 
       {/* ── No-log nudge banner ── */}
       {!paused && !todayLog && (
@@ -594,6 +700,32 @@ export default function HomePage() {
         ))
       ); })()}
       </>)}
+
+      {/* ── Feature adoption nudge ── */}
+      {!paused && nudge && (
+        <div className="glass-card anim-float" style={{
+          padding: '14px 16px', marginBottom: 14, marginTop: 4,
+          display: 'flex', alignItems: 'center', gap: 12,
+          background: 'linear-gradient(135deg,rgba(110,52,130,0.10),rgba(165,106,189,0.06))',
+          borderColor: 'rgba(165,106,189,0.30)',
+        }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: 14, flexShrink: 0,
+            background: 'linear-gradient(135deg,#A56ABD,#6E3482)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
+            boxShadow: '0 6px 16px rgba(110,52,130,0.28)',
+          }}>{nudge.icon}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#1C0B2E' }}>{nudge.title}</p>
+            <p style={{ margin: '2px 0 0', fontSize: 12, color: '#6E3482', lineHeight: 1.4 }}>{nudge.message}</p>
+          </div>
+          <button
+            onClick={() => { dismissNudge(nudge.id); setNudge(null); }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#A99BB5', fontSize: 16, padding: '4px 6px', flexShrink: 0, fontFamily: 'var(--font-outfit)' }}
+            aria-label="Dismiss nudge"
+          >✕</button>
+        </div>
+      )}
     </div>
   );
 }

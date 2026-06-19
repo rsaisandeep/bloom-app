@@ -28,6 +28,11 @@ export default function ReadPage() {
 
   useEffect(() => {
     sessionStorage.setItem('bloom_read_visited', 'true');
+    // Support direct article open via ?open=slug (e.g. from symptom chip links)
+    try {
+      const slug = new URL(window.location.href).searchParams.get('open');
+      if (slug) setOpenSlug(slug);
+    } catch {}
     fetchFromSheet().then((data) => {
       const { phase } = getCurrentPhase(data);
       setCurrentSlug(PHASE_SLUG[phase]);

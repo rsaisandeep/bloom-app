@@ -10,6 +10,7 @@ import LogSheet from "@/components/LogSheet";
 const PHASE_COLORS: Record<string, string> = {
   menstrual: "#fca5a5", follicular: "#c4b5fd", ovulation: "#fde68a", luteal: "#a5b4fc",
 };
+const FERTILE_COLOR = "#6ee7b7"; // teal-green for fertile window
 
 export default function CalendarPage() {
   const [data, setData] = useState<BloomData>(() => loadData());
@@ -58,10 +59,14 @@ export default function CalendarPage() {
       } else if (predictions) {
         const diff = Math.round((date.getTime() - lastStart.getTime()) / 86400000);
         const avg = predictions.avgLength;
-        phase = phaseFromDay((diff % avg) + 1, avg); // position within the projected cycle
+        phase = phaseFromDay((diff % avg) + 1, avg);
       }
     }
-    return { phase, hasLog, isToday };
+    // Fertile window: between fertileStart and fertileEnd (inclusive)
+    const isFertile = predictions
+      ? dateStr >= localDateStr(predictions.fertileStart) && dateStr <= localDateStr(predictions.fertileEnd)
+      : false;
+    return { phase, hasLog, isToday, isFertile };
   }
 
   const monthLabel = view.toLocaleDateString("en-US", { month: "long", year: "numeric" });
@@ -84,6 +89,10 @@ export default function CalendarPage() {
             <span style={{ fontSize: ".68rem", fontWeight: 700, color: "#6E3482" }}>{meta.label}</span>
           </div>
         ))}
+        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+          <div style={{ width: 10, height: 10, borderRadius: "50%", background: FERTILE_COLOR }} />
+          <span style={{ fontSize: ".68rem", fontWeight: 700, color: "#6E3482" }}>Fertile window</span>
+        </div>
       </div>
 
       {/* Calendar */}
@@ -96,20 +105,28 @@ export default function CalendarPage() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 4 }}>
           {Array(firstDay).fill(null).map((_,i) => <div key={`b${i}`} />)}
           {Array.from({length: daysInMonth}, (_,i) => i+1).map((day) => {
-            const { phase, hasLog, isToday } = getDayInfo(day);
+            const { phase, hasLog, isToday, isFertile } = getDayInfo(day);
             const cellStr = localDateStr(new Date(year, month, day));
             const isFuture = cellStr > localDateStr(today);
+            // Fertile window overrides phase color for future days; for past days show as overlay dot
+            const bgColor = isFertile && isFuture
+              ? FERTILE_COLOR
+              : phase ? PHASE_COLORS[phase] : "rgba(255,255,255,0.35)";
             const cell = (
               <div style={{
                 aspectRatio: "1", display: "flex", flexDirection: "column",
                 alignItems: "center", justifyContent: "center",
                 borderRadius: 12, fontSize: ".78rem", fontWeight: 800,
-                background: phase ? PHASE_COLORS[phase] : "rgba(255,255,255,0.35)",
+                background: bgColor,
                 outline: isToday ? "2.5px solid #6E3482" : "none", outlineOffset: 1,
-                color: "#1C0B2E", position: "relative", opacity: isFuture ? 0.4 : 1,
+                color: "#1C0B2E", position: "relative", opacity: isFuture ? 0.5 : 1,
                 cursor: isFuture ? "default" : "pointer",
               }}>
                 {day}
+                {/* Fertile window indicator for past/today days */}
+                {isFertile && !isFuture && (
+                  <div style={{ position: "absolute", top: 2, right: 2, width: 5, height: 5, borderRadius: "50%", background: "#059669" }} />
+                )}
                 {hasLog && <div style={{ position: "absolute", bottom: 2, width: 4, height: 4, borderRadius: "50%", background: "#6E3482" }} />}
               </div>
             );
