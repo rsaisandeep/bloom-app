@@ -4,7 +4,6 @@ import "./globals.css";
 import AuthGuard from "@/components/AuthGuard";
 import NavWrapper from "@/components/NavWrapper";
 import InstallPrompt from "@/components/InstallPrompt";
-import BiometricGate from "@/components/BiometricGate";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -35,11 +34,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${outfit.variable} h-full`}>
       <body className="min-h-full flex flex-col max-w-md mx-auto relative">
         <AuthGuard>
-          <BiometricGate>
-            <NavWrapper />
-            <main className="flex-1" style={{ paddingBottom: 'calc(110px + env(safe-area-inset-bottom))' }}>{children}</main>
-            <InstallPrompt />
-          </BiometricGate>
+          <NavWrapper />
+          <main className="flex-1" style={{ paddingBottom: 'calc(110px + env(safe-area-inset-bottom))' }}>{children}</main>
+          <InstallPrompt />
         </AuthGuard>
       </body>
     </html>
