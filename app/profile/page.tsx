@@ -11,6 +11,7 @@ import { buildLogsCSV, downloadCSV } from '@/lib/export';
 import { apiLogout } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 import { usePushNotifications } from '@/lib/usePushNotifications';
+import { getBioCookie, setBioCookie, deleteBioCookie } from '@/components/BiometricGate';
 
 const NOTIF_CATEGORIES = [
   { id: 'log_reminder', label: 'Log reminder', sub: 'Daily nudge to log your symptoms' },
@@ -110,7 +111,7 @@ export default function ProfilePage() {
     // Biometric support detection (client-only)
     if (typeof window !== 'undefined' && navigator.credentials && window.PublicKeyCredential) {
       setBiometricSupported(true);
-      setBiometricEnabled(localStorage.getItem('bloom_biometric_enabled') === 'true');
+      setBiometricEnabled(getBioCookie('bloom_biometric_enabled') === 'true');
     }
   }, []);
 
@@ -141,8 +142,8 @@ export default function ProfilePage() {
       }) as PublicKeyCredential | null;
       if (!credential) throw new Error('No credential returned');
       const idB64 = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
-      localStorage.setItem('bloom_biometric_credential_id', idB64);
-      localStorage.setItem('bloom_biometric_enabled', 'true');
+      setBioCookie('bloom_biometric_credential_id', idB64);
+      setBioCookie('bloom_biometric_enabled', 'true');
       sessionStorage.setItem('bloom_biometric_verified', 'true');
       setBiometricEnabled(true);
     } catch (e) {
@@ -153,8 +154,8 @@ export default function ProfilePage() {
   }
 
   function disableBiometric() {
-    localStorage.removeItem('bloom_biometric_credential_id');
-    localStorage.removeItem('bloom_biometric_enabled');
+    deleteBioCookie('bloom_biometric_credential_id');
+    deleteBioCookie('bloom_biometric_enabled');
     sessionStorage.removeItem('bloom_biometric_verified');
     setBiometricEnabled(false);
     setBiometricError('');

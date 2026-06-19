@@ -1,14 +1,32 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 
+// Biometric keys live in cookies so they survive localStorage.clear() on logout.
+function getBioCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+function setBioCookie(name: string, value: string) {
+  const expires = new Date(Date.now() + 365 * 86400000).toUTCString();
+  document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires};path=/;SameSite=Strict`;
+}
+
+function deleteBioCookie(name: string) {
+  document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+}
+
+export { getBioCookie, setBioCookie, deleteBioCookie };
+
 export default function BiometricGate({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<'checking' | 'unlocked' | 'locked'>('checking');
 
   const authenticate = useCallback(async () => {
     setStatus('checking');
-    const credIdB64 = localStorage.getItem('bloom_biometric_credential_id');
+    const credIdB64 = getBioCookie('bloom_biometric_credential_id');
     if (!credIdB64) {
-      localStorage.removeItem('bloom_biometric_enabled');
+      deleteBioCookie('bloom_biometric_enabled');
       setStatus('unlocked');
       return;
     }
@@ -36,7 +54,7 @@ export default function BiometricGate({ children }: { children: React.ReactNode 
       setStatus('unlocked');
       return;
     }
-    const enabled = localStorage.getItem('bloom_biometric_enabled') === 'true';
+    const enabled = getBioCookie('bloom_biometric_enabled') === 'true';
     if (!enabled || !navigator.credentials) {
       setStatus('unlocked');
       return;
