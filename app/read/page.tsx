@@ -34,6 +34,10 @@ export default function ReadPage() {
     });
   }, []);
 
+  useEffect(() => {
+    if (openSlug) window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [openSlug]);
+
   function toggleGroup(id: string) {
     setExpanded((prev) => {
       const next = new Set(prev);
