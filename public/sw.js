@@ -31,3 +31,29 @@ self.addEventListener('fetch', (e) => {
       .catch(() => caches.match(request).then((hit) => hit || caches.match('/')))
   );
 });
+
+self.addEventListener('push', (e) => {
+  if (!e.data) return;
+  const { title, body, url } = e.data.json();
+  e.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      data: { url: url || '/' },
+    })
+  );
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const target = e.notification.data?.url || '/';
+  e.waitUntil(
+    self.clients
+      .matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clients) => {
+        const match = clients.find((c) => c.url === target && 'focus' in c);
+        return match ? match.focus() : self.clients.openWindow(target);
+      })
+  );
+});
