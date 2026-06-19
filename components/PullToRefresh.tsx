@@ -101,10 +101,12 @@ export default function PullToRefresh({ children }: { children: ReactNode }) {
       )}
 
       {/* Sliding content — header inside here moves with the pull */}
+      {/* Only apply transform/willChange during active pull or snap — at rest these
+          create a stacking context that breaks position:fixed in children */}
       <div style={{
-        transform: `translateY(${pullY}px)`,
+        transform: (pullY > 0 || snap) ? `translateY(${pullY}px)` : undefined,
         transition: snap ? `transform 0.38s ${EASE}` : 'none',
-        willChange: 'transform',
+        willChange: (pullY > 0 || snap) ? 'transform' : undefined,
       }}>
         {children}
       </div>

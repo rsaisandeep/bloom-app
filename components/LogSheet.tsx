@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { loadData, saveLog, startPeriod, isNewPeriodStart, getCurrentPhase, type DayLog, type Phase } from '@/lib/cycle';
 import { appDayKey } from '@/lib/day';
@@ -178,7 +179,7 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
 
   if (!open) return null;
 
-  return (
+  return createPortal(
     <>
       <div onClick={onClose} style={{
         position: 'fixed', inset: 0, background: 'rgba(28,11,46,0.45)',
@@ -420,6 +421,7 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
           </button>
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 }
