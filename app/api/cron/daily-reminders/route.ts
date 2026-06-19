@@ -24,7 +24,7 @@ export async function GET(req: Request) {
   const { data: logSubs } = await db
     .from('push_subscriptions')
     .select('user_id, endpoint, p256dh, auth')
-    .contains('notif_categories', ['log_reminder']);
+    .filter('notif_categories', 'cs', '["log_reminder"]');
 
   console.log('[cron] logSubs found:', logSubs?.length ?? 0);
   if (logSubs?.length) {
@@ -53,7 +53,7 @@ export async function GET(req: Request) {
   const { data: periodSubs } = await db
     .from('push_subscriptions')
     .select('user_id, endpoint, p256dh, auth')
-    .contains('notif_categories', ['period_soon']);
+    .filter('notif_categories', 'cs', '["period_soon"]');
 
   if (periodSubs?.length) {
     const userIds = [...new Set(periodSubs.map(s => s.user_id))];
