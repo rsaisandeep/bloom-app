@@ -271,7 +271,6 @@ export default function ReportsPage() {
   const [phase, setPhase] = useState<Phase>('follicular');
   const [dayOfCycle, setDayOfCycle] = useState(1);
   const [data, setData] = useState<BloomData | null>(null);
-  const [openScience, setOpenScience] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasLog, setHasLog] = useState(false);
   const [showLog, setShowLog] = useState(false);
@@ -406,10 +405,11 @@ export default function ReportsPage() {
         {recsLoading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '24px 0' }}><IOSSpinner size={32} /></div>
         ) : showLogCta ? (
-          <div className="glass-card tint-purple anim-rise" style={{ padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: '#1C0B2E', lineHeight: 1.5 }}>Log today to unlock personalized recommendations.</span>
+          <div className="glass-card anim-rise" style={{ padding: '18px 18px' }}>
+            <p style={{ margin: '0 0 4px', fontSize: 10, fontWeight: 800, letterSpacing: 0.6, color: '#A56ABD', textTransform: 'uppercase' }}>Recommendations</p>
+            <p style={{ margin: '0 0 12px', fontSize: 14.5, fontWeight: 800, color: '#1C0B2E', lineHeight: 1.5 }}>Log today's check-in to get personalized recommendations.</p>
             <button onClick={() => setShowLog(true)} style={{
-              padding: '10px 18px', borderRadius: 999, border: 'none', cursor: 'pointer', flexShrink: 0,
+              padding: '10px 18px', borderRadius: 999, border: 'none', cursor: 'pointer',
               background: 'linear-gradient(135deg,#6E3482,#49225B)', color: '#fff',
               fontSize: 13, fontWeight: 800, fontFamily: 'var(--font-outfit)',
             }}>Log now →</button>
@@ -423,27 +423,13 @@ export default function ReportsPage() {
             <div className="stagger" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {REC_CARDS.map(({ key, emoji, label, tint, border, color }) => {
                 const d = recsToShow[key as keyof Recommendations] as { text: string; science: string };
-                const isOpen = openScience === key;
                 return (
-                  <div key={key} className="glass-card" style={{ background: tint, borderColor: border, padding: 16 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                      <span style={{ fontSize: 20 }}>{emoji}</span>
-                      <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.5, color }}>{label.toUpperCase()}</span>
-                    </div>
-                    <p style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600, color: '#1C0B2E', lineHeight: 1.6 }}>{d.text}</p>
-                    <button onClick={() => setOpenScience(isOpen ? null : key)} className="liquid-pill" style={{
-                      padding: '7px 14px', fontSize: 12, fontWeight: 700, color: '#6E3482',
-                      cursor: 'pointer', fontFamily: 'var(--font-outfit)',
-                    }}>
-                      {isOpen ? '▲ Hide science' : '▼ Why this works'}
-                    </button>
-                    {isOpen && (
-                      <div className="anim-rise" style={{
-                        marginTop: 10, padding: '10px 12px', borderRadius: 12,
-                        background: 'rgba(255,255,255,0.55)', borderLeft: '3px solid #A56ABD',
-                        fontSize: 12.5, fontStyle: 'italic', color: '#6E3482', lineHeight: 1.6,
-                      }}>{d.science}</div>
-                    )}
+                  <div key={key} className="glass-card" style={{ background: tint, borderColor: border, padding: '14px 16px' }}>
+                    <p style={{ margin: '0 0 6px', fontSize: 10, fontWeight: 800, letterSpacing: 0.6, color, textTransform: 'uppercase' }}>
+                      {emoji} {label}
+                    </p>
+                    <p style={{ margin: '0 0 8px', fontSize: 14.5, fontWeight: 800, color: '#1C0B2E', lineHeight: 1.5 }}>{d.text}</p>
+                    <p style={{ margin: 0, fontSize: 12, color: '#6E3482', lineHeight: 1.55, fontStyle: 'italic' }}>{d.science}</p>
                   </div>
                 );
               })}
