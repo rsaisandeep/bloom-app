@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { getArticle } from '@/lib/articles';
 import { getCurrentPhase } from '@/lib/cycle';
 import { fetchFromSheet } from '@/lib/data';
@@ -55,7 +56,7 @@ export default function ReadPage() {
 
   // ── Detail view ──
   if (article) {
-    return (
+    return createPortal(
       <div style={{ position: 'fixed', inset: 0, zIndex: 300, display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
         {/* Sticky back bar */}
         <div style={{
@@ -102,7 +103,8 @@ export default function ReadPage() {
             ))}
           </div>
         </div>
-      </div>
+      </div>,
+      document.body
     );
   }
 
