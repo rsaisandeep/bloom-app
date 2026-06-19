@@ -7,13 +7,13 @@ export default function InfoModal() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
 
-  const youLog = ['Period start & end', 'Flow & cramps', 'Mood & energy', 'Bloating & sleep', 'Cravings'];
+  const youLog = ['Period start & end', 'Flow & cramps', 'Mood & energy', 'BBT & cervical mucus', 'Sleep & cravings', 'Symptoms & ovulation'];
   const youGet = [
+    { icon: '🌅', t: 'Morning & evening check-ins',  s: 'Phase-aware fields shown at the right time of day' },
     { icon: '🌙', t: 'Your phase & cycle day',       s: 'Adapts to your real period & cycle length' },
     { icon: '🗓', t: 'Period & fertile predictions',  s: 'A date range in PCOS mode too' },
-    { icon: '✅', t: 'Daily focus tasks',             s: 'Tailored to your phase & today\'s symptoms' },
-    { icon: '📊', t: 'Science-backed reports',        s: 'Food, movement & self-care per phase' },
-    { icon: '📅', t: 'Period length tracking',        s: 'Log end date — improves all predictions' },
+    { icon: '📊', t: 'Personalised recommendations', s: 'Structured food, movement & self-care cards per phase' },
+    { icon: '📖', t: 'Curated article library',      s: 'Guides on phases, conditions, fertility & more' },
   ];
 
   return (
@@ -106,9 +106,9 @@ export default function InfoModal() {
 
               {/* Library */}
               <div className="glass-card tint-purple" style={{ padding: '14px 16px', marginBottom: 18 }}>
-                <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 800, color: '#1C0B2E' }}>📖 A library to learn from</p>
+                <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 800, color: '#1C0B2E' }}>✨ Smarter every day</p>
                 <p style={{ margin: 0, fontSize: 12.5, color: '#6E3482', lineHeight: 1.55 }}>
-                  Curated guides on all four cycle phases, cycle syncing, and PCOS — what it is and how to manage it with food & tracking.
+                  The more you log, the more tailored your check-ins, recommendations, and predictions become. Bloom learns your cycle — not a textbook average.
                 </p>
               </div>
 

@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import Hamburger from '@/components/Hamburger';
 import InfoModal from '@/components/InfoModal';
+import { apiLogout } from '@/lib/api';
 
 export default function TopBar({ title }: { title?: string }) {
   const [username, setUsername] = useState('');
@@ -26,7 +27,17 @@ export default function TopBar({ title }: { title?: string }) {
           whiteSpace: 'nowrap', pointerEvents: 'none',
         }}>{title}</span>
       )}
-      <InfoModal />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        <InfoModal />
+        <button onClick={() => apiLogout()} aria-label="Log out" className="liquid-pill" style={{
+          width: 38, height: 38, borderRadius: '50%', cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="#6E3482" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      </div>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiLogin, apiLoginByUsername, apiRegister, HANDLE_RE } from '@/lib/api';
 import { fetchFromSheet } from '@/lib/data';
@@ -60,6 +60,13 @@ export default function LoginPage() {
     }
   }
 
+  useEffect(() => {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    const prev = meta?.getAttribute('content') ?? '#EEE8F5';
+    meta?.setAttribute('content', '#1C0B2E');
+    return () => { meta?.setAttribute('content', prev); };
+  }, []);
+
   const isReg = mode === 'register';
 
   const fieldStyle: React.CSSProperties = {
@@ -78,7 +85,7 @@ export default function LoginPage() {
 
   return (
     <div style={{
-      minHeight: '100vh',
+      position: 'fixed', inset: 0, overflowY: 'auto',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -89,7 +96,6 @@ export default function LoginPage() {
         radial-gradient(500px 400px at 100% 80%, rgba(73,34,91,0.30), transparent 55%),
         linear-gradient(160deg, #2A0A3E 0%, #1C0B2E 100%)
       `,
-      backgroundAttachment: 'fixed',
     }}>
       <div style={{ width: '100%', maxWidth: 380, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 28 }}>
 

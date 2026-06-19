@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import PeriodStartModal from '@/components/PeriodStartModal';
-import { apiLogout } from '@/lib/api';
 import { useInstall } from '@/lib/useInstall';
 
 export default function Hamburger({ username }: { username: string }) {
@@ -22,10 +21,6 @@ export default function Hamburger({ username }: { username: string }) {
     setOpen(false); // on iOS, closing reveals Safari's Share button for "Add to Home Screen"
   }
 
-  function logout() {
-    apiLogout(); // signs out of Supabase + clears app cache, then redirects to /login
-  }
-
   function handleReadNav() {
     setOpen(false);
     sessionStorage.setItem('bloom_read_visited', 'true');
@@ -35,7 +30,6 @@ export default function Hamburger({ username }: { username: string }) {
 
   const items = [
     { emoji: '📖', label: 'Read', sub: 'Articles & cycle guides', onClick: handleReadNav, badge: !readVisited },
-    { emoji: '👤', label: 'Profile', sub: 'Your account', onClick: () => { setOpen(false); router.push('/profile'); } },
   ];
 
   return (
@@ -127,18 +121,18 @@ export default function Hamburger({ username }: { username: string }) {
               ))}
             </div>
 
-            {/* Logout */}
-            <button onClick={logout} style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              padding: '13px', borderRadius: 18, marginTop: 14,
-              border: '1.5px solid rgba(220,38,38,0.28)',
-              background: 'rgba(252,232,232,0.6)', color: '#dc2626',
-              fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-outfit)',
+            {/* Settings (formerly Profile) */}
+            <button onClick={() => { setOpen(false); router.push('/profile'); }} style={{
+              display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left',
+              padding: '13px 16px', borderRadius: 18, marginTop: 14,
+              border: '1px solid rgba(165,106,189,0.25)',
+              background: 'rgba(237,233,255,0.5)', cursor: 'pointer', fontFamily: 'var(--font-outfit)',
             }}>
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              Log out
+              <span style={{ fontSize: 20 }}>⚙️</span>
+              <div>
+                <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#1C0B2E' }}>Settings</p>
+                <p style={{ margin: '1px 0 0', fontSize: 11, color: '#8A6A9A' }}>Your account</p>
+              </div>
             </button>
           </div>
         </div>,
