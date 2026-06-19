@@ -115,5 +115,6 @@ export async function GET(req: Request) {
     );
   }
 
+  console.log('[cron] daily-reminders results:', JSON.stringify(results));
   return NextResponse.json({ ok: true, today, results });
 }
