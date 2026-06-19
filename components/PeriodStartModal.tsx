@@ -30,10 +30,16 @@ export default function PeriodStartModal({
   label = 'Log period',
   variant = 'card',
   onDone,
+  initialEndDate,
+  endSource = 'manual',
+  estimatedEndDate,
 }: {
   label?: string;
-  variant?: 'card' | 'banner-cta' | 'menu';
+  variant?: 'card' | 'banner-cta' | 'menu' | 'period-end-banner';
   onDone?: () => void;
+  initialEndDate?: string;
+  endSource?: 'manual' | 'computer';
+  estimatedEndDate?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -62,9 +68,10 @@ export default function PeriodStartModal({
       if (active) {
         setActiveId(active.id);
         setStartDate(active.startDate ?? '');
-        setEndDate(active.periodEndDate ?? '');
+        setEndDate(initialEndDate ?? active.periodEndDate ?? '');
       } else {
         setStartDate(today);
+        if (initialEndDate) setEndDate(initialEndDate);
       }
       setFetching(false);
     });
@@ -98,7 +105,7 @@ export default function PeriodStartModal({
       // editPeriodStart/addPeriodStart key the cycle id off the start date.
       const targetId = `${uname}_${startDate}`;
       if (endDate && endDate >= startDate) {
-        setPeriodEnd(endDate, targetId);
+        setPeriodEnd(endDate, targetId, endSource);
       } else {
         clearPeriodEnd(targetId); // clears any previously saved end date
       }
@@ -128,7 +135,27 @@ export default function PeriodStartModal({
   };
 
   const trigger =
-    variant === 'banner-cta' ? (
+    variant === 'period-end-banner' ? (
+      <div className="glass-card" style={{
+        padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12,
+        background: 'linear-gradient(135deg,rgba(165,106,189,0.18),rgba(110,52,130,0.10))',
+        borderColor: 'rgba(165,106,189,0.4)',
+      }}>
+        <div style={{
+          width: 40, height: 40, borderRadius: 14, flexShrink: 0,
+          background: 'linear-gradient(135deg,#6E3482,#A56ABD)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
+          boxShadow: '0 6px 16px rgba(110,52,130,0.3)',
+        }}>🩹</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#1C0B2E' }}>Period may have ended</p>
+          <p style={{ margin: '2px 0 0', fontSize: 12, color: '#6E3482', lineHeight: 1.4 }}>
+            Estimated end: {estimatedEndDate ? fmt(estimatedEndDate) : '–'}. Tap to confirm or update.
+          </p>
+        </div>
+        <span style={{ color: '#A56ABD', fontSize: 16 }}>›</span>
+      </div>
+    ) : variant === 'banner-cta' ? (
       <span style={{
         fontSize: 12, fontWeight: 800, color: '#fff', flexShrink: 0,
         padding: '8px 14px', borderRadius: 999,
@@ -184,13 +211,22 @@ export default function PeriodStartModal({
             <p style={{ margin: '0 0 4px', fontSize: 18, fontWeight: 800, color: '#1C0B2E' }}>
               {fetching ? 'Log your period' : activeId ? 'Update period dates' : 'Log your period'}
             </p>
-            <p style={{ margin: '0 0 20px', fontSize: 13, color: '#8A6A9A' }}>
+            <p style={{ margin: '0 0 16px', fontSize: 13, color: '#8A6A9A' }}>
               {fetching
                 ? 'Loading your period data…'
                 : activeId && startDate
                   ? `Started ${fmt(startDate)}. Update dates below.`
                   : 'Pick the start date. End date is optional.'}
             </p>
+            {initialEndDate && !fetching && (
+              <div style={{
+                background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.35)',
+                borderRadius: 12, padding: '10px 14px', marginBottom: 16,
+                fontSize: 12, color: '#b45309', lineHeight: 1.5,
+              }}>
+                This date was estimated — please confirm it&apos;s correct.
+              </div>
+            )}
 
             {/* Period name */}
             <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 800, color: '#6E3482', letterSpacing: 0.5, textTransform: 'uppercase' }}>

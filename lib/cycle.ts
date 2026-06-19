@@ -10,6 +10,7 @@ export interface Cycle {
   periodEndAt?: string;     // full timestamp the end was logged — used for phase transition (date + time)
   cycleLength?: number;     // days to next period start (set when next cycle begins)
   periodLength?: number;    // bleeding days (derived from flow logs / onboarding)
+  period_end_source?: 'manual' | 'computer' | null; // how the end date was set
 }
 
 export interface DayLog {
@@ -131,7 +132,7 @@ export function saveLog(log: DayLog) {
 
 // Explicitly set the period end date. Targets the cycle with `id` if given,
 // otherwise the most recent cycle.
-export function setPeriodEnd(endDate: string, id?: string) {
+export function setPeriodEnd(endDate: string, id?: string, source: 'manual' | 'computer' = 'manual') {
   const data = loadData();
   if (data.cycles.length === 0) return;
   const c = id ? data.cycles.find((x) => x.id === id) : data.cycles[data.cycles.length - 1];
@@ -140,6 +141,7 @@ export function setPeriodEnd(endDate: string, id?: string) {
   c.periodEndDate = endDate;                   // date only — display + day-count math
   c.periodEndAt = new Date().toISOString();    // timestamp — drives phase transition (date + time)
   c.periodLength = daysBetween(c.startDate, endDate) + 1;
+  c.period_end_source = source;
   saveData(data);
   syncAfterSave();
 }
@@ -154,6 +156,7 @@ export function clearPeriodEnd(id?: string) {
   delete c.periodEndDate;
   delete c.periodEndAt;
   delete c.periodLength;
+  delete c.period_end_source;
   saveData(data);
   syncAfterSave();
 }

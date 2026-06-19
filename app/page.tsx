@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   loadData, emptyData, getCurrentPhase, getPredictions, getPredictionWindow, getAverageCycleLength,
+  getAveragePeriodLength, needsPeriodEnd,
   getLateInfo, isPaused, setPaused, hasGoal, PHASE_META, type Phase, type BloomData,
 } from '@/lib/cycle';
 import { getActionItems, getActionGroups } from '@/lib/actions';
@@ -14,6 +15,16 @@ import Hamburger from '@/components/Hamburger';
 import InfoModal from '@/components/InfoModal';
 import PeriodStartModal from '@/components/PeriodStartModal';
 import LogSheet from '@/components/LogSheet';
+
+type NotifType = 'late_period' | 'long_cycle' | 'fertile_window' | 'pms_incoming' | 'luteal_halfway' | 'logging_streak';
+const NOTIF_META: Record<NotifType, { title: string; icon: string; bg: string; border: string; iconBg: string; textColor: string }> = {
+  late_period:    { title: 'Period might be late',  icon: '📅', bg: 'linear-gradient(135deg,rgba(220,38,38,0.12),rgba(157,23,77,0.07))',    border: 'rgba(220,38,38,0.30)',   iconBg: 'linear-gradient(135deg,#dc2626,#9d174d)', textColor: '#9d174d' },
+  long_cycle:     { title: 'Cycle running long',    icon: '⏳', bg: 'linear-gradient(135deg,rgba(245,158,11,0.14),rgba(217,119,6,0.08))',   border: 'rgba(245,158,11,0.40)',  iconBg: 'linear-gradient(135deg,#f59e0b,#d97706)', textColor: '#b45309' },
+  fertile_window: { title: 'Fertile window open',   icon: '🌸', bg: 'linear-gradient(135deg,rgba(251,191,36,0.14),rgba(165,106,189,0.08))', border: 'rgba(251,191,36,0.40)',  iconBg: 'linear-gradient(135deg,#fbbf24,#f59e0b)', textColor: '#92400e' },
+  pms_incoming:   { title: 'PMS watch',             icon: '🌧️', bg: 'linear-gradient(135deg,rgba(99,102,241,0.12),rgba(79,70,229,0.07))',  border: 'rgba(99,102,241,0.30)',  iconBg: 'linear-gradient(135deg,#818cf8,#6366f1)', textColor: '#4338ca' },
+  luteal_halfway: { title: 'Luteal midpoint',       icon: '🌘', bg: 'linear-gradient(135deg,rgba(129,140,248,0.12),rgba(99,102,241,0.07))', border: 'rgba(129,140,248,0.30)', iconBg: 'linear-gradient(135deg,#818cf8,#a5b4fc)', textColor: '#4338ca' },
+  logging_streak: { title: 'Streak at risk',        icon: '🔥', bg: 'linear-gradient(135deg,rgba(165,106,189,0.16),rgba(110,52,130,0.08))', border: 'rgba(165,106,189,0.40)', iconBg: 'linear-gradient(135deg,#A56ABD,#6E3482)', textColor: '#6E3482' },
+};
 
 const RING_COLORS: Record<Phase, [string, string]> = {
   menstrual:  ['#f87171', '#fca5a5'],
@@ -38,6 +49,7 @@ export default function HomePage() {
   const [username, setUsername] = useState('');
   const [done, setDone] = useState<number[]>([]);
   const [showLog, setShowLog] = useState(false);
+  const [dismissedNotifs, setDismissedNotifs] = useState<Set<string>>(new Set());
 
   const todayKey = useAppDay();
 
@@ -66,6 +78,23 @@ export default function HomePage() {
     } catch { setDone([]); }
   }, [todayKey]);
 
+  // Load per-day dismissed notification set from sessionStorage.
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(`bloom_notif_${todayKey}`);
+      setDismissedNotifs(raw ? new Set(raw.split(',').filter(Boolean)) : new Set());
+    } catch {}
+  }, [todayKey]);
+
+  function dismissNotif(type: string) {
+    setDismissedNotifs((prev) => {
+      const next = new Set(prev);
+      next.add(type);
+      try { sessionStorage.setItem(`bloom_notif_${todayKey}`, [...next].join(',')); } catch {}
+      return next;
+    });
+  }
+
   function toggleDone(i: number) {
     setDone((prev) => {
       const next = prev.includes(i) ? prev.filter((x) => x !== i) : [...prev, i];
@@ -91,6 +120,67 @@ export default function HomePage() {
   const showPeriodStart = phase === 'luteal' && dayOfCycle >= 25 && !paused;
   const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   const meta = PHASE_META[phase];
+
+  const yesterday = (() => {
+    const d = new Date(todayStr + 'T00:00:00'); d.setDate(d.getDate() - 1);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  })();
+
+  // Phase 3A: predicted period end for auto-fill banner
+  const predictedEndDate = (() => {
+    if (!hasCycles || !needsPeriodEnd(data)) return null;
+    const last = data.cycles[data.cycles.length - 1];
+    const pLen = getAveragePeriodLength(data);
+    const d = new Date(last.startDate + 'T00:00:00'); d.setDate(d.getDate() + pLen - 1);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  })();
+  const showPeriodEndBanner = !paused && phase !== 'menstrual' && predictedEndDate !== null && todayStr > predictedEndDate;
+
+  // Phase 2: smart notification card (one at a time, session-dismissible)
+  const activeNotif: { type: NotifType; message: string } | null = (() => {
+    if (paused || !hasCycles) return null;
+    const MS_DAY = 86400000;
+    const candidates: { type: NotifType; message: string }[] = [];
+
+    if (lateInfo && lateInfo.daysLate >= 3)
+      candidates.push({ type: 'late_period', message: 'Your period is 3+ days late. Log it if it started, or check in tomorrow.' });
+
+    if (dayOfCycle > 40 && phase !== 'menstrual')
+      candidates.push({ type: 'long_cycle', message: 'Cycle running long (40+ days). Consider logging or checking in with a doctor.' });
+
+    if (predictions && phase === 'ovulation') {
+      const ovDate = new Date(predictions.ovulation);
+      const day1 = new Date(ovDate); day1.setDate(ovDate.getDate() - 1);
+      const day1Str = `${day1.getFullYear()}-${String(day1.getMonth()+1).padStart(2,'0')}-${String(day1.getDate()).padStart(2,'0')}`;
+      if (todayStr === day1Str)
+        candidates.push({ type: 'fertile_window', message: "You're in your fertile window today." });
+    }
+
+    if (predictions && predictions.daysUntilPeriod === 3)
+      candidates.push({ type: 'pms_incoming', message: 'Period likely in 3 days — watch for PMS symptoms.' });
+
+    if (predictions && phase === 'luteal') {
+      const ovDate = new Date(predictions.ovulation);
+      const lutealStart = new Date(ovDate); lutealStart.setDate(ovDate.getDate() + 2);
+      const lutealLength = Math.round((predictions.nextPeriod.getTime() - lutealStart.getTime()) / MS_DAY);
+      const todayD = new Date(todayStr + 'T00:00:00');
+      const lutealDay = Math.round((todayD.getTime() - lutealStart.getTime()) / MS_DAY) + 1;
+      if (lutealLength > 0 && lutealDay === Math.floor(lutealLength / 2))
+        candidates.push({ type: 'luteal_halfway', message: 'Halfway through luteal phase — energy may dip. Hydrate and rest.' });
+    }
+
+    const loggedYesterday = data.logs.some(l => l.date === yesterday);
+    if (!todayLog && loggedYesterday)
+      candidates.push({ type: 'logging_streak', message: "Don't break your streak — log today's symptoms." });
+
+    const priority: NotifType[] = ['late_period', 'long_cycle', 'fertile_window', 'pms_incoming', 'luteal_halfway', 'logging_streak'];
+    for (const t of priority) {
+      const c = candidates.find(x => x.type === t);
+      if (c && !dismissedNotifs.has(t)) return c;
+    }
+    return null;
+  })();
+  const notifMeta = activeNotif ? NOTIF_META[activeNotif.type] : null;
 
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(today); d.setDate(today.getDate() - 3 + i); return d;
@@ -256,6 +346,18 @@ export default function HomePage() {
 
       {/* ── Period end / Period started prompts ── */}
       {showPeriodEnd && <div className="anim-float" style={{ marginBottom: 14 }}><PeriodStartModal variant="card" label="Log period end" onDone={refresh} /></div>}
+      {/* ── Phase 3A: period end auto-fill banner ── */}
+      {showPeriodEndBanner && predictedEndDate && (
+        <div className="anim-float" style={{ marginBottom: 14 }}>
+          <PeriodStartModal
+            variant="period-end-banner"
+            estimatedEndDate={predictedEndDate}
+            initialEndDate={predictedEndDate}
+            endSource="computer"
+            onDone={refresh}
+          />
+        </div>
+      )}
       {showPeriodStart && <div className="anim-float" style={{ marginBottom: 14 }}><PeriodStartModal variant="card" label="Period started?" onDone={refresh} /></div>}
 
       {/* ── Late-period reminder ── */}
@@ -290,6 +392,35 @@ export default function HomePage() {
             )}
           </div>
           <PeriodStartModal variant="banner-cta" onDone={refresh} />
+        </div>
+      )}
+
+      {/* ── Phase 2: smart notification card (one at a time) ── */}
+      {activeNotif && notifMeta && (
+        <div className="glass-card anim-float" style={{
+          padding: '14px 16px', marginBottom: 14,
+          display: 'flex', alignItems: 'center', gap: 12,
+          background: notifMeta.bg, borderColor: notifMeta.border,
+        }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: 14, flexShrink: 0,
+            background: notifMeta.iconBg,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
+            boxShadow: '0 6px 16px rgba(0,0,0,0.12)',
+          }}>{notifMeta.icon}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#1C0B2E' }}>{notifMeta.title}</p>
+            <p style={{ margin: '2px 0 0', fontSize: 12, color: notifMeta.textColor, lineHeight: 1.4 }}>{activeNotif.message}</p>
+          </div>
+          <button
+            onClick={() => dismissNotif(activeNotif.type)}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: '#A99BB5', fontSize: 16, padding: '4px 6px', flexShrink: 0,
+              fontFamily: 'var(--font-outfit)',
+            }}
+            aria-label="Dismiss notification"
+          >✕</button>
         </div>
       )}
 
