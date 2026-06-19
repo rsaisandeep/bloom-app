@@ -13,6 +13,7 @@ import { localDateStr, appDayKey } from '@/lib/day';
 import { useAppDay } from '@/lib/useAppDay';
 import Hamburger from '@/components/Hamburger';
 import InfoModal from '@/components/InfoModal';
+import LogoutButton from '@/components/LogoutButton';
 import PeriodStartModal from '@/components/PeriodStartModal';
 import LogSheet from '@/components/LogSheet';
 
@@ -231,8 +232,11 @@ export default function HomePage() {
           <p style={{ margin: '1px 0 0', fontSize: 17, fontWeight: 800, color: '#1C0B2E' }}>{cap(username) || 'there'} 🌸</p>
         </div>
 
-        {/* Info top-right */}
-        <InfoModal />
+        {/* Info + logout top-right */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <InfoModal />
+          <LogoutButton />
+        </div>
       </div>
 
       {/* ── Month + week strip ── */}
