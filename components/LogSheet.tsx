@@ -175,10 +175,14 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
 
   return createPortal(
     <>
-      <div onClick={onClose} style={{
-        position: 'fixed', inset: 0, background: 'rgba(28,11,46,0.45)',
-        backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', zIndex: 300,
-      }} />
+      <div
+        onClick={onClose}
+        onTouchMove={(e) => e.preventDefault()}
+        style={{
+          position: 'fixed', inset: 0, background: 'rgba(28,11,46,0.45)',
+          backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', zIndex: 300,
+        }}
+      />
       <div style={{
         position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
         width: '100%', maxWidth: 448,
@@ -290,31 +294,29 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
               </div>
 
               <div className="glass-card" style={{ padding: '14px 14px 12px' }}>
-                <p style={LABEL}>
-                  Symptoms{' '}
-                  <span style={{ fontWeight: 600, textTransform: 'none', color: '#8A6A9A' }}>· tap to log · 📖 to read</span>
-                </p>
-                {filteredSymptoms.length === 0 ? (
-                  <p style={{ fontSize: 13, color: '#8A6A9A', margin: 0, padding: '4px 0' }}>
-                    No symptoms match &ldquo;{symptomSearch}&rdquo;
-                  </p>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-                    {filteredSymptoms.map((opt) => {
-                      const active = (form.symptoms ?? []).includes(opt.value);
-                      return (
-                        <div key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                <p style={LABEL}>Symptoms <span style={{ fontWeight: 600, textTransform: 'none', color: '#8A6A9A' }}>· tap to log</span></p>
+                <div style={{ maxHeight: 300, overflowY: 'auto', overscrollBehavior: 'contain' }}>
+                  {filteredSymptoms.length === 0 ? (
+                    <p style={{ fontSize: 13, color: '#8A6A9A', margin: 0, padding: '4px 0' }}>
+                      No symptoms match &ldquo;{symptomSearch}&rdquo;
+                    </p>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                      {filteredSymptoms.map((opt) => {
+                        const active = (form.symptoms ?? []).includes(opt.value);
+                        return (
                           <button
+                            key={opt.value}
                             onClick={() => toggleSymptom(opt.value)}
-                            style={{ ...chipStyle(active), flex: 1, justifyContent: 'flex-start' }}
+                            style={{ ...chipStyle(active), width: '100%', justifyContent: 'flex-start' }}
                           >
                             <span>{opt.emoji}</span><span>{opt.label}</span>
                           </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             </>
           )}
