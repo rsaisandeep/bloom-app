@@ -26,6 +26,7 @@ export async function GET(req: Request) {
     .select('user_id, endpoint, p256dh, auth')
     .contains('notif_categories', ['log_reminder']);
 
+  console.log('[cron] logSubs found:', logSubs?.length ?? 0);
   if (logSubs?.length) {
     // Single query: users who already logged today — skip them
     const { data: loggedToday } = await db
@@ -35,7 +36,7 @@ export async function GET(req: Request) {
 
     const loggedIds = new Set(loggedToday?.map(l => l.user_id) ?? []);
 
-    await Promise.allSettled(
+    const settled = await Promise.allSettled(
       logSubs.map(async (sub) => {
         if (loggedIds.has(sub.user_id)) { results.logReminder.skipped++; return; }
         await sendPushNotification(
@@ -45,6 +46,7 @@ export async function GET(req: Request) {
         results.logReminder.sent++;
       })
     );
+    settled.forEach((r, i) => { if (r.status === 'rejected') console.error('[cron] logReminder send failed:', logSubs[i].user_id, r.reason); });
   }
 
   // ── period_soon ─────────────────────────────────────────────────────────────
