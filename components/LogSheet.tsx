@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { loadData, saveLog, startPeriod, isNewPeriodStart, getCurrentPhase, type DayLog, type Phase } from '@/lib/cycle';
 import { appDayKey } from '@/lib/day';
 import { fetchFromSheet, saveToSheet } from '@/lib/data';
-import { SYMPTOM_ARTICLE } from '@/lib/symptomArticles';
 
 type Option = { value: string; label: string; emoji: string };
 type Field = { key: keyof DayLog; label: string; options: Option[] };
@@ -125,11 +124,6 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
       const cur = f.symptoms ?? [];
       return { ...f, symptoms: cur.includes(v) ? cur.filter((s) => s !== v) : [...cur, v] };
     });
-  }
-
-  function openArticle(slug: string) {
-    onClose();
-    router.push(`/read?open=${slug}`);
   }
 
   async function handleSave() {
@@ -307,7 +301,6 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
                     {filteredSymptoms.map((opt) => {
-                      const articleSlug = SYMPTOM_ARTICLE[opt.value];
                       const active = (form.symptoms ?? []).includes(opt.value);
                       return (
                         <div key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
@@ -317,22 +310,6 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
                           >
                             <span>{opt.emoji}</span><span>{opt.label}</span>
                           </button>
-                          {articleSlug && (
-                            <button
-                              onClick={() => openArticle(articleSlug)}
-                              title="Read related article"
-                              style={{
-                                flexShrink: 0, width: 34, height: 34, borderRadius: 10,
-                                border: '1px solid var(--glass-border-dim)',
-                                background: 'rgba(255,255,255,0.55)', cursor: 'pointer',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontSize: 15, fontFamily: 'inherit',
-                                transition: 'background .15s',
-                              }}
-                            >
-                              📖
-                            </button>
-                          )}
                         </div>
                       );
                     })}
