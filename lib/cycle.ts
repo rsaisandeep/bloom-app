@@ -60,6 +60,13 @@ export function hasGoal(s: BloomSettings, id: string): boolean {
   return getGoals(s).includes(id);
 }
 
+// Whether to surface fertility/contraception inputs (sexual activity, ovulation
+// & pregnancy tests). True for users trying to conceive OR using contraception —
+// sensitive data we don't ask everyone for by default.
+export function tracksFertility(s: BloomSettings): boolean {
+  return hasGoal(s, 'conceive') || (!!s.birthControl && s.birthControl !== 'none');
+}
+
 export interface BloomData {
   cycles: Cycle[];
   logs: DayLog[];
