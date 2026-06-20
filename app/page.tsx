@@ -428,7 +428,7 @@ export default function HomePage() {
                     transition: 'left .8s cubic-bezier(.34,1.2,.64,1)',
                   }} />
                 </div>
-                <div style={{ display: 'flex', gap: 10, marginTop: 7, flexWrap: 'wrap' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 10px', marginTop: 7 }}>
                   {[
                     { label: 'Menstrual', color: '#f87171' },
                     { label: 'Follicular', color: '#a78bfa' },
