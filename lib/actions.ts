@@ -52,7 +52,7 @@ const BASE: Record<Phase, Omit<ActionItem, 'group'>[]> = {
 // ── Symptom-triggered tasks, tagged with the check-in they target ──
 // Each item names the group ("what it's targeting") so the home screen can
 // show them under a header per symptom.
-function symptomOverrides(phase: Phase, log?: DayLog): ActionItem[] {
+function symptomOverrides(phase: Phase, log?: Partial<DayLog>): ActionItem[] {
   if (!log) return [];
   const out: ActionItem[] = [];
 
@@ -237,7 +237,7 @@ function goalOverrides(phase: Phase, goals: string[]): ActionItem[] {
 // task surfaces first. Severe symptom tasks outrank goal tasks, which outrank
 // the phase baseline. Source defaults: symptom 70, goal 60, baseline 20 — the
 // severe symptom branches set their own higher weight.
-export function getActionItems(phase: Phase, log?: DayLog, goals: string[] = []): ActionItem[] {
+export function getActionItems(phase: Phase, log?: Partial<DayLog>, goals: string[] = []): ActionItem[] {
   const phaseLabel = `${PHASE_META[phase].label} phase`;
   const baseline: ActionItem[] = BASE[phase].map((i) => ({ ...i, group: phaseLabel, weight: 20 }));
   const goalItems = goalOverrides(phase, goals).map((i) => ({ ...i, weight: i.weight ?? 60 }));
@@ -256,7 +256,7 @@ export function getActionItems(phase: Phase, log?: DayLog, goals: string[] = [])
 }
 
 // Same tasks, grouped by what they target, headers in first-seen order.
-export function getActionGroups(phase: Phase, log?: DayLog, goals: string[] = []): ActionGroup[] {
+export function getActionGroups(phase: Phase, log?: Partial<DayLog>, goals: string[] = []): ActionGroup[] {
   const groups: ActionGroup[] = [];
   const byName = new Map<string, ActionGroup>();
   for (const item of getActionItems(phase, log, goals)) {

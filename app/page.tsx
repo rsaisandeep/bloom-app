@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
   loadData, emptyData, getCurrentPhase, getPredictions, getPredictionWindow, getAverageCycleLength,
   getAveragePeriodLength, needsPeriodEnd,
-  getLateInfo, isPaused, setPaused, hasGoal, PHASE_META, type Phase, type BloomData,
+  getLateInfo, isPaused, setPaused, hasGoal, PHASE_META, carryForward, type Phase, type BloomData,
 } from '@/lib/cycle';
 import { getActionItems, getActionGroups } from '@/lib/actions';
 import { fetchFromSheet, sanitize } from '@/lib/data';
@@ -20,7 +20,7 @@ import PeriodStartModal from '@/components/PeriodStartModal';
 import LogSheet from '@/components/LogSheet';
 import BloomMascot from '@/components/BloomMascot';
 
-type NotifType = 'late_period' | 'long_cycle' | 'fertile_window' | 'pms_incoming' | 'luteal_halfway' | 'logging_streak';
+type NotifType = 'late_period' | 'long_cycle' | 'fertile_window' | 'pms_incoming' | 'luteal_halfway' | 'logging_streak' | 'evening_refine';
 const NOTIF_META: Record<NotifType, { title: string; icon: string; bg: string; border: string; iconBg: string; textColor: string }> = {
   late_period:    { title: 'Period might be late',  icon: '📅', bg: 'linear-gradient(135deg,rgba(220,38,38,0.12),rgba(157,23,77,0.07))',    border: 'rgba(220,38,38,0.30)',   iconBg: 'linear-gradient(135deg,#dc2626,#9d174d)', textColor: '#9d174d' },
   long_cycle:     { title: 'Cycle running long',    icon: '⏳', bg: 'linear-gradient(135deg,rgba(245,158,11,0.14),rgba(217,119,6,0.08))',   border: 'rgba(245,158,11,0.40)',  iconBg: 'linear-gradient(135deg,#f59e0b,#d97706)', textColor: '#b45309' },
@@ -28,6 +28,7 @@ const NOTIF_META: Record<NotifType, { title: string; icon: string; bg: string; b
   pms_incoming:   { title: 'PMS watch',             icon: '🌧️', bg: 'linear-gradient(135deg,rgba(99,102,241,0.12),rgba(79,70,229,0.07))',  border: 'rgba(99,102,241,0.30)',  iconBg: 'linear-gradient(135deg,#818cf8,#6366f1)', textColor: '#4338ca' },
   luteal_halfway: { title: 'Luteal midpoint',       icon: '🌘', bg: 'linear-gradient(135deg,rgba(129,140,248,0.12),rgba(99,102,241,0.07))', border: 'rgba(129,140,248,0.30)', iconBg: 'linear-gradient(135deg,#818cf8,#a5b4fc)', textColor: '#4338ca' },
   logging_streak: { title: 'Streak at risk',        icon: '🔥', bg: 'linear-gradient(135deg,rgba(165,106,189,0.16),rgba(110,52,130,0.08))', border: 'rgba(165,106,189,0.40)', iconBg: 'linear-gradient(135deg,#A56ABD,#6E3482)', textColor: '#6E3482' },
+  evening_refine: { title: 'Refine today',          icon: '🌙', bg: 'linear-gradient(135deg,rgba(99,102,241,0.12),rgba(79,70,229,0.07))',  border: 'rgba(99,102,241,0.30)',  iconBg: 'linear-gradient(135deg,#818cf8,#6366f1)', textColor: '#4338ca' },
 };
 
 const RING_COLORS: Record<Phase, [string, string]> = {
@@ -202,7 +203,12 @@ export default function HomePage() {
     if (!todayLog && loggedYesterday)
       candidates.push({ type: 'logging_streak', message: "Don't break your streak — log today's symptoms." });
 
-    const priority: NotifType[] = ['late_period', 'long_cycle', 'fertile_window', 'pms_incoming', 'luteal_halfway', 'logging_streak'];
+    // Evening: invite refining today's log so it reflects how the day actually
+    // went (sharpens patterns + seeds tomorrow morning's tasks).
+    if (todayLog && new Date().getHours() >= 17)
+      candidates.push({ type: 'evening_refine', message: 'How did today actually go? Tap your check-in to refine it.' });
+
+    const priority: NotifType[] = ['late_period', 'long_cycle', 'fertile_window', 'pms_incoming', 'luteal_halfway', 'logging_streak', 'evening_refine'];
     for (const t of priority) {
       const c = candidates.find(x => x.type === t);
       if (c && !dismissedNotifs.has(t)) return c;
@@ -234,10 +240,14 @@ export default function HomePage() {
     return count;
   })();
 
-  // Predefined reminder-style action items based on phase + today's symptoms,
-  // grouped by what each task targets (a check-in symptom, fertility, or phase).
-  const actions = getActionItems(phase, todayLog, goals);
-  const actionGroups = getActionGroups(phase, todayLog, goals);
+  // Tasks come from phase + the day's check-in. Before today is logged, seed
+  // them from yesterday's retrospective log (mood/energy/cravings/symptoms etc.)
+  // so the morning isn't a blank slate — saving today's check-in refreshes them.
+  const yesterdayLog = data.logs.find(l => l.date === yesterday);
+  const taskLog = todayLog ?? carryForward(yesterdayLog);
+  const tasksFromYesterday = !todayLog && !!taskLog;
+  const actions = getActionItems(phase, taskLog, goals);
+  const actionGroups = getActionGroups(phase, taskLog, goals);
 
   // For hero phase timeline
   const periodLen = getAveragePeriodLength(data);
@@ -639,7 +649,11 @@ export default function HomePage() {
         <div>
           <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#1C0B2E' }}>Today&apos;s focus</p>
           <p style={{ margin: '1px 0 0', fontSize: 12, color: '#8A6A9A' }}>
-            {todayLog ? `${done.length}/${actions.length} done · ${meta.label} phase` : 'Log to get personalized tasks'}
+            {todayLog
+              ? `${done.length}/${actions.length} done · ${meta.label} phase`
+              : tasksFromYesterday
+                ? 'Based on yesterday — log to refresh'
+                : 'Log to get personalized tasks'}
           </p>
         </div>
         {todayLog && (

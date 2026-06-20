@@ -21,10 +21,10 @@ const FLOW_FIELDS: Field[] = [
 ];
 
 const WELLBEING_FIELDS: Field[] = [
-  { key: 'mood',     label: 'Mood',               options: [{value:'happy',label:'Happy',emoji:'😊'},{value:'calm',label:'Calm',emoji:'😌'},{value:'energetic',label:'Energetic',emoji:'⚡'},{value:'anxious',label:'Anxious',emoji:'😰'},{value:'irritable',label:'Irritable',emoji:'😤'},{value:'sad',label:'Sad',emoji:'😢'},{value:'fatigued',label:'Fatigued',emoji:'😴'}] },
-  { key: 'energy',   label: 'Energy Level',       options: [{value:'high',label:'High',emoji:'🔋'},{value:'medium',label:'Medium',emoji:'🔆'},{value:'low',label:'Low',emoji:'🪫'},{value:'exhausted',label:'Exhausted',emoji:'💤'}] },
-  { key: 'sleep',    label: "Last Night's Sleep", options: [{value:'good',label:'Good',emoji:'😴'},{value:'poor',label:'Poor',emoji:'😪'},{value:'insomnia',label:'Insomnia',emoji:'👀'}] },
-  { key: 'cravings', label: 'Cravings',           options: [{value:'none',label:'None',emoji:'🙅'},{value:'sweet',label:'Sweet',emoji:'🍫'},{value:'salty',label:'Salty',emoji:'🧂'},{value:'everything',label:'Everything',emoji:'🍕'}] },
+  { key: 'mood',     label: 'Mood right now',      options: [{value:'happy',label:'Happy',emoji:'😊'},{value:'calm',label:'Calm',emoji:'😌'},{value:'energetic',label:'Energetic',emoji:'⚡'},{value:'anxious',label:'Anxious',emoji:'😰'},{value:'irritable',label:'Irritable',emoji:'😤'},{value:'sad',label:'Sad',emoji:'😢'},{value:'fatigued',label:'Fatigued',emoji:'😴'}] },
+  { key: 'energy',   label: 'Energy right now',    options: [{value:'high',label:'High',emoji:'🔋'},{value:'medium',label:'Medium',emoji:'🔆'},{value:'low',label:'Low',emoji:'🪫'},{value:'exhausted',label:'Exhausted',emoji:'💤'}] },
+  { key: 'sleep',    label: "Last night's sleep",  options: [{value:'good',label:'Good',emoji:'😴'},{value:'poor',label:'Poor',emoji:'😪'},{value:'insomnia',label:'Insomnia',emoji:'👀'}] },
+  { key: 'cravings', label: 'Cravings right now',  options: [{value:'none',label:'None',emoji:'🙅'},{value:'sweet',label:'Sweet',emoji:'🍫'},{value:'salty',label:'Salty',emoji:'🧂'},{value:'everything',label:'Everything',emoji:'🍕'}] },
 ];
 
 const SYMPTOM_OPTIONS: Option[] = [
@@ -84,6 +84,7 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
   const [phase, setPhase] = useState<Phase>('follicular');
   const [tab, setTab] = useState<Tab>('flow');
   const [showMore, setShowMore] = useState(false); // reveal phase-atypical log inputs
+  const [showHelp, setShowHelp] = useState(false); // "how check-ins work" explainer
   const isMorning = new Date().getHours() < 12;
 
   useEffect(() => {
@@ -92,6 +93,7 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
     setSaving(false);
     setTab('flow');
     setShowMore(false);
+    setShowHelp(false);
     const cachedData = loadData();
     const cached = cachedData.logs.find((l) => l.date === date);
     setForm(cached ?? DEFAULTS);
@@ -277,6 +279,46 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
 
         {/* Tab content */}
         <div style={{ padding: '10px 16px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
+
+          {/* How check-ins work — plain-English explainer */}
+          <div className="glass-card" style={{ padding: '10px 14px' }}>
+            <button
+              onClick={() => setShowHelp((s) => !s)}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                background: 'transparent', border: 'none', padding: 0, cursor: 'pointer',
+                fontFamily: 'inherit', fontSize: '.82rem', fontWeight: 800, color: '#6E3482',
+              }}
+            >
+              <span>💡 How check-ins work</span>
+              <span style={{ color: '#8A6A9A' }}>{showHelp ? '▴' : '▾'}</span>
+            </button>
+            {showHelp && (
+              <div style={{ marginTop: 8, fontSize: '.8rem', lineHeight: 1.55, color: '#4A3358' }}>
+                <p style={{ margin: '0 0 6px' }}>
+                  <b>Check in once a day — morning is best.</b> Your tasks for the day are built from
+                  this check-in plus where you are in your cycle, so logging early gives you the
+                  whole day to act on them.
+                </p>
+                <p style={{ margin: '0 0 6px' }}>
+                  <b>Answer for right now.</b> Mood, energy and cravings ask how you feel <i>at this
+                  moment</i>, not the whole day — so you can answer first thing. Sleep is about last night.
+                </p>
+                <p style={{ margin: '0 0 6px' }}>
+                  <b>Before you log, we show yesterday&apos;s tasks as a head start</b> — your body
+                  rarely changes overnight. Saving today&apos;s check-in refreshes them.
+                </p>
+                <p style={{ margin: 0 }}>
+                  <b>You can reopen any time.</b> Tweak it in the evening to capture how the day
+                  actually went — that sharpens your patterns and seeds tomorrow morning.
+                </p>
+                <p style={{ margin: '6px 0 0', color: '#8A6A9A' }}>
+                  We surface the inputs that matter most for your <b>{phase}</b> phase first; the
+                  rest are tucked under <i>“Other inputs.”</i> Everything stays loggable.
+                </p>
+              </div>
+            )}
+          </div>
 
           {/* ── Flow tab (phase-relevant first, rest under "More") ── */}
           {tab === 'flow' && (() => {

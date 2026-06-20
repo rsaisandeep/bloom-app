@@ -120,6 +120,25 @@ export function isLogInputRelevant(phase: Phase, field: keyof DayLog): boolean {
   return PHASE_LOG_RELEVANCE[phase].fields.includes(field);
 }
 
+// ── Carry-forward seed ──
+// Retrospective fields describe how the day/night went and autocorrelate
+// strongly day-to-day (e.g. poor sleep → next-day low energy). Carrying them
+// forward seeds the morning's tasks before the user has logged. Morning-only
+// readings (BBT, mucus, tests, flow) are deliberately excluded so a stale
+// fertility/period cue can never leak across days.
+const RETROSPECTIVE_FIELDS: (keyof DayLog)[] = [
+  'mood', 'energy', 'sleep', 'cravings', 'cramps', 'bloating', 'symptoms',
+];
+export function carryForward(prev?: DayLog): Partial<DayLog> | undefined {
+  if (!prev) return undefined;
+  const seed: Partial<DayLog> = {};
+  for (const k of RETROSPECTIVE_FIELDS) {
+    const v = prev[k];
+    if (v !== undefined && v !== null) (seed as Record<string, unknown>)[k] = v;
+  }
+  return Object.keys(seed).length ? seed : undefined;
+}
+
 const STORAGE_KEY = "bloom_data";
 const MS_DAY = 86400000;
 
