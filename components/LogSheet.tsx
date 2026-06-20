@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
-import { loadData, saveLog, startPeriod, isNewPeriodStart, getCurrentPhase, isLogInputRelevant, PHASE_LOG_RELEVANCE, type DayLog, type Phase } from '@/lib/cycle';
+import { loadData, saveLog, startPeriod, isNewPeriodStart, getCurrentPhase, isLogInputRelevant, hasGoal, PHASE_LOG_RELEVANCE, type DayLog, type Phase } from '@/lib/cycle';
 import { appDayKey } from '@/lib/day';
 import { fetchFromSheet, saveToSheet } from '@/lib/data';
 
@@ -85,6 +85,7 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
   const [tab, setTab] = useState<Tab>('flow');
   const [showMore, setShowMore] = useState(false); // reveal phase-atypical log inputs
   const [showHelp, setShowHelp] = useState(false); // "how check-ins work" explainer
+  const [fertilityMode, setFertilityMode] = useState(false); // gate sensitive fertility inputs by goal
   const isMorning = new Date().getHours() < 12;
 
   useEffect(() => {
@@ -98,8 +99,10 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
     const cached = cachedData.logs.find((l) => l.date === date);
     setForm(cached ?? DEFAULTS);
     setPhase(getCurrentPhase(cachedData).phase);
+    setFertilityMode(hasGoal(cachedData.settings, 'conceive'));
     fetchFromSheet().then((data) => {
       setPhase(getCurrentPhase(data).phase);
+      setFertilityMode(hasGoal(data.settings, 'conceive'));
       const existing = data.logs.find((l) => l.date === date);
       if (existing) setForm(existing);
     });
@@ -322,8 +325,12 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
 
           {/* ── Flow tab (phase-relevant first, rest under "More") ── */}
           {tab === 'flow' && (() => {
-            const relevant = FLOW_FIELDS.filter((f) => isLogInputRelevant(phase, f.key));
-            const other = FLOW_FIELDS.filter((f) => !isLogInputRelevant(phase, f.key));
+            // Sexual activity & ovulation tests are only shown when the user's
+            // goal is conceiving — sensitive, and irrelevant for everyone else.
+            const GATED: (keyof DayLog)[] = ['sex', 'ovulationTest'];
+            const fields = fertilityMode ? FLOW_FIELDS : FLOW_FIELDS.filter((f) => !GATED.includes(f.key));
+            const relevant = fields.filter((f) => isLogInputRelevant(phase, f.key));
+            const other = fields.filter((f) => !isLogInputRelevant(phase, f.key));
             const bbtRelevant = isLogInputRelevant(phase, 'bbt');
             return (
               <>
