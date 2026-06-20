@@ -371,9 +371,9 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
                 return other.length > 0 ? moreSection(<>{other.map(fieldCard)}</>) : null;
               })()}
 
-              {/* Water stepper */}
+              {/* Water stepper — a running tally you top up through the day */}
               <div className="glass-card" style={{ padding: '14px 14px 12px' }}>
-                <p style={LABEL}>Water <span style={{ fontWeight: 600, textTransform: 'none', color: '#8A6A9A' }}>· glasses today</span></p>
+                <p style={LABEL}>Water <span style={{ fontWeight: 600, textTransform: 'none', color: '#8A6A9A' }}>· tap + through the day</span></p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                   <button onClick={() => setForm((f) => ({ ...f, water: Math.max(0, (f.water ?? 0) - 1) }))} style={{
                     width: 38, height: 38, borderRadius: 12, border: '1px solid var(--glass-border-dim)', cursor: 'pointer',
@@ -386,7 +386,17 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
                     width: 38, height: 38, borderRadius: 12, border: '1px solid var(--glass-border-dim)', cursor: 'pointer',
                     background: 'rgba(255,255,255,0.55)', color: '#6E3482', fontSize: '1.1rem', fontWeight: 800, fontFamily: 'inherit',
                   }}>+</button>
+                  {/* Quick-add presets */}
+                  <div style={{ display: 'flex', gap: 6, marginLeft: 'auto' }}>
+                    {[1, 2, 3].map((n) => (
+                      <button key={n} onClick={() => setForm((f) => ({ ...f, water: (f.water ?? 0) + n }))} style={{
+                        padding: '6px 10px', borderRadius: 999, border: '1px solid var(--glass-border-dim)', cursor: 'pointer',
+                        background: 'rgba(255,255,255,0.55)', color: '#6E3482', fontSize: '.78rem', fontWeight: 800, fontFamily: 'inherit',
+                      }}>+{n}</button>
+                    ))}
+                  </div>
                 </div>
+                <p style={{ margin: '8px 0 0', fontSize: '.72rem', color: '#8A6A9A' }}>Tally as you go — reopen any time to add more.</p>
               </div>
 
               {/* Weight */}
