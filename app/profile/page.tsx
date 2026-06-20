@@ -161,7 +161,7 @@ export default function ProfilePage() {
 
   return (
     <><TopBar />
-    <div style={{ minHeight: '100vh', padding: '8px 20px 20px' }}>
+    <div style={{ minHeight: '100dvh', padding: '8px 20px 20px' }}>
       <h1 style={{ margin: '0 0 24px', fontSize: 26, fontWeight: 800, color: '#1C0B2E', letterSpacing: -0.5, textAlign: 'center' }}>
         Profile
       </h1>

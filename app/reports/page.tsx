@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { loadData, getCurrentPhase, getGoals, PHASE_META, type BloomData, type DayLog, type Phase } from '@/lib/cycle';
+import { loadData, getCurrentPhase, getGoals, getAveragePeriodLength, PHASE_META, type BloomData, type DayLog, type Phase } from '@/lib/cycle';
 import { computeInsights, type Insights, type TrendPoint } from '@/lib/insights';
 import { buildSampleData, SAMPLE_RECS } from '@/lib/sampleData';
 import type { Recommendations } from '@/lib/matcher';
@@ -93,7 +93,6 @@ function TrendChart({ points, unit, decimals = 1 }: { points: TrendPoint[]; unit
 
 function Patterns({ insights, sample }: { insights: Insights; sample?: boolean }) {
   const { cycleStats, symptoms, byPhase, correlations, loggedDays } = insights;
-  const maxBar = cycleStats ? Math.max(cycleStats.avg, ...cycleStats.history, 1) : 1;
   const maxSym = symptoms[0]?.count ?? 1;
   const phaseRows = byPhase.filter((p) => p.count > 0);
   const { bbtTrend, weightTrend } = insights;
@@ -120,35 +119,6 @@ function Patterns({ insights, sample }: { insights: Insights; sample?: boolean }
                 <p style={{ margin: '2px 0 0', fontSize: 10, color: '#A99BB5' }}>{t.unit}</p>
               </div>
             ))}
-          </div>
-
-          {/* Cycle length chart with dashed average reference line */}
-          <div className="glass-card" style={{ padding: '16px 18px' }}>
-            <p style={{ margin: '0 0 14px', fontSize: 13, fontWeight: 800, color: '#1C0B2E' }}>📊 Cycle length history</p>
-            <div style={{ position: 'relative', height: 88 }}>
-              {/* avg line */}
-              <div style={{ position: 'absolute', left: 0, right: 0, bottom: `${(cycleStats.avg / maxBar) * 72}px`, borderTop: '1.5px dashed rgba(110,52,130,0.5)' }}>
-                <span style={{ position: 'absolute', right: 0, top: -15, fontSize: 9, fontWeight: 800, color: '#6E3482', background: 'rgba(237,233,255,0.95)', padding: '1px 5px', borderRadius: 6 }}>avg {cycleStats.avg}d</span>
-              </div>
-              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'flex-end', gap: 8 }}>
-                {cycleStats.history.map((len, i) => (
-                  <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end' }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: '#8A6A9A', marginBottom: 3 }}>{len}d</span>
-                    <div style={{
-                      width: '100%', height: `${(len / maxBar) * 72}px`, borderRadius: 8,
-                      background: 'linear-gradient(180deg,#C4A6D6,#6E3482)',
-                      boxShadow: '0 3px 10px rgba(110,52,130,0.18)',
-                      transition: 'height .5s cubic-bezier(.34,1.4,.64,1)',
-                    }} />
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: 8, marginTop: 5 }}>
-              {cycleStats.history.map((_, i) => (
-                <span key={i} style={{ flex: 1, textAlign: 'center', fontSize: 9, fontWeight: 600, color: '#A99BB5' }}>#{i + 1}</span>
-              ))}
-            </div>
           </div>
         </>
       )}
@@ -266,6 +236,107 @@ function SampleBanner({ onLog }: { onLog: () => void }) {
   );
 }
 
+// Phase-colored cycle history bars + the cycle-rhythm trend, split into a
+// dedicated cycle-days chart and a period-days chart. Moved here from Calendar.
+function CycleCharts({ data }: { data: BloomData }) {
+  const completed = data.cycles.filter((c) => c.cycleLength && c.cycleLength >= 10);
+  if (completed.length < 1) return null;
+  const periodLen = getAveragePeriodLength(data);
+
+  function phaseColor(day: number, cycLen: number, pLen: number): string {
+    const ovDay = Math.max(pLen + 3, cycLen - 14);
+    if (day <= pLen) return '#fca5a5';
+    if (day < ovDay - 1) return '#c4b5fd';
+    if (day <= ovDay + 1) return '#fde68a';
+    return '#a5b4fc';
+  }
+
+  const barCycles = completed.slice(-5);
+  const chartCycles = completed.filter((c) => c.periodLength).slice(-6);
+  const mth = (s: string) => new Date(s + 'T00:00:00').toLocaleDateString('en-US', { month: 'short' });
+  const chartLabels = chartCycles.map((c) => mth(c.startDate));
+  const cycleLens = chartCycles.map((c) => c.cycleLength!);
+  const periodLens = chartCycles.map((c) => c.periodLength!);
+
+  // Single-series line chart with its own y-scale — used for both split charts.
+  function lineChart(values: number[], color: string, unit: string, dashed = false) {
+    const W = 300, H = 110;
+    const PAD = { l: 26, r: 30, t: 8, b: 22 };
+    const iW = W - PAD.l - PAD.r, iH = H - PAD.t - PAD.b;
+    const yMin = Math.max(0, Math.min(...values) - 4);
+    const yMax = Math.max(...values) + 4;
+    const n = values.length;
+    const xS = (i: number) => PAD.l + (n > 1 ? (i / (n - 1)) * iW : iW / 2);
+    const yS = (v: number) => PAD.t + iH - ((v - yMin) / (yMax - yMin || 1)) * iH;
+    const pts = values.map((v, i) => `${xS(i)},${yS(v)}`).join(' ');
+    return (
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', overflow: 'visible' }}>
+        {[yMin, Math.round((yMin + yMax) / 2), yMax].map((v, i) => (
+          <g key={i}>
+            <line x1={PAD.l} x2={W - PAD.r} y1={yS(v)} y2={yS(v)} stroke="rgba(165,106,189,0.12)" strokeWidth={1} />
+            <text x={PAD.l - 4} y={yS(v) + 3.5} textAnchor="end" fill="#8A6A9A" fontSize={7.5} fontWeight={700}>{Math.round(v)}</text>
+          </g>
+        ))}
+        <polyline points={pts} fill="none" stroke={color} strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" strokeDasharray={dashed ? '4 2.5' : undefined} />
+        {values.map((v, i) => (<circle key={i} cx={xS(i)} cy={yS(v)} r={3.5} fill="#fff" stroke={color} strokeWidth={2} />))}
+        {chartLabels.map((l, i) => (<text key={i} x={xS(i)} y={H - 4} textAnchor="middle" fill="#8A6A9A" fontSize={7.5} fontWeight={700}>{l}</text>))}
+        <text x={xS(n - 1) + 5} y={yS(values[n - 1]) + 4} fill={color} fontSize={8} fontWeight={800}>{values[n - 1]}{unit}</text>
+      </svg>
+    );
+  }
+
+  return (
+    <div className="anim-rise" style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 16 }}>
+      {/* Cycle history — phase-colored bars per cycle */}
+      <div className="glass-card" style={{ padding: '16px 18px' }}>
+        <p style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 800, color: '#1C0B2E' }}>📊 Cycle history</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+          {barCycles.map((c, idx) => {
+            const len = c.cycleLength!;
+            const pLen = c.periodLength ?? periodLen;
+            const label = new Date(c.startDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            return (
+              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: '.62rem', fontWeight: 700, color: '#8A6A9A', minWidth: 38, textAlign: 'right', flexShrink: 0 }}>{label}</span>
+                <div style={{ flex: 1, display: 'flex', gap: 1.5 }}>
+                  {Array.from({ length: len }, (_, d) => (
+                    <div key={d} style={{ flex: 1, height: 16, background: phaseColor(d + 1, len, pLen), borderRadius: d === 0 ? '4px 0 0 4px' : d === len - 1 ? '0 4px 4px 0' : 0 }} />
+                  ))}
+                </div>
+                <span style={{ fontSize: '.62rem', fontWeight: 700, color: '#8A6A9A', minWidth: 22, flexShrink: 0 }}>{len}d</span>
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ display: 'flex', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
+          {[['#fca5a5', 'Menstrual'], ['#c4b5fd', 'Follicular'], ['#fde68a', 'Ovulation'], ['#a5b4fc', 'Luteal']].map(([color, label]) => (
+            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div style={{ width: 8, height: 8, borderRadius: 2, background: color }} />
+              <span style={{ fontSize: '.62rem', fontWeight: 700, color: '#8A6A9A' }}>{label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Cycle rhythm — split into cycle-days and period-days charts */}
+      {chartCycles.length >= 2 && (
+        <>
+          <div className="glass-card" style={{ padding: '14px 16px' }}>
+            <p style={{ margin: '0 0 1px', fontSize: '.65rem', fontWeight: 800, color: '#8A6A9A', letterSpacing: .6, textTransform: 'uppercase' }}>Cycle days</p>
+            <p style={{ margin: '0 0 10px', fontSize: '.7rem', color: '#8A6A9A' }}>Last {chartCycles.length} cycles</p>
+            {lineChart(cycleLens, '#a5b4fc', 'd')}
+          </div>
+          <div className="glass-card" style={{ padding: '14px 16px' }}>
+            <p style={{ margin: '0 0 1px', fontSize: '.65rem', fontWeight: 800, color: '#8A6A9A', letterSpacing: .6, textTransform: 'uppercase' }}>Period days</p>
+            <p style={{ margin: '0 0 10px', fontSize: '.7rem', color: '#8A6A9A' }}>Last {chartCycles.length} cycles</p>
+            {lineChart(periodLens, '#fca5a5', 'd', true)}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function ReportsPage() {
   const [recs, setRecs] = useState<Recommendations | null>(null);
   const [phase, setPhase] = useState<Phase>('follicular');
@@ -343,7 +414,8 @@ export default function ReportsPage() {
   }, [refreshKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const realInsights = useMemo(() => (data ? computeInsights(data) : null), [data]);
-  const sampleInsights = useMemo(() => computeInsights(buildSampleData()), []);
+  const sampleData = useMemo(() => buildSampleData(), []);
+  const sampleInsights = useMemo(() => computeInsights(sampleData), [sampleData]);
   const sampleMode = !realInsights?.enough;            // no real history yet → show labeled sample
   const shownInsights = sampleMode ? sampleInsights : realInsights!;
   const recsToShow: Recommendations | null = recs ?? (sampleMode ? SAMPLE_RECS : null);
@@ -405,6 +477,8 @@ export default function ReportsPage() {
         })()}
 
         <Patterns insights={shownInsights} sample={sampleMode} />
+
+        <CycleCharts data={sampleMode ? sampleData : data} />
 
         {/* Recommendation cards — real (today's log), sample, a loading spinner, or a log-CTA */}
         {recsLoading ? (

@@ -131,7 +131,7 @@ export default function ReadPage() {
 
   return (
     <><TopBar title="Read" />
-    <div style={{ minHeight: '100vh', padding: '4px 16px 24px' }}>
+    <div style={{ minHeight: '100dvh', padding: '4px 16px 24px' }}>
       <p className="anim-rise" style={{ margin: '0 0 14px', fontSize: 13, color: '#8A6A9A' }}>Curated guides on your cycle</p>
 
       {recommended && (

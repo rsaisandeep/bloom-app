@@ -28,6 +28,9 @@ export default function PullToRefresh({ children }: { children: ReactNode }) {
 
     const onMove = (e: TouchEvent) => {
       if (!active) return;
+      // If the page has scrolled away from the very top, disengage immediately
+      // so we never preventDefault and trap the user's scroll (e.g. at the bottom).
+      if (window.scrollY > 0) { active = false; setSnap(true); setPullY(0); return; }
       const dy = e.touches[0].clientY - startY;
       if (dy > 4) {
         e.preventDefault();
@@ -68,10 +71,12 @@ export default function PullToRefresh({ children }: { children: ReactNode }) {
     window.addEventListener('touchstart', onStart, { passive: true });
     window.addEventListener('touchmove', onMove, { passive: false });
     window.addEventListener('touchend', onEnd, { passive: true });
+    window.addEventListener('touchcancel', onEnd, { passive: true });
     return () => {
       window.removeEventListener('touchstart', onStart);
       window.removeEventListener('touchmove', onMove);
       window.removeEventListener('touchend', onEnd);
+      window.removeEventListener('touchcancel', onEnd);
     };
   }, [disabled]);
 

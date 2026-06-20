@@ -31,7 +31,7 @@ export default function ChooseUsernamePage() {
 
   return (
     <div style={{
-      minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: '24px 16px',
       background: `
         radial-gradient(900px 700px at 60% -20%, rgba(110,52,130,0.55), transparent 55%),

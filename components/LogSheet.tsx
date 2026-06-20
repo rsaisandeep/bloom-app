@@ -83,7 +83,6 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
   const [saved, setSaved] = useState(false);
   const [phase, setPhase] = useState<Phase>('follicular');
   const [tab, setTab] = useState<Tab>('flow');
-  const [symptomSearch, setSymptomSearch] = useState('');
   const isMorning = new Date().getHours() < 12;
 
   useEffect(() => {
@@ -91,7 +90,6 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
     setSaved(false);
     setSaving(false);
     setTab('flow');
-    setSymptomSearch('');
     const cachedData = loadData();
     const cached = cachedData.logs.find((l) => l.date === date);
     setForm(cached ?? DEFAULTS);
@@ -167,10 +165,6 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
       </div>
     </div>
   );
-
-  const filteredSymptoms = symptomSearch.trim()
-    ? SYMPTOM_OPTIONS.filter((o) => o.label.toLowerCase().includes(symptomSearch.toLowerCase()))
-    : SYMPTOM_OPTIONS;
 
   if (!open) return null;
 
@@ -270,56 +264,19 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
 
           {/* ── Symptoms tab ── */}
           {tab === 'symptoms' && (
-            <>
-              {/* Search */}
-              <div style={{ position: 'relative' }}>
-                <input
-                  type="text"
-                  placeholder="Search symptoms…"
-                  value={symptomSearch}
-                  onChange={(e) => setSymptomSearch(e.target.value)}
-                  style={{
-                    width: '100%', padding: '10px 36px 10px 14px', borderRadius: 12,
-                    border: '1px solid var(--glass-border-dim)', background: 'rgba(255,255,255,0.7)',
-                    fontSize: '.85rem', fontWeight: 600, color: '#1C0B2E', fontFamily: 'inherit',
-                    outline: 'none', boxSizing: 'border-box',
-                  }}
-                />
-                {symptomSearch && (
-                  <button onClick={() => setSymptomSearch('')} style={{
-                    position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
-                    background: 'none', border: 'none', cursor: 'pointer', color: '#8A6A9A', fontSize: 14,
-                    fontFamily: 'inherit',
-                  }}>✕</button>
-                )}
+            <div className="glass-card" style={{ padding: '14px 14px 12px' }}>
+              <p style={LABEL}>Symptoms <span style={{ fontWeight: 600, textTransform: 'none', color: '#8A6A9A' }}>· tap to log</span></p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+                {SYMPTOM_OPTIONS.map((opt) => {
+                  const active = (form.symptoms ?? []).includes(opt.value);
+                  return (
+                    <button key={opt.value} onClick={() => toggleSymptom(opt.value)} style={chipStyle(active)}>
+                      <span>{opt.emoji}</span><span>{opt.label}</span>
+                    </button>
+                  );
+                })}
               </div>
-
-              <div className="glass-card" style={{ padding: '14px 14px 12px' }}>
-                <p style={LABEL}>Symptoms <span style={{ fontWeight: 600, textTransform: 'none', color: '#8A6A9A' }}>· tap to log</span></p>
-                <div style={{ maxHeight: 300, overflowY: 'auto', overscrollBehavior: 'contain' }}>
-                  {filteredSymptoms.length === 0 ? (
-                    <p style={{ fontSize: 13, color: '#8A6A9A', margin: 0, padding: '4px 0' }}>
-                      No symptoms match &ldquo;{symptomSearch}&rdquo;
-                    </p>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-                      {filteredSymptoms.map((opt) => {
-                        const active = (form.symptoms ?? []).includes(opt.value);
-                        return (
-                          <button
-                            key={opt.value}
-                            onClick={() => toggleSymptom(opt.value)}
-                            style={{ ...chipStyle(active), width: '100%', justifyContent: 'flex-start' }}
-                          >
-                            <span>{opt.emoji}</span><span>{opt.label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </>
+            </div>
           )}
 
           {/* ── Wellbeing tab ── */}

@@ -266,7 +266,7 @@ export default function HomePage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', padding: '0 16px' }}>
+    <div style={{ minHeight: '100dvh', padding: '0 16px' }}>
 
       {/* ── Header (sticky) ── */}
       <div style={{
