@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { loadData, getCurrentPhase, getGoals, getAveragePeriodLength, PHASE_META, type BloomData, type DayLog, type Phase } from '@/lib/cycle';
 import { computeInsights, type Insights, type TrendPoint } from '@/lib/insights';
 import { buildSampleData, SAMPLE_RECS } from '@/lib/sampleData';
@@ -8,7 +9,7 @@ import type { Recommendations } from '@/lib/matcher';
 import { fetchFromSheet, sanitize } from '@/lib/data';
 import { appDayKey } from '@/lib/day';
 import TopBar from '@/components/TopBar';
-import LogSheet from '@/components/LogSheet';
+const LogSheet = dynamic(() => import('@/components/LogSheet'), { ssr: false });
 import AnimatedNumber from '@/components/AnimatedNumber';
 
 // What each goal makes the report emphasise — shown as a small focus banner so

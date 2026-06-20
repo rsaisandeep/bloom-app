@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import {
   loadData, emptyData, getCurrentPhase, getPredictions, getPredictionWindow, getAverageCycleLength,
@@ -18,7 +19,7 @@ import InfoModal from '@/components/InfoModal';
 import NotificationBell from '@/components/NotificationBell';
 import LogoutButton from '@/components/LogoutButton';
 import PeriodStartModal from '@/components/PeriodStartModal';
-import LogSheet from '@/components/LogSheet';
+const LogSheet = dynamic(() => import('@/components/LogSheet'), { ssr: false });
 import BloomMascot from '@/components/BloomMascot';
 import AnimatedNumber from '@/components/AnimatedNumber';
 import { motion } from 'motion/react';

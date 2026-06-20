@@ -90,14 +90,14 @@ export default function ReadPage() {
             <p style={{ margin: '0 0 4px', fontSize: 11, fontWeight: 800, letterSpacing: 1, color: article.accent, textTransform: 'uppercase' }}>
               {article.category} · {article.readMins} min read
             </p>
-            <h1 style={{ margin: '0 0 4px', fontSize: 26, fontWeight: 800, color: '#1C0B2E', letterSpacing: -0.5, textAlign: 'center' }}>{article.title}</h1>
+            <h1 style={{ margin: '0 0 4px', fontSize: 26, fontWeight: 800, color: '#1C0B2E', letterSpacing: -0.5 }}>{article.title}</h1>
             <p style={{ margin: 0, fontSize: 14, color: '#6E3482', fontWeight: 600 }}>{article.subtitle}</p>
           </div>
 
           <div className="stagger" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {article.sections.map((s, i) => (
               <div key={i} className="glass-card" style={{ padding: '18px 18px' }}>
-                <h2 style={{ margin: '0 0 8px', fontSize: 15, fontWeight: 800, color: article.accent, textAlign: 'center' }}>{s.heading}</h2>
+                <h2 style={{ margin: '0 0 8px', fontSize: 15, fontWeight: 800, color: article.accent }}>{s.heading}</h2>
                 <p style={{ margin: 0, fontSize: 14, lineHeight: 1.7, color: '#3A2A48' }}>{s.body}</p>
               </div>
             ))}

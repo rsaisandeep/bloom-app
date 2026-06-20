@@ -2,11 +2,12 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { getSettings, setPcosMode, setPaused, updateSettings, getGoals, loadData, deleteCycle, isLikelySkipped, type Cycle } from '@/lib/cycle';
 import { fetchFromSheet } from '@/lib/data';
 import TopBar from '@/components/TopBar';
-import DoctorSummaryModal from '@/components/DoctorSummary';
-import ImportSheet from '@/components/ImportSheet';
+const DoctorSummaryModal = dynamic(() => import('@/components/DoctorSummary'), { ssr: false });
+const ImportSheet = dynamic(() => import('@/components/ImportSheet'), { ssr: false });
 import { buildLogsCSV, downloadCSV } from '@/lib/export';
 import { apiLogout } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
