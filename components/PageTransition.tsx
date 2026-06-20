@@ -19,7 +19,7 @@ export default function PageTransition({ children }: { children: React.ReactNode
           initial="initial"
           animate="enter"
           exit="exit"
-          style={{ willChange: 'transform, opacity' }}
+          style={{ willChange: 'opacity' }}
         >
           {children}
         </motion.div>

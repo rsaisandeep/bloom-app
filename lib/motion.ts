@@ -20,11 +20,15 @@ export const pressSpring: Transition = {
   mass: 0.7,
 };
 
-// Page transition: enter with slight upward translate + fade.
+// Page transition: cross-fade only. We deliberately avoid translate/scale here
+// because a transform (or will-change: transform) on this persistent wrapper
+// makes it the containing block for position:fixed descendants — which breaks
+// the fixed-overlay login page and every fixed modal. The upward-motion feel
+// is carried by the per-card stagger cascade instead, which is transform-safe.
 export const pageVariants: Variants = {
-  initial: { opacity: 0, y: 8 },
-  enter: { opacity: 1, y: 0, transition: spring },
-  exit: { opacity: 0, y: -6, transition: { duration: 0.18, ease: [0.4, 0, 1, 1] } },
+  initial: { opacity: 0 },
+  enter: { opacity: 1, transition: { duration: 0.26, ease: [0.22, 0.61, 0.36, 1] } },
+  exit: { opacity: 0, transition: { duration: 0.16, ease: [0.4, 0, 1, 1] } },
 };
 
 // Tap/press: scale down on press, spring back on release. No opacity flicker.
