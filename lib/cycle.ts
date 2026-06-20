@@ -66,6 +66,27 @@ export interface BloomData {
   settings: BloomSettings;
 }
 
+// ── Phase-valid inputs (single source of truth) ──
+// Which DayLog fields are meaningful enough in a given phase to drive task
+// generation and recommendation matching. Inputs not listed for a phase are
+// either physiologically irrelevant (e.g. flow outside menstruation, an
+// ovulation test in the luteal phase) or too low-signal to act on (e.g.
+// egg-white cervical-mucus fertility cues once past the ovulation window).
+// Gating both the matcher and the phase-framed tasks through this map ensures
+// an out-of-phase input is never used.
+const ALWAYS_VALID_INPUTS: (keyof DayLog)[] = [
+  'energy', 'mood', 'sleep', 'sex', 'pill', 'water', 'weight', 'notes',
+];
+export const PHASE_VALID_INPUTS: Record<Phase, ReadonlyArray<keyof DayLog>> = {
+  menstrual:  [...ALWAYS_VALID_INPUTS, 'cramps', 'bloating', 'flow'],
+  follicular: [...ALWAYS_VALID_INPUTS, 'cervicalMucus', 'ovulationTest'],
+  ovulation:  [...ALWAYS_VALID_INPUTS, 'cramps', 'cervicalMucus', 'ovulationTest', 'bbt'],
+  luteal:     [...ALWAYS_VALID_INPUTS, 'cramps', 'bloating', 'cravings', 'bbt', 'pregnancyTest'],
+};
+export function isInputValidForPhase(phase: Phase, field: keyof DayLog): boolean {
+  return PHASE_VALID_INPUTS[phase].includes(field);
+}
+
 const STORAGE_KEY = "bloom_data";
 const MS_DAY = 86400000;
 

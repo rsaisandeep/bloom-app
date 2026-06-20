@@ -1,11 +1,12 @@
 import type { Phase, DayLog } from './cycle';
-import { PHASE_META } from './cycle';
+import { PHASE_META, isInputValidForPhase } from './cycle';
 
 export interface ActionItem {
   icon: string;
   title: string;
   sub: string;
   group: string; // what this task targets (a check-in symptom, fertility, or the phase)
+  weight?: number; // higher = more urgent/severe; drives sort order. Defaulted per source.
 }
 
 export interface ActionGroup {
@@ -51,29 +52,29 @@ const BASE: Record<Phase, Omit<ActionItem, 'group'>[]> = {
 // ── Symptom-triggered tasks, tagged with the check-in they target ──
 // Each item names the group ("what it's targeting") so the home screen can
 // show them under a header per symptom.
-function symptomOverrides(log?: DayLog): ActionItem[] {
+function symptomOverrides(phase: Phase, log?: DayLog): ActionItem[] {
   if (!log) return [];
   const out: ActionItem[] = [];
 
   // Cramps
   if (log.cramps === 'severe') {
-    out.push({ group: 'Cramps', icon: '🔥', title: 'Heat therapy 38–40°C', sub: '15–20 min — rivals ibuprofen for cramps' });
-    out.push({ group: 'Cramps', icon: '🐟', title: 'Omega-3 + magnesium', sub: 'Anti-inflammatory, calms uterine contractions' });
+    out.push({ group: 'Cramps', icon: '🔥', title: 'Heat therapy 38–40°C', sub: '15–20 min — rivals ibuprofen for cramps', weight: 100 });
+    out.push({ group: 'Cramps', icon: '🐟', title: 'Omega-3 + magnesium', sub: 'Anti-inflammatory, calms uterine contractions', weight: 100 });
   } else if (log.cramps === 'moderate' || log.cramps === 'mild') {
     out.push({ group: 'Cramps', icon: '🔥', title: 'Warm compress', sub: '15 min on lower abdomen' });
   }
 
   // Bloating
   if (log.bloating === 'severe') {
-    out.push({ group: 'Bloating', icon: '🔄', title: 'Clockwise belly massage', sub: '5 min — follows colon, releases gas' });
-    out.push({ group: 'Bloating', icon: '🧂', title: 'Cut salt today', sub: 'Sodium pulls fluid into tissues' });
+    out.push({ group: 'Bloating', icon: '🔄', title: 'Clockwise belly massage', sub: '5 min — follows colon, releases gas', weight: 85 });
+    out.push({ group: 'Bloating', icon: '🧂', title: 'Cut salt today', sub: 'Sodium pulls fluid into tissues', weight: 85 });
   }
 
   // Mood
   if (log.mood === 'sad' || log.mood === 'anxious') {
-    out.push({ group: 'Mood', icon: '🌳', title: '20 min aerobic', sub: 'Raises BDNF & serotonin fast' });
-    out.push({ group: 'Mood', icon: '🫁', title: '4-7-8 breathing', sub: 'Calms nervous system in ~90 sec' });
-    out.push({ group: 'Mood', icon: '🫂', title: 'Connect with someone', sub: 'Oxytocin counters low serotonin' });
+    out.push({ group: 'Mood', icon: '🌳', title: '20 min aerobic', sub: 'Raises BDNF & serotonin fast', weight: 90 });
+    out.push({ group: 'Mood', icon: '🫁', title: '4-7-8 breathing', sub: 'Calms nervous system in ~90 sec', weight: 90 });
+    out.push({ group: 'Mood', icon: '🫂', title: 'Connect with someone', sub: 'Oxytocin counters low serotonin', weight: 90 });
   } else if (log.mood === 'irritable') {
     out.push({ group: 'Mood', icon: '🧘', title: 'Aerobic 20–30 min', sub: 'Boosts serotonin & GABA' });
     out.push({ group: 'Mood', icon: '🫁', title: 'Box breathing', sub: '4-4-4-4 to defuse irritability' });
@@ -100,9 +101,10 @@ function symptomOverrides(log?: DayLog): ActionItem[] {
     out.push({ group: 'Cravings', icon: '🥜', title: 'Nuts or olives', sub: 'Salt craving with minerals, not chips' });
   }
 
-  // Cervical mucus — fertile-window signal
-  if (log.cervicalMucus === 'eggwhite' || log.cervicalMucus === 'watery') {
-    out.push({ group: 'Fertility', icon: '🌱', title: "You're likely fertile", sub: 'Egg-white/watery mucus = peak fertility. Log an ovulation test' });
+  // Cervical mucus — fertile-window signal (only meaningful in the fertile phases)
+  if (isInputValidForPhase(phase, 'cervicalMucus') &&
+      (log.cervicalMucus === 'eggwhite' || log.cervicalMucus === 'watery')) {
+    out.push({ group: 'Fertility', icon: '🌱', title: "You're likely fertile", sub: 'Egg-white/watery mucus = peak fertility. Log an ovulation test', weight: 95 });
   }
 
   // Multi-select symptoms — each tagged with the specific symptom it targets
@@ -145,27 +147,33 @@ function symptomOverrides(log?: DayLog): ActionItem[] {
   }
 
   if (sx.includes('dizziness')) {
-    out.push({ group: 'Dizziness', icon: '🫘', title: 'Increase iron-rich foods', sub: 'Heavy flow lowers ferritin → dizziness; lentils + vitamin C' });
-    out.push({ group: 'Dizziness', icon: '💧', title: 'Hydrate and sit slowly', sub: 'Orthostatic dizziness is common during menstruation — rise gradually' });
+    out.push({ group: 'Dizziness', icon: '🫘', title: 'Increase iron-rich foods', sub: 'Low iron is a common dizziness driver — lentils + vitamin C' });
+    out.push({ group: 'Dizziness', icon: '💧', title: 'Hydrate and sit slowly', sub: 'Orthostatic dizziness is common — rise gradually to steady blood pressure' });
     out.push({ group: 'Dizziness', icon: '🧂', title: 'Light salty snack', sub: 'A pinch of sodium helps blood pressure stabilise quickly' });
   }
 
   if (sx.includes('hot_flashes')) {
-    out.push({ group: 'Hot flashes', icon: '👕', title: 'Wear breathable layers', sub: 'Easy to remove — hot flashes peak around ovulation with LH surge' });
+    out.push({ group: 'Hot flashes', icon: '👕', title: 'Wear breathable layers', sub: 'Easy to remove — helps you shed heat fast' });
     out.push({ group: 'Hot flashes', icon: '❄️', title: 'Cool water on wrists', sub: 'Pulse-point cooling drops core temp in ~30 sec' });
-    out.push({ group: 'Hot flashes', icon: '🌡️', title: 'This may be ovulation', sub: 'Temp spikes 0.2–0.5°C at ovulation — log it as a fertility signal' });
+    // Fertility framing only holds around ovulation.
+    if (phase === 'ovulation') {
+      out.push({ group: 'Hot flashes', icon: '🌡️', title: 'This may be ovulation', sub: 'Temp spikes 0.2–0.5°C at ovulation — log it as a fertility signal' });
+    }
   }
 
   if (sx.includes('chills')) {
-    out.push({ group: 'Chills', icon: '🌡️', title: 'Post-ovulation temp drop is normal', sub: 'BBT falls slightly before period; chills can accompany it' });
-    out.push({ group: 'Chills', icon: '🧣', title: 'Layer up + warm drink', sub: 'Your basal temp dips in late luteal — body is not fighting an illness' });
+    // The basal-temperature framing is only accurate in the luteal phase.
+    if (phase === 'luteal') {
+      out.push({ group: 'Chills', icon: '🌡️', title: 'Post-ovulation temp drop is normal', sub: 'BBT falls slightly before period; chills can accompany it' });
+      out.push({ group: 'Chills', icon: '🧣', title: 'Layer up + warm drink', sub: 'Your basal temp dips in late luteal — body is not fighting an illness' });
+    }
     out.push({ group: 'Chills', icon: '🛁', title: 'Warm bath or shower', sub: 'Raises skin temp, reduces the perceived cold sensation' });
   }
 
   if (sx.includes('diarrhea')) {
-    out.push({ group: 'Diarrhea', icon: '⚡', title: 'Electrolyte drink', sub: 'Prostaglandins cause GI motility in menstrual phase — replace salts' });
+    out.push({ group: 'Diarrhea', icon: '⚡', title: 'Electrolyte drink', sub: 'Cycle-related prostaglandins can speed gut motility — replace lost salts' });
     out.push({ group: 'Diarrhea', icon: '🍌', title: 'BRAT foods today', sub: 'Banana, rice, applesauce, toast — gentle on a reactive gut' });
-    out.push({ group: 'Diarrhea', icon: '🌡️', title: 'This is menstrual, not a bug', sub: 'High prostaglandins act on the bowel — usually resolves in 1–2 days' });
+    out.push({ group: 'Diarrhea', icon: '🌡️', title: 'May be hormonal, not a bug', sub: 'Prostaglandins can act on the bowel — usually resolves in 1–2 days' });
   }
 
   if (sx.includes('constipation')) {
@@ -187,8 +195,8 @@ function symptomOverrides(log?: DayLog): ActionItem[] {
   }
 
   if (sx.includes('leg_cramps')) {
-    out.push({ group: 'Leg cramps', icon: '🍌', title: 'Potassium + magnesium', sub: 'Bananas and pumpkin seeds replace electrolytes lost during menstruation' });
-    out.push({ group: 'Leg cramps', icon: '💧', title: 'Hydrate well today', sub: 'Dehydration concentrates prostaglandins and worsens muscle cramping' });
+    out.push({ group: 'Leg cramps', icon: '🍌', title: 'Potassium + magnesium', sub: 'Bananas and pumpkin seeds replenish cramp-easing electrolytes' });
+    out.push({ group: 'Leg cramps', icon: '💧', title: 'Hydrate well today', sub: 'Dehydration worsens muscle cramping — keep fluids up' });
     out.push({ group: 'Leg cramps', icon: '🦵', title: 'Calf stretch against a wall', sub: '30-sec hold, 3 reps — immediate relief for cramp tightness' });
   }
 
@@ -224,12 +232,17 @@ function goalOverrides(phase: Phase, goals: string[]): ActionItem[] {
   return out;
 }
 
-// Flat, de-duped list of every applicable task (goal- and symptom-targeted first,
-// then the phase baseline). Order is preserved so checkbox indexing stays stable.
+// Flat, de-duped list of every applicable task. Each task carries a `weight`
+// (severity/urgency); the list is sorted weight-descending so the most pressing
+// task surfaces first. Severe symptom tasks outrank goal tasks, which outrank
+// the phase baseline. Source defaults: symptom 70, goal 60, baseline 20 — the
+// severe symptom branches set their own higher weight.
 export function getActionItems(phase: Phase, log?: DayLog, goals: string[] = []): ActionItem[] {
   const phaseLabel = `${PHASE_META[phase].label} phase`;
-  const baseline: ActionItem[] = BASE[phase].map((i) => ({ ...i, group: phaseLabel }));
-  const merged = [...goalOverrides(phase, goals), ...symptomOverrides(log), ...baseline];
+  const baseline: ActionItem[] = BASE[phase].map((i) => ({ ...i, group: phaseLabel, weight: 20 }));
+  const goalItems = goalOverrides(phase, goals).map((i) => ({ ...i, weight: i.weight ?? 60 }));
+  const symptomItems = symptomOverrides(phase, log).map((i) => ({ ...i, weight: i.weight ?? 70 }));
+  const merged = [...goalItems, ...symptomItems, ...baseline];
   const seen = new Set<string>();
   const out: ActionItem[] = [];
   for (const item of merged) {
@@ -237,7 +250,9 @@ export function getActionItems(phase: Phase, log?: DayLog, goals: string[] = [])
     seen.add(item.title);
     out.push(item);
   }
-  return out;
+  // Stable sort by weight (descending) — same-weight items keep first-seen order,
+  // so dedup precedence (goal > symptom > baseline) is preserved within a tier.
+  return out.sort((a, b) => (b.weight ?? 0) - (a.weight ?? 0));
 }
 
 // Same tasks, grouped by what they target, headers in first-seen order.

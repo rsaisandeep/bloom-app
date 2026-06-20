@@ -1,4 +1,5 @@
 import type { Phase, DayLog } from "./cycle";
+import { isInputValidForPhase } from "./cycle";
 
 interface RecommendationVersions {
   versions: string[];
@@ -37,7 +38,7 @@ export interface Recommendations {
 }
 
 export function getRecommendations(phaseData: PhaseData, userInput: Partial<DayLog>): Recommendations {
-  const matchedRule = findBestRule(phaseData.rules, userInput);
+  const matchedRule = findBestRule(phaseData.rules, userInput, phaseData.phase);
   const source = matchedRule ? matchedRule.recommendations : phaseData.default;
 
   return {
@@ -51,13 +52,13 @@ export function getRecommendations(phaseData: PhaseData, userInput: Partial<DayL
   };
 }
 
-function findBestRule(rules: Rule[], userInput: Partial<DayLog>): Rule | null {
+function findBestRule(rules: Rule[], userInput: Partial<DayLog>, phase: Phase): Rule | null {
   if (!rules || rules.length === 0) return null;
   let bestRule: Rule | null = null;
   let bestScore = -1;
 
   for (const rule of rules) {
-    const score = scoreRule(rule, userInput);
+    const score = scoreRule(rule, userInput, phase);
     if (score > bestScore) {
       bestScore = score;
       bestRule = rule;
@@ -66,11 +67,14 @@ function findBestRule(rules: Rule[], userInput: Partial<DayLog>): Rule | null {
   return bestScore > 0 ? bestRule : null;
 }
 
-function scoreRule(rule: Rule, userInput: Partial<DayLog>): number {
+function scoreRule(rule: Rule, userInput: Partial<DayLog>, phase: Phase): number {
   const conditions = rule.conditions;
   let matchCount = 0;
 
   for (const [key, acceptedValues] of Object.entries(conditions)) {
+    // Ignore any condition keyed on an input that is irrelevant to this phase,
+    // so a misplaced rule can never match on an out-of-phase field.
+    if (!isInputValidForPhase(phase, key as keyof DayLog)) continue;
     const val = userInput[key as keyof DayLog];
     const accepted = acceptedValues as string[];
     if (val === undefined || val === null) continue;
