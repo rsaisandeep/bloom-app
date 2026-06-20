@@ -292,7 +292,10 @@ export default function HomePage() {
         WebkitBackdropFilter: 'blur(20px) saturate(150%)',
         borderBottom: '1px solid rgba(165,106,189,0.12)',
       }}>
-        <Hamburger username={username} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Hamburger username={username} />
+          <InfoModal />
+        </div>
 
         {/* Truly centered regardless of button widths */}
         <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', textAlign: 'center', pointerEvents: 'none' }}>
@@ -301,7 +304,6 @@ export default function HomePage() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <InfoModal />
           <NotificationBell />
           <LogoutButton />
         </div>

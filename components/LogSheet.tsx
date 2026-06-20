@@ -256,11 +256,28 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
                     : new Date(date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
                 </p>
               </div>
-              <button onClick={onClose} style={{
-                background: 'rgba(165,106,189,0.15)', border: 'none', borderRadius: 999,
-                width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', color: '#6E3482', fontSize: 16, fontFamily: 'inherit',
-              }}>✕</button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button onClick={handleSave} disabled={saving} style={{
+                  padding: '8px 16px', border: 0, borderRadius: 999,
+                  fontWeight: 800, fontSize: '.85rem', color: '#fff', fontFamily: 'inherit',
+                  background: saved
+                    ? 'linear-gradient(135deg,#22c55e,#16a34a)'
+                    : saving ? 'rgba(110,52,130,0.5)'
+                    : 'linear-gradient(135deg,#6E3482,#49225B)',
+                  boxShadow: saved
+                    ? '0 6px 18px rgba(34,197,94,0.35)'
+                    : '0 6px 18px rgba(110,52,130,0.32)',
+                  cursor: saving ? 'default' : 'pointer',
+                  transition: 'all .2s cubic-bezier(.22,.61,.36,1)', whiteSpace: 'nowrap',
+                }}>
+                  {saved ? '✓ Saved!' : saving ? 'Saving…' : isToday ? 'Save check-in' : 'Save changes'}
+                </button>
+                <button onClick={onClose} style={{
+                  background: 'rgba(165,106,189,0.15)', border: 'none', borderRadius: 999,
+                  width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', color: '#6E3482', fontSize: 16, fontFamily: 'inherit', flexShrink: 0,
+                }}>✕</button>
+              </div>
             </div>
           </div>
 
@@ -443,23 +460,6 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
               </div>
             </>
           )}
-
-          <button onClick={handleSave} disabled={saving} style={{
-            width: '100%', marginTop: 6, padding: '14px', border: 0,
-            borderRadius: 16, fontWeight: 800, fontSize: '1rem', color: '#fff',
-            background: saved
-              ? 'linear-gradient(135deg,#22c55e,#16a34a)'
-              : saving ? 'rgba(110,52,130,0.5)'
-              : 'linear-gradient(135deg,#6E3482,#49225B)',
-            boxShadow: saved
-              ? '0 8px 24px rgba(34,197,94,0.35)'
-              : '0 8px 24px rgba(110,52,130,0.35),inset 0 1px 0 rgba(255,255,255,0.2)',
-            cursor: saving ? 'default' : 'pointer',
-            transition: 'all .2s cubic-bezier(.22,.61,.36,1)',
-            fontFamily: 'inherit',
-          }}>
-            {saved ? '✓ Saved!' : saving ? 'Saving…' : isToday ? 'Save check-in →' : 'Save changes →'}
-          </button>
         </div>
       </div>
     </>,

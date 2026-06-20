@@ -20,7 +20,10 @@ export default function TopBar({ title }: { title?: string }) {
       WebkitBackdropFilter: 'blur(20px) saturate(150%)',
       borderBottom: '1px solid rgba(165,106,189,0.12)',
     }}>
-      <Hamburger username={username} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <Hamburger username={username} />
+        <InfoModal />
+      </div>
       {title && (
         <span style={{
           position: 'absolute', left: '50%', transform: 'translateX(-50%)',
@@ -29,7 +32,6 @@ export default function TopBar({ title }: { title?: string }) {
         }}>{title}</span>
       )}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <InfoModal />
         <NotificationBell />
         <LogoutButton />
       </div>

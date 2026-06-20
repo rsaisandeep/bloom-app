@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { loadData } from '@/lib/cycle';
 import { sanitize } from '@/lib/data';
@@ -37,6 +37,8 @@ function getNotifs(): Notif[] {
 export default function NotificationBell() {
   const [open, setOpen] = useState(false);
   const [notifs, setNotifs] = useState<Notif[]>([]);
+  const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const refresh = () => setNotifs(getNotifs());
@@ -45,17 +47,32 @@ export default function NotificationBell() {
     return () => window.removeEventListener('bloom:refresh', refresh);
   }, []);
 
+  function computePos() {
+    const r = btnRef.current?.getBoundingClientRect();
+    if (!r) return;
+    const width = Math.min(340, window.innerWidth - 24);
+    const left = Math.min(Math.max(8, r.left), window.innerWidth - width - 8);
+    setPos({ top: r.bottom + 8, left, width });
+  }
+
+  function openMenu() { computePos(); setOpen(true); }
+
+  // Reposition on resize/scroll while open so the dropdown tracks its button.
   useEffect(() => {
     if (!open) return;
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = ''; };
+    window.addEventListener('resize', computePos);
+    window.addEventListener('scroll', computePos, true);
+    return () => {
+      window.removeEventListener('resize', computePos);
+      window.removeEventListener('scroll', computePos, true);
+    };
   }, [open]);
 
   const count = notifs.length;
 
   return (
     <>
-      <button onClick={() => setOpen(true)} aria-label="Notifications" className="liquid-pill" style={{
+      <button ref={btnRef} onClick={openMenu} aria-label="Notifications" className="liquid-pill" style={{
         position: 'relative', width: 38, height: 38, borderRadius: '50%', cursor: 'pointer',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
@@ -71,45 +88,42 @@ export default function NotificationBell() {
         )}
       </button>
 
-      {open && typeof document !== 'undefined' && createPortal(
-        <div onClick={() => setOpen(false)} style={{
-          position: 'fixed', inset: 0, zIndex: 500, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-          background: 'rgba(28,11,46,0.42)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
-          animation: 'rise .2s ease both',
-        }}>
-          <div onClick={(e) => e.stopPropagation()} style={{
-            width: '100%', maxWidth: 448, maxHeight: '70vh',
-            display: 'flex', flexDirection: 'column',
-            background: 'rgba(255,255,255,0.94)',
+      {open && pos && typeof document !== 'undefined' && createPortal(
+        <>
+          <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 500 }} />
+          <div style={{
+            position: 'fixed', top: pos.top, left: pos.left, width: pos.width, zIndex: 501,
+            maxHeight: 'calc(100dvh - 80px)', display: 'flex', flexDirection: 'column',
+            background: 'rgba(255,255,255,0.97)',
             backdropFilter: 'blur(40px) saturate(180%)', WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-            borderRadius: '28px 28px 0 0',
-            boxShadow: '0 -10px 48px rgba(110,52,130,0.22)', animation: 'floatIn .3s cubic-bezier(.22,.8,.3,1) both',
+            borderRadius: 18, border: '1px solid rgba(165,106,189,0.18)',
+            boxShadow: '0 14px 44px rgba(110,52,130,0.24)',
+            animation: 'rise .16s ease both',
           }}>
-            <div style={{ flexShrink: 0, padding: '16px 20px 14px', borderBottom: '1px solid rgba(165,106,189,0.18)' }}>
-              <div style={{ width: 40, height: 4, borderRadius: 2, background: 'rgba(165,106,189,0.3)', margin: '0 auto 14px' }} />
-              <p style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#1C0B2E', textAlign: 'center' }}>Notifications</p>
+            <div style={{ flexShrink: 0, padding: '12px 16px 10px', borderBottom: '1px solid rgba(165,106,189,0.15)' }}>
+              <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#1C0B2E' }}>Notifications</p>
             </div>
 
-            <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px calc(24px + env(safe-area-inset-bottom))' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '12px 14px 14px' }}>
               {count === 0 ? (
-                <p style={{ margin: '20px 0', fontSize: 13.5, color: '#8A6A9A', textAlign: 'center', lineHeight: 1.5 }}>
+                <p style={{ margin: '16px 0', fontSize: 13, color: '#8A6A9A', textAlign: 'center', lineHeight: 1.5 }}>
                   You&apos;re all caught up 🎉
                 </p>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {notifs.map((n) => (
                     <div key={n.type} className="glass-card" style={{
-                      display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
+                      display: 'flex', alignItems: 'center', gap: 12, padding: '11px 12px',
                       background: 'linear-gradient(135deg,rgba(165,106,189,0.16),rgba(110,52,130,0.08))',
                       borderColor: 'rgba(165,106,189,0.40)',
                     }}>
                       <div style={{
-                        width: 40, height: 40, borderRadius: 14, flexShrink: 0,
+                        width: 38, height: 38, borderRadius: 12, flexShrink: 0,
                         background: 'linear-gradient(135deg,#A56ABD,#6E3482)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19,
                       }}>{n.icon}</div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#1C0B2E' }}>{n.title}</p>
+                        <p style={{ margin: 0, fontSize: 13.5, fontWeight: 800, color: '#1C0B2E' }}>{n.title}</p>
                         <p style={{ margin: '2px 0 0', fontSize: 12, color: '#6E3482', lineHeight: 1.4 }}>{n.message}</p>
                       </div>
                     </div>
@@ -118,7 +132,7 @@ export default function NotificationBell() {
               )}
             </div>
           </div>
-        </div>,
+        </>,
         document.body
       )}
     </>
