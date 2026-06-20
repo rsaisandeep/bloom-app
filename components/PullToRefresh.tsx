@@ -21,16 +21,33 @@ export default function PullToRefresh({ children }: { children: ReactNode }) {
 
     let startY = 0;
     let active = false;
+    let scroller: HTMLElement | null = null;
+
+    // Find the nearest ancestor that scrolls on its own (e.g. the fixed article
+    // overlay). The document body's scrollY stays 0 while these scroll, so without
+    // this we'd preventDefault and trap the user's gesture inside them.
+    const scrollableAncestor = (el: EventTarget | null): HTMLElement | null => {
+      let node = el as HTMLElement | null;
+      while (node && node !== document.body) {
+        const oy = getComputedStyle(node).overflowY;
+        if ((oy === 'auto' || oy === 'scroll') && node.scrollHeight > node.clientHeight) return node;
+        node = node.parentElement;
+      }
+      return null;
+    };
 
     const onStart = (e: TouchEvent) => {
-      if (window.scrollY === 0) { startY = e.touches[0].clientY; active = true; }
+      scroller = scrollableAncestor(e.target);
+      const atTop = window.scrollY === 0 && (!scroller || scroller.scrollTop <= 0);
+      if (atTop) { startY = e.touches[0].clientY; active = true; }
     };
 
     const onMove = (e: TouchEvent) => {
       if (!active) return;
-      // If the page has scrolled away from the very top, disengage immediately
-      // so we never preventDefault and trap the user's scroll (e.g. at the bottom).
-      if (window.scrollY > 0) { active = false; setSnap(true); setPullY(0); return; }
+      // If the page (or an inner scroller) has scrolled away from the very top,
+      // disengage immediately so we never preventDefault and trap the user's
+      // scroll (e.g. at the bottom of an article).
+      if (window.scrollY > 0 || (scroller && scroller.scrollTop > 0)) { active = false; setSnap(true); setPullY(0); return; }
       const dy = e.touches[0].clientY - startY;
       if (dy > 4) {
         e.preventDefault();
