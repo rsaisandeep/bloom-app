@@ -19,6 +19,8 @@ import LogoutButton from '@/components/LogoutButton';
 import PeriodStartModal from '@/components/PeriodStartModal';
 import LogSheet from '@/components/LogSheet';
 import BloomMascot from '@/components/BloomMascot';
+import AnimatedNumber from '@/components/AnimatedNumber';
+import { motion } from 'motion/react';
 
 type NotifType = 'late_period' | 'long_cycle' | 'fertile_window' | 'pms_incoming' | 'luteal_halfway' | 'logging_streak' | 'evening_refine';
 const NOTIF_META: Record<NotifType, { title: string; icon: string; bg: string; border: string; iconBg: string; textColor: string }> = {
@@ -373,9 +375,11 @@ export default function HomePage() {
                 </linearGradient>
               </defs>
               <circle cx="60" cy="60" r={R} fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="12" />
-              <circle cx="60" cy="60" r={R} fill="none" stroke="url(#phaseGrad)" strokeWidth="12"
-                strokeDasharray={`${C * ringFill} ${C}`} strokeLinecap="round"
-                style={{ transition: 'stroke-dasharray .8s cubic-bezier(.34,1.2,.64,1)' }} />
+              <motion.circle cx="60" cy="60" r={R} fill="none" stroke="url(#phaseGrad)" strokeWidth="12"
+                strokeDasharray={C} strokeLinecap="round"
+                initial={{ strokeDashoffset: C }}
+                animate={{ strokeDashoffset: C * (1 - ringFill) }}
+                transition={{ type: 'spring', stiffness: 60, damping: 18, mass: 1 }} />
             </svg>
             <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
               {!loaded ? (
@@ -386,7 +390,7 @@ export default function HomePage() {
               ) : hasCycles ? (
                 <>
                   <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', fontWeight: 600, letterSpacing: 0.5 }}>DAY</span>
-                  <span style={{ fontSize: 30, color: '#fff', fontWeight: 800, lineHeight: 1.1 }}>{dayOfCycle}</span>
+                  <AnimatedNumber value={dayOfCycle} style={{ fontSize: 30, color: '#fff', fontWeight: 800, lineHeight: 1.1 }} />
                 </>
               ) : (
                 <BloomMascot size={72} />
@@ -422,10 +426,10 @@ export default function HomePage() {
             {hasCycles && (
               <div style={{ marginTop: 14 }}>
                 <div style={{ position: 'relative', height: 7, borderRadius: 999, display: 'flex', overflow: 'visible' }}>
-                  <div style={{ width: `${menstrualPct}%`,  background: '#f87171', borderRadius: '999px 0 0 999px', minWidth: 4 }} />
-                  <div style={{ width: `${follicularPct}%`, background: '#a78bfa', minWidth: follicularPct > 0 ? 4 : 0 }} />
-                  <div style={{ width: `${ovulationPct}%`, background: '#fbbf24', minWidth: 4 }} />
-                  <div style={{ flex: 1, background: '#818cf8', borderRadius: '0 999px 999px 0', minWidth: lutealPct > 0 ? 4 : 0 }} />
+                  <div className="grow-bar" style={{ width: `${menstrualPct}%`,  background: '#f87171', borderRadius: '999px 0 0 999px', minWidth: 4 }} />
+                  <div className="grow-bar" style={{ width: `${follicularPct}%`, background: '#a78bfa', minWidth: follicularPct > 0 ? 4 : 0 }} />
+                  <div className="grow-bar" style={{ width: `${ovulationPct}%`, background: '#fbbf24', minWidth: 4 }} />
+                  <div className="grow-bar" style={{ flex: 1, background: '#818cf8', borderRadius: '0 999px 999px 0', minWidth: lutealPct > 0 ? 4 : 0 }} />
                   {/* Current day marker */}
                   <div style={{
                     position: 'absolute',

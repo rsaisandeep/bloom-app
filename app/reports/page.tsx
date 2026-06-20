@@ -9,6 +9,7 @@ import { fetchFromSheet, sanitize } from '@/lib/data';
 import { appDayKey } from '@/lib/day';
 import TopBar from '@/components/TopBar';
 import LogSheet from '@/components/LogSheet';
+import AnimatedNumber from '@/components/AnimatedNumber';
 
 // What each goal makes the report emphasise — shown as a small focus banner so
 // the user can see their onboarding goals actually shape what's surfaced here.
@@ -109,13 +110,15 @@ function Patterns({ insights, sample }: { insights: Insights; sample?: boolean }
           {/* Stat tiles */}
           <div style={{ display: 'flex', gap: 10 }}>
             {[
-              { label: 'Avg cycle', value: `${cycleStats.avg}`, unit: 'days', color: '#6E3482' },
-              { label: 'Avg period', value: `${cycleStats.periodAvg}`, unit: 'days', color: '#A56ABD' },
+              { label: 'Avg cycle', num: cycleStats.avg, value: `${cycleStats.avg}`, unit: 'days', color: '#6E3482' },
+              { label: 'Avg period', num: cycleStats.periodAvg, value: `${cycleStats.periodAvg}`, unit: 'days', color: '#A56ABD' },
               { label: 'Regularity', value: cycleStats.irregular ? 'Irregular' : 'Regular', unit: `±${Math.round(cycleStats.stdDev)}d`, color: cycleStats.irregular ? '#B45309' : '#166534', small: true },
             ].map((t) => (
               <div key={t.label} className="glass-card" style={{ flex: 1, padding: '12px 10px', textAlign: 'center' }}>
                 <p style={{ margin: '0 0 4px', fontSize: 9.5, fontWeight: 800, letterSpacing: 0.3, color: '#8A6A9A', textTransform: 'uppercase' }}>{t.label}</p>
-                <p style={{ margin: 0, fontSize: t.small ? 15 : 22, fontWeight: 800, color: t.color, lineHeight: 1.1 }}>{t.value}</p>
+                {typeof t.num === 'number'
+                  ? <AnimatedNumber value={t.num} style={{ display: 'block', margin: 0, fontSize: 22, fontWeight: 800, color: t.color, lineHeight: 1.1 }} />
+                  : <p style={{ margin: 0, fontSize: t.small ? 15 : 22, fontWeight: 800, color: t.color, lineHeight: 1.1 }}>{t.value}</p>}
                 <p style={{ margin: '2px 0 0', fontSize: 10, color: '#A99BB5' }}>{t.unit}</p>
               </div>
             ))}
@@ -132,7 +135,7 @@ function Patterns({ insights, sample }: { insights: Insights; sample?: boolean }
                 <span style={{ fontSize: 16, width: 22, textAlign: 'center' }}>{s.emoji}</span>
                 <span style={{ fontSize: 13, fontWeight: 600, color: '#1C0B2E', width: 100 }}>{s.label}</span>
                 <div style={{ flex: 1, height: 8, borderRadius: 6, background: 'rgba(165,106,189,0.15)', overflow: 'hidden' }}>
-                  <div style={{ width: `${(s.count / maxSym) * 100}%`, height: '100%', borderRadius: 6, background: 'linear-gradient(90deg,#A56ABD,#6E3482)' }} />
+                  <div className="grow-bar" style={{ width: `${(s.count / maxSym) * 100}%`, height: '100%', borderRadius: 6, background: 'linear-gradient(90deg,#A56ABD,#6E3482)' }} />
                 </div>
                 <span style={{ fontSize: 11, fontWeight: 700, color: '#8A6A9A', width: 34, textAlign: 'right' }}>{s.pct}%</span>
               </div>
@@ -154,7 +157,7 @@ function Patterns({ insights, sample }: { insights: Insights; sample?: boolean }
                   <span style={{ fontSize: 13, fontWeight: 700, color: '#1C0B2E', width: 74 }}>{m.label}</span>
                   <span style={{ flex: 1, fontSize: 12.5, color: '#6E3482', fontWeight: 600 }}>{p.topMood ?? '—'}</span>
                   <div title={p.energyLabel} style={{ width: 56, height: 8, borderRadius: 6, background: 'rgba(165,106,189,0.18)', overflow: 'hidden', flexShrink: 0 }}>
-                    <div style={{ width: `${pct}%`, height: '100%', borderRadius: 6, background: 'linear-gradient(90deg,#C4A6D6,#6E3482)' }} />
+                    <div className="grow-bar" style={{ width: `${pct}%`, height: '100%', borderRadius: 6, background: 'linear-gradient(90deg,#C4A6D6,#6E3482)' }} />
                   </div>
                 </div>
               );

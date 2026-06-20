@@ -186,16 +186,23 @@ body {
   0%   { opacity: 1; }
   100% { opacity: 0.15; }
 }
-.anim-rise   { animation: rise .28s cubic-bezier(.22,.61,.36,1) both; will-change: transform, opacity; }
-.anim-float  { animation: floatIn .34s cubic-bezier(.34,1.2,.64,1) both; will-change: transform, opacity; }
-.stagger > * { animation: rise .28s cubic-bezier(.22,.61,.36,1) both; will-change: transform, opacity; }
-.stagger > *:nth-child(1) { animation-delay: .03s; }
-.stagger > *:nth-child(2) { animation-delay: .07s; }
-.stagger > *:nth-child(3) { animation-delay: .11s; }
-.stagger > *:nth-child(4) { animation-delay: .15s; }
-.stagger > *:nth-child(5) { animation-delay: .19s; }
-.stagger > *:nth-child(6) { animation-delay: .23s; }
-.stagger > *:nth-child(7) { animation-delay: .27s; }
+/* Spring-ish entrance curve (subtle overshoot) shared by the cascade. */
+.anim-rise   { animation: rise .42s cubic-bezier(.22,1.08,.36,1) both; will-change: transform, opacity; }
+.anim-float  { animation: floatIn .5s cubic-bezier(.22,1.12,.36,1) both; will-change: transform, opacity; }
+.stagger > * { animation: rise .42s cubic-bezier(.22,1.08,.36,1) both; will-change: transform, opacity; }
+.stagger > *:nth-child(1) { animation-delay: .04s; }
+.stagger > *:nth-child(2) { animation-delay: .10s; }
+.stagger > *:nth-child(3) { animation-delay: .16s; }
+.stagger > *:nth-child(4) { animation-delay: .22s; }
+.stagger > *:nth-child(5) { animation-delay: .28s; }
+.stagger > *:nth-child(6) { animation-delay: .34s; }
+.stagger > *:nth-child(7) { animation-delay: .40s; }
+
+/* Bar / chart draw-in — fill grows from its start edge on mount. */
+@keyframes growX { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes growY { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+.grow-bar { transform-origin: left center; animation: growX .7s cubic-bezier(.22,1.0,.36,1) both; }
+.grow-bar-up { transform-origin: bottom center; animation: growY .6s cubic-bezier(.22,1.05,.36,1) both; }
 
 /* shimmer-host retained as a no-op host class; the distracting infinite
    light-sweep was removed in favor of the cohesive spring motion system. */
@@ -224,8 +231,11 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .anim-rise,
   .anim-float,
-  .stagger > * {
+  .stagger > *,
+  .grow-bar,
+  .grow-bar-up {
     animation: none !important;
+    transform: none !important;
   }
   button:not(:disabled):active { transform: none; }
   *, *::before, *::after {

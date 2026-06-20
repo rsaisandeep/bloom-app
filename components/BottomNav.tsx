@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { motion } from 'motion/react';
 
 function CycleIcon({ c }: { c: string }) {
   return (
@@ -83,10 +84,20 @@ export default function BottomNav() {
               display: 'flex', flexDirection: 'column', alignItems: 'center',
               gap: 4, padding: '10px 14px', textDecoration: 'none', position: 'relative',
               borderRadius: 18,
-              background: active ? 'linear-gradient(135deg,rgba(165,106,189,0.20),rgba(110,52,130,0.10))' : 'transparent',
-              transition: 'background .3s cubic-bezier(.34,1.4,.64,1)',
             }}>
-              <span style={{ position: 'relative', display: 'flex' }}>
+              {/* Morphing active pill — springs between tabs via shared layoutId. */}
+              {active && (
+                <motion.div
+                  layoutId="nav-pill"
+                  transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                  style={{
+                    position: 'absolute', inset: 0, borderRadius: 18, zIndex: 0,
+                    background: 'linear-gradient(135deg,rgba(165,106,189,0.22),rgba(110,52,130,0.12))',
+                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)',
+                  }}
+                />
+              )}
+              <span style={{ position: 'relative', zIndex: 1, display: 'flex' }}>
                 <Icon c={c} />
                 {href === '/read' && !readVisited && (
                   <span style={{
@@ -100,6 +111,7 @@ export default function BottomNav() {
               <span style={{
                 fontSize: 10, fontWeight: active ? 800 : 600,
                 color: c, letterSpacing: 0.2, fontFamily: 'var(--font-outfit)',
+                position: 'relative', zIndex: 1,
               }}>{label}</span>
             </Link>
           );
