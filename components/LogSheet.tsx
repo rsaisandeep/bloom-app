@@ -104,7 +104,8 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
   }, [open, date]);
 
   useEffect(() => {
-    document.body.style.overflow = open ? 'hidden' : '';
+    if (!open) return;
+    document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = ''; };
   }, [open]);
 
@@ -187,7 +188,7 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
         position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
         width: '100%', maxWidth: 448,
         background: 'linear-gradient(180deg,#EEE8F5 0%,#E4DCF0 100%)',
-        borderRadius: '24px 24px 0 0', zIndex: 301,
+        borderRadius: '28px 28px 0 0', zIndex: 301,
         maxHeight: '92dvh', overflowY: 'auto',
         animation: 'slideUp .32s cubic-bezier(.34,1.2,.64,1) both',
         paddingBottom: 'calc(20px + env(safe-area-inset-bottom))',
@@ -197,14 +198,14 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
         <div style={{
           position: 'sticky', top: 0, zIndex: 1,
           background: 'rgba(238,232,245,0.96)', backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)', borderRadius: '24px 24px 0 0',
+          WebkitBackdropFilter: 'blur(20px)', borderRadius: '28px 28px 0 0',
           paddingBottom: 0,
         }}>
           <div style={{ padding: '12px 16px 10px' }}>
             <div style={{ width: 40, height: 4, borderRadius: 999, background: 'rgba(110,52,130,0.2)', margin: '0 auto 12px' }} />
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
-                <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#1C0B2E' }}>
+                <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#1C0B2E', textAlign: 'center' }}>
                   {isToday ? "Today's Check-in" : 'Edit Log'}
                 </h2>
                 <p style={{ margin: '2px 0 0', fontSize: 12, color: '#8A6A9A' }}>

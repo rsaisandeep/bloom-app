@@ -54,6 +54,15 @@ export default function PeriodStartModal({
 
   useEffect(() => { setMounted(true); }, []);
 
+  // Lock background scroll while the modal is open. Guarded so a closed
+  // instance (e.g. mounted inside the open Hamburger drawer) never clears
+  // a lock owned by an ancestor modal.
+  useEffect(() => {
+    if (!open) return;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, [open]);
+
   function launch() {
     setFetching(true);
     setStartDate('');

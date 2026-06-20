@@ -27,6 +27,13 @@ export default function ImportSheet({ open, onClose, onImported }: { open: boole
     if (open) { setStep('pick'); setParsed(null); setMapping({}); setFloPreview(null); setError(''); setResult(null); }
   }, [open]);
 
+  // Lock background scroll while the sheet is open
+  useEffect(() => {
+    if (!open) return;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, [open]);
+
   // Live preview of what will be imported as the mapping changes (CSV path).
   const preview = useMemo(
     () => (parsed && mapping.date ? buildImport(parsed, mapping, loadData()) : null),
@@ -93,7 +100,7 @@ export default function ImportSheet({ open, onClose, onImported }: { open: boole
 
         {step === 'pick' && (
           <>
-            <h3 style={{ margin: '0 0 6px', fontSize: 20, fontWeight: 800, color: '#1C0B2E' }}>Import from another app</h3>
+            <h3 style={{ margin: '0 0 6px', fontSize: 20, fontWeight: 800, color: '#1C0B2E', textAlign: 'center' }}>Import from another app</h3>
             <p style={{ margin: '0 0 18px', fontSize: 13.5, color: '#8A6A9A', lineHeight: 1.55 }}>
               Bring your history from Flo, Clue, Apple Health or any tracker that exports a CSV. We&apos;ll map the columns for you — nothing is overwritten.
             </p>
@@ -120,7 +127,7 @@ export default function ImportSheet({ open, onClose, onImported }: { open: boole
 
         {step === 'map' && parsed && (
           <>
-            <h3 style={{ margin: '0 0 4px', fontSize: 20, fontWeight: 800, color: '#1C0B2E' }}>Match your columns</h3>
+            <h3 style={{ margin: '0 0 4px', fontSize: 20, fontWeight: 800, color: '#1C0B2E', textAlign: 'center' }}>Match your columns</h3>
             <p style={{ margin: '0 0 16px', fontSize: 13, color: '#8A6A9A', lineHeight: 1.5 }}>
               We guessed these from your file. Adjust any that look wrong — <strong>Date</strong> is required.
             </p>
@@ -173,7 +180,7 @@ export default function ImportSheet({ open, onClose, onImported }: { open: boole
 
         {step === 'flo' && floPreview && (
           <>
-            <h3 style={{ margin: '0 0 6px', fontSize: 20, fontWeight: 800, color: '#1C0B2E' }}>Flo export detected 🌸</h3>
+            <h3 style={{ margin: '0 0 6px', fontSize: 20, fontWeight: 800, color: '#1C0B2E', textAlign: 'center' }}>Flo export detected 🌸</h3>
             <p style={{ margin: '0 0 16px', fontSize: 13, color: '#8A6A9A', lineHeight: 1.55 }}>
               We read your cycles straight from the Flo file — no column mapping needed. Nothing you&apos;ve already logged is overwritten.
             </p>
@@ -202,7 +209,7 @@ export default function ImportSheet({ open, onClose, onImported }: { open: boole
         {step === 'done' && result && (
           <div style={{ textAlign: 'center', padding: '8px 0 4px' }}>
             <div style={{ fontSize: 52, marginBottom: 12 }}>🎉</div>
-            <h3 style={{ margin: '0 0 8px', fontSize: 20, fontWeight: 800, color: '#1C0B2E' }}>Import complete</h3>
+            <h3 style={{ margin: '0 0 8px', fontSize: 20, fontWeight: 800, color: '#1C0B2E', textAlign: 'center' }}>Import complete</h3>
             <p style={{ margin: '0 0 24px', fontSize: 14, color: '#8A6A9A', lineHeight: 1.6 }}>
               Added <strong>{result.logCount}</strong> logs and <strong>{result.cycleCount}</strong> cycles. Your reports and predictions now use this history.
             </p>

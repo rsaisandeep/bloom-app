@@ -177,7 +177,7 @@ export default function OnboardingPage() {
         <>
           <div style={{ marginBottom: 28 }}>
             <div style={{ fontSize: 36, marginBottom: 10 }}>👋</div>
-            <h1 style={{ margin: '0 0 8px', fontSize: 26, fontWeight: 800, color: '#1C0B2E', letterSpacing: -0.5 }}>
+            <h1 style={{ margin: '0 0 8px', fontSize: 26, fontWeight: 800, color: '#1C0B2E', letterSpacing: -0.5, textAlign: 'center' }}>
               Tell us about you
             </h1>
             <p style={{ margin: 0, fontSize: 14, color: '#8A6A9A', lineHeight: 1.65 }}>
@@ -208,7 +208,7 @@ export default function OnboardingPage() {
                           width: 24, height: 24, borderRadius: '50%', flexShrink: 0, cursor: 'pointer',
                           border: '1.5px solid rgba(165,106,189,0.4)', background: 'rgba(165,106,189,0.08)',
                           color: '#6E3482', fontSize: 13, fontWeight: 800, fontStyle: 'italic',
-                          fontFamily: 'Georgia, serif', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontFamily: 'var(--font-outfit)', display: 'flex', alignItems: 'center', justifyContent: 'center',
                           lineHeight: 1,
                         }}>i</button>
                       )}
@@ -277,7 +277,7 @@ export default function OnboardingPage() {
         <>
           <div style={{ marginBottom: 28 }}>
             <div style={{ fontSize: 36, marginBottom: 10 }}>🗓</div>
-            <h1 style={{ margin: '0 0 8px', fontSize: 26, fontWeight: 800, color: '#1C0B2E', letterSpacing: -0.5 }}>
+            <h1 style={{ margin: '0 0 8px', fontSize: 26, fontWeight: 800, color: '#1C0B2E', letterSpacing: -0.5, textAlign: 'center' }}>
               Set up your cycle
             </h1>
             <p style={{ margin: 0, fontSize: 14, color: '#8A6A9A', lineHeight: 1.65 }}>
@@ -335,7 +335,7 @@ export default function OnboardingPage() {
         <>
           <div style={{ marginBottom: 28, textAlign: 'center' }}>
             <div style={{ fontSize: 52, marginBottom: 10 }}>🌸</div>
-            <h1 style={{ margin: '0 0 8px', fontSize: 26, fontWeight: 800, color: '#1C0B2E', letterSpacing: -0.5 }}>
+            <h1 style={{ margin: '0 0 8px', fontSize: 26, fontWeight: 800, color: '#1C0B2E', letterSpacing: -0.5, textAlign: 'center' }}>
               You're all set!
             </h1>
             <p style={{ margin: 0, fontSize: 14, color: '#8A6A9A', lineHeight: 1.65 }}>

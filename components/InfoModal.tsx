@@ -1,11 +1,18 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 
 export default function InfoModal() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+
+  // Lock background scroll while the modal is open
+  useEffect(() => {
+    if (!open) return;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, [open]);
 
   const youLog = ['Period start & end', 'Flow & cramps', 'Mood & energy', 'BBT & cervical mucus', 'Sleep & cravings', 'Symptoms & ovulation'];
   const youGet = [

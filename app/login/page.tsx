@@ -136,7 +136,7 @@ export default function LoginPage() {
             background: 'linear-gradient(90deg, transparent, rgba(165,106,189,0.6), transparent)',
           }} />
 
-          <h2 style={{ margin: '0 0 20px', color: '#F5EBFA', fontSize: 20, fontWeight: 700 }}>
+          <h2 style={{ margin: '0 0 20px', color: '#F5EBFA', fontSize: 20, fontWeight: 700, textAlign: 'center' }}>
             {isReg ? 'Create your account' : 'Welcome back'}
           </h2>
 

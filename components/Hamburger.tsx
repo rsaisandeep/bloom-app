@@ -16,6 +16,13 @@ export default function Hamburger({ username }: { username: string }) {
     setReadVisited(sessionStorage.getItem('bloom_read_visited') === 'true');
   }, []);
 
+  // Lock background scroll while the drawer is open
+  useEffect(() => {
+    if (!open) return;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, [open]);
+
   function handleInstall() {
     if (canInstall) { promptInstall(); }
     setOpen(false); // on iOS, closing reveals Safari's Share button for "Add to Home Screen"

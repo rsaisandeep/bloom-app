@@ -147,7 +147,7 @@ export default function CalendarPage() {
       {/* Predictions */}
       {predictions && (
         <>
-          <h2 style={{ margin: "0 0 10px", fontSize: "1rem", fontWeight: 800, color: "#1C0B2E" }}>Upcoming</h2>
+          <h2 style={{ margin: "0 0 10px", fontSize: "1rem", fontWeight: 800, color: "#1C0B2E", textAlign: "center" }}>Upcoming</h2>
           <div className="glass-card" style={{ padding: "14px 16px" }}>
             {[
               pcosMode && predWindow
@@ -213,7 +213,7 @@ export default function CalendarPage() {
 
         return (
           <>
-            <h2 style={{ margin: '16px 0 10px', fontSize: '1rem', fontWeight: 800, color: '#1C0B2E' }}>Cycle Trends</h2>
+            <h2 style={{ margin: '16px 0 10px', fontSize: '1rem', fontWeight: 800, color: '#1C0B2E', textAlign: 'center' }}>Cycle Trends</h2>
 
             {/* Stats row */}
             <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>

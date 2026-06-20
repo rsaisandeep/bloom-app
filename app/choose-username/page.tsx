@@ -42,7 +42,7 @@ export default function ChooseUsernamePage() {
       <div style={{ width: '100%', maxWidth: 380, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24 }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 48, lineHeight: 1 }}>🌸</div>
-          <h1 style={{ margin: '10px 0 4px', fontSize: 24, fontWeight: 800, color: '#F5EBFA' }}>Pick a username</h1>
+          <h1 style={{ margin: '10px 0 4px', fontSize: 24, fontWeight: 800, color: '#F5EBFA', textAlign: 'center' }}>Pick a username</h1>
           <p style={{ color: 'rgba(231,219,239,0.55)', fontSize: 14, margin: 0 }}>
             You can use it to log in instead of your email.
           </p>

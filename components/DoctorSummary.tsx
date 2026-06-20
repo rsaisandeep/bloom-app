@@ -15,6 +15,13 @@ export default function DoctorSummaryModal({ open, onClose }: { open: boolean; o
   useEffect(() => { setMounted(true); }, []);
   useEffect(() => { if (open) setSummary(buildSummary(sanitize(loadData()))); }, [open]);
 
+  // Lock background scroll while the modal is open
+  useEffect(() => {
+    if (!open) return;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, [open]);
+
   if (!mounted || !open || !summary) return null;
 
   const s = summary;
@@ -42,7 +49,7 @@ export default function DoctorSummaryModal({ open, onClose }: { open: boolean; o
 
         <div id="bloom-summary" style={{ background: '#fff', borderRadius: 20, padding: 28, margin: '0 12px', color: '#1C0B2E', fontFamily: 'var(--font-outfit)' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', borderBottom: '2px solid #6E3482', paddingBottom: 12, marginBottom: 18 }}>
-            <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#6E3482' }}>🌸 Cycle Summary</h1>
+            <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#6E3482', textAlign: 'center' }}>🌸 Cycle Summary</h1>
             <span style={{ fontSize: 12, color: '#8A6A9A' }}>Generated {fmt(s.generatedOn)}</span>
           </div>
 
