@@ -52,6 +52,12 @@ const TABS = [
 export default function BottomNav() {
   const path = usePathname();
   const [readVisited, setReadVisited] = useState(true);
+  // Move the pill the instant a tab is tapped, instead of waiting for the
+  // App Router navigation to commit (usePathname lags behind the tap, which is
+  // what made the indicator feel laggy). Clear once the real route catches up.
+  const [pending, setPending] = useState<string | null>(null);
+  useEffect(() => { setPending(null); }, [path]);
+  const activeHref = pending ?? path;
 
   useEffect(() => {
     if (path === '/read') {
@@ -77,10 +83,10 @@ export default function BottomNav() {
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-around', padding: '10px 6px' }}>
         {TABS.map(({ href, label, Icon }) => {
-          const active = path === href;
+          const active = activeHref === href;
           const c = active ? '#6E3482' : '#A99BB5';
           return (
-            <Link key={href} href={href} style={{
+            <Link key={href} href={href} onClick={() => setPending(href)} style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center',
               gap: 4, padding: '10px 14px', textDecoration: 'none', position: 'relative',
               borderRadius: 18,
@@ -89,7 +95,7 @@ export default function BottomNav() {
               {active && (
                 <motion.div
                   layoutId="nav-pill"
-                  transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 34, mass: 0.6 }}
                   style={{
                     position: 'absolute', inset: 0, borderRadius: 18, zIndex: 0,
                     background: 'linear-gradient(135deg,rgba(165,106,189,0.22),rgba(110,52,130,0.12))',
