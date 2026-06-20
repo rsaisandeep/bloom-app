@@ -5,6 +5,7 @@ import AuthGuard from "@/components/AuthGuard";
 import NavWrapper from "@/components/NavWrapper";
 import InstallPrompt from "@/components/InstallPrompt";
 import PullToRefresh from "@/components/PullToRefresh";
+import PageTransition from "@/components/PageTransition";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -37,7 +38,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthGuard>
           <NavWrapper />
           <PullToRefresh>
-            <main className="flex-1" style={{ paddingBottom: 'calc(110px + env(safe-area-inset-bottom))' }}>{children}</main>
+            <main className="flex-1" style={{ paddingBottom: 'calc(110px + env(safe-area-inset-bottom))' }}>
+              <PageTransition>{children}</PageTransition>
+            </main>
           </PullToRefresh>
           <InstallPrompt />
         </AuthGuard>

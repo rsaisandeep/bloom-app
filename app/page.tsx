@@ -696,8 +696,8 @@ export default function HomePage() {
                       border: isDone ? 'none' : '2px solid rgba(165,106,189,0.45)',
                       background: isDone ? 'linear-gradient(135deg,#6E3482,#A56ABD)' : 'transparent',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      transition: 'all .25s cubic-bezier(.34,1.56,.64,1)',
-                      transform: isDone ? 'scale(1.08)' : 'scale(1)',
+                      transition: 'all .25s cubic-bezier(.22,1.12,.4,1)',
+                      transform: isDone ? 'scale(1.04)' : 'scale(1)',
                       boxShadow: isDone ? '0 4px 12px rgba(110,52,130,0.35)' : 'none',
                     }}>
                       {isDone && (
