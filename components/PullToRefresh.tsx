@@ -100,25 +100,29 @@ export default function PullToRefresh({ children }: { children: ReactNode }) {
   if (disabled) return <>{children}</>;
 
   const progress = Math.min(pullY / THRESHOLD, 1);
-  // Flower centered in gap — gap = pullY (frozen at release pos while refreshing)
-  const flowerY = Math.max(pullY / 2 - 15, -20);
-  const showFlower = pullY > 5 || refreshing;
+  // Spinner centered in gap — gap = pullY (frozen at release pos while refreshing)
+  const spinnerY = Math.max(pullY / 2 - 15, -20);
+  const showSpinner = pullY > 5 || refreshing;
 
   return (
     <>
-      {/* Flower lives in the gap BEHIND the sliding content */}
-      {showFlower && (
+      {/* Spinner lives in the gap BEHIND the sliding content */}
+      {showSpinner && (
         <div style={{
           position: 'fixed', top: 0, left: '50%', zIndex: 90,
-          transform: `translateX(-50%) translateY(${flowerY}px)`,
+          transform: `translateX(-50%) translateY(${spinnerY}px)`,
           transition: snap ? `transform 0.38s ${EASE}` : 'none',
           pointerEvents: 'none',
         }}>
-          <span style={{
-            fontSize: 30, display: 'inline-block',
-            animation: refreshing ? 'spinSlow .75s linear infinite' : undefined,
-            transform: refreshing ? undefined : `rotate(${progress * 360}deg)`,
-          }}>🌸</span>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" style={{
+            display: 'block',
+            animation: refreshing ? 'spinSlow .7s linear infinite' : undefined,
+            transform: refreshing ? undefined : `rotate(${progress * 270}deg)`,
+          }}>
+            <circle cx="12" cy="12" r="9" stroke="rgba(110,52,130,0.18)" strokeWidth="2.4" />
+            <path d="M12 3a9 9 0 0 1 9 9" stroke="#6E3482" strokeWidth="2.4" strokeLinecap="round"
+              style={{ opacity: refreshing ? 1 : Math.max(progress, 0.25) }} />
+          </svg>
         </div>
       )}
 

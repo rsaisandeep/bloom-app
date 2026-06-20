@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
   loadData, emptyData, getCurrentPhase, getPredictions, getPredictionWindow, getAverageCycleLength,
   getAveragePeriodLength, needsPeriodEnd,
-  getLateInfo, isPaused, setPaused, hasGoal, PHASE_META, carryForward, type Phase, type BloomData,
+  getLateInfo, isPaused, setPaused, PHASE_META, carryForward, type Phase, type BloomData,
 } from '@/lib/cycle';
 import { getActionItems, getActionGroups } from '@/lib/actions';
 import { fetchFromSheet, sanitize } from '@/lib/data';
@@ -15,6 +15,7 @@ import { detectAnomalies, type Anomaly } from '@/lib/anomalies';
 import { getActiveNudge, dismissNudge, type Nudge } from '@/lib/nudges';
 import Hamburger from '@/components/Hamburger';
 import InfoModal from '@/components/InfoModal';
+import NotificationBell from '@/components/NotificationBell';
 import LogoutButton from '@/components/LogoutButton';
 import PeriodStartModal from '@/components/PeriodStartModal';
 import LogSheet from '@/components/LogSheet';
@@ -147,7 +148,6 @@ export default function HomePage() {
   const predictions = getPredictions(data);
   const pcosMode = !!data.settings?.pcosMode;
   const predWindow = pcosMode ? getPredictionWindow(data) : null;
-  const ttcMode = hasGoal(data.settings, 'conceive');
   const goals = data.settings?.goals?.length ? data.settings.goals : (data.settings?.goal ? [data.settings.goal] : []);
   const paused = isPaused(data);
   const lateInfo = hasCycles ? getLateInfo(data) : null;
@@ -301,6 +301,7 @@ export default function HomePage() {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <InfoModal />
+          <NotificationBell />
           <LogoutButton />
         </div>
       </div>
@@ -460,31 +461,6 @@ export default function HomePage() {
           </div>
         </div>
       </div>
-      )}
-
-      {/* ── Fertile window (Trying to conceive goal) ── */}
-      {ttcMode && !paused && !pcosMode && hasCycles && predictions && (
-        <div className="glass-card anim-float shimmer-host" style={{
-          padding: '14px 16px', marginBottom: 14,
-          display: 'flex', alignItems: 'center', gap: 12,
-          background: 'linear-gradient(135deg, rgba(251,191,36,0.16), rgba(165,106,189,0.10))',
-          borderColor: 'rgba(251,191,36,0.4)',
-        }}>
-          <div style={{
-            width: 40, height: 40, borderRadius: 14, flexShrink: 0,
-            background: 'linear-gradient(135deg,#fbbf24,#f59e0b)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
-            boxShadow: '0 6px 16px rgba(245,158,11,0.3)',
-          }}>🌱</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#1C0B2E' }}>
-              {phase === 'ovulation' ? 'Fertile window — now' : 'Fertile window'}
-            </p>
-            <p style={{ margin: '2px 0 0', fontSize: 12, color: '#92400e', lineHeight: 1.4 }}>
-              {fmt(predictions.fertileStart)} – {fmt(predictions.fertileEnd)} · ovulation ~{fmt(predictions.ovulation)}
-            </p>
-          </div>
-        </div>
       )}
 
       {/* ── Period end / Period started prompts ── */}

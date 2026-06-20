@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import Hamburger from '@/components/Hamburger';
 import InfoModal from '@/components/InfoModal';
+import NotificationBell from '@/components/NotificationBell';
 import LogoutButton from '@/components/LogoutButton';
 
 export default function TopBar({ title }: { title?: string }) {
@@ -29,6 +30,7 @@ export default function TopBar({ title }: { title?: string }) {
       )}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <InfoModal />
+        <NotificationBell />
         <LogoutButton />
       </div>
     </div>

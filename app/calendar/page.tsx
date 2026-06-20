@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { loadData, getPredictions, getPredictionWindow, getAveragePeriodLength, PHASE_META, type BloomData, type Phase } from "@/lib/cycle";
+import { loadData, getPredictions, getPredictionWindow, getAveragePeriodLength, hasGoal, PHASE_META, type BloomData, type Phase } from "@/lib/cycle";
 import { phaseForDate } from "@/lib/insights";
 import { fetchFromSheet } from "@/lib/data";
 import { localDateStr } from "@/lib/day";
@@ -35,6 +35,19 @@ export default function CalendarPage() {
   const lastStart = data.cycles.length > 0 ? new Date(data.cycles[data.cycles.length - 1].startDate) : null;
   const periodLen = getAveragePeriodLength(data);
   const todayStr = localDateStr(today);
+  const ttcMode = hasGoal(data.settings, 'conceive');
+
+  // Next 5 fertile windows for TTC users — projected forward from the first
+  // predicted window by the self-corrected cycle length (no new model).
+  const fertileWindows = ttcMode && predictions
+    ? Array.from({ length: 10 }, (_, k) => {
+        const shift = k * predictions.projectedLength;
+        const s = new Date(predictions.fertileStart); s.setDate(s.getDate() + shift);
+        const e = new Date(predictions.fertileEnd);   e.setDate(e.getDate() + shift);
+        const ov = new Date(predictions.ovulation);   ov.setDate(ov.getDate() + shift);
+        return { s, e, ov };
+      }).filter((w) => localDateStr(w.e) >= todayStr).slice(0, 4)
+    : [];
 
   function phaseFromDay(d: number, cycleLen: number): Phase {
     const ovDay = Math.max(periodLen + 3, cycleLen - 14);
@@ -155,15 +168,39 @@ export default function CalendarPage() {
                 : predictions.uncertainty > 0
                   ? { dot: "#fca5a5", label: "Next period",   value: `${fmtD(predictions.nextPeriodEarliest)} – ${fmtD(predictions.nextPeriodLatest)}`, vc: "#dc2626" }
                   : { dot: "#fca5a5", label: "Next period",   value: fmtD(predictions.nextPeriod), vc: "#dc2626" },
-              { dot: "#fde68a", label: "Fertile window",   value: `${fmtD(predictions.fertileStart)} – ${fmtD(predictions.fertileEnd)}`, vc: "#d97706" },
+              // For TTC users the fertile windows are shown as pills below, so the
+              // single (often-elapsed) row here is dropped to avoid a stale repeat.
+              ...(ttcMode ? [] : [{ dot: "#fde68a", label: "Fertile window", value: `${fmtD(predictions.fertileStart)} – ${fmtD(predictions.fertileEnd)}`, vc: "#d97706" }]),
               { dot: "#c4b5fd", label: pcosMode ? "Typical cycle" : "Avg cycle length", value: `${predictions.avgLength} days`, vc: "#6E3482" },
-            ].map((item, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: i < 2 ? "1px solid rgba(165,106,189,0.15)" : "none" }}>
+            ].map((item, i, arr) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: i < arr.length - 1 ? "1px solid rgba(165,106,189,0.15)" : "none" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <div style={{ width: 10, height: 10, borderRadius: "50%", background: item.dot }} />
                   <span style={{ fontSize: ".85rem", fontWeight: 600, color: "#1C0B2E" }}>{item.label}</span>
                 </div>
                 <span style={{ fontSize: ".85rem", fontWeight: 800, color: item.vc }}>{item.value}</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Fertile windows — TTC goal only */}
+      {ttcMode && fertileWindows.length > 0 && (
+        <>
+          <h2 style={{ margin: "16px 0 10px", fontSize: "1rem", fontWeight: 800, color: "#1C0B2E", textAlign: "center" }}>Next fertile windows</h2>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            {fertileWindows.map((w, i) => (
+              <div key={i} className="glass-card" style={{
+                display: "flex", alignItems: "center", gap: 8,
+                padding: "10px 14px", borderRadius: 999,
+                background: "rgba(110,231,183,0.14)", borderColor: "rgba(5,150,105,0.30)",
+              }}>
+                <div style={{ width: 9, height: 9, borderRadius: "50%", background: FERTILE_COLOR, flexShrink: 0 }} />
+                <div style={{ minWidth: 0 }}>
+                  <p style={{ margin: 0, fontSize: ".8rem", fontWeight: 800, color: "#065f46", whiteSpace: "nowrap" }}>{fmtD(w.s)} – {fmtD(w.e)}</p>
+                  <p style={{ margin: "1px 0 0", fontSize: ".65rem", fontWeight: 700, color: "#059669" }}>ov ~{fmtD(w.ov)}</p>
+                </div>
               </div>
             ))}
           </div>

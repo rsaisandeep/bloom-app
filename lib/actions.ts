@@ -222,6 +222,12 @@ function goalOverrides(phase: Phase, goals: string[]): ActionItem[] {
       out.push({ group: 'Conceiving', icon: '❤️', title: 'Your fertile window is now', sub: 'Best 2–3 days to try — time intercourse around ovulation' });
       out.push({ group: 'Conceiving', icon: '🧪', title: 'Use an ovulation test', sub: 'A positive LH test means ovulation in ~24–36 h' });
     }
+
+    // Egg-quality wellness — general lifestyle habits, shown every phase for TTC.
+    out.push({ group: 'Egg quality', icon: '🫐', title: 'Antioxidant-rich foods', sub: 'Berries, leafy greens & colourful veg support overall cell health' });
+    out.push({ group: 'Egg quality', icon: '🥑', title: 'Healthy fats & omega-3s', sub: 'Salmon, walnuts, avocado, olive oil as part of a balanced diet' });
+    out.push({ group: 'Egg quality', icon: '😴', title: 'Protect your sleep & manage stress', sub: '7–9 h sleep + downtime help keep your routine steady' });
+    out.push({ group: 'Egg quality', icon: '🚭', title: 'Limit alcohol & avoid smoking', sub: 'General wellness habits worth keeping while trying to conceive' });
   }
 
   if (goals.includes('symptoms') && (phase === 'luteal' || phase === 'menstrual')) {
