@@ -87,6 +87,39 @@ export function isInputValidForPhase(phase: Phase, field: keyof DayLog): boolean
   return PHASE_VALID_INPUTS[phase].includes(field);
 }
 
+// ── Phase log relevance (for surfacing, not gating) ──
+// The permissive companion to PHASE_VALID_INPUTS: which log inputs are worth
+// surfacing first in the daily check-in for each phase. Everything stays
+// loggable — phase-relevant fields show up top, the rest collapse under "More".
+// mood/energy/sleep/sex/pill are universal, so they're surfaced every phase.
+// `symptoms` lists the symptom chips most common in the phase (shown first).
+export interface PhaseLogRelevance {
+  fields: ReadonlyArray<keyof DayLog>;
+  symptoms: ReadonlyArray<string>;
+}
+const UNIVERSAL_LOG_FIELDS: (keyof DayLog)[] = ['mood', 'energy', 'sleep', 'sex', 'pill'];
+export const PHASE_LOG_RELEVANCE: Record<Phase, PhaseLogRelevance> = {
+  menstrual: {
+    fields: [...UNIVERSAL_LOG_FIELDS, 'flow', 'cramps', 'bloating'],
+    symptoms: ['backache', 'leg_cramps', 'dizziness', 'nausea', 'diarrhea', 'fatigue', 'headache', 'pelvic_pain'],
+  },
+  follicular: {
+    fields: [...UNIVERSAL_LOG_FIELDS, 'cervicalMucus', 'ovulationTest', 'bbt'],
+    symptoms: ['acne', 'headache'],
+  },
+  ovulation: {
+    fields: [...UNIVERSAL_LOG_FIELDS, 'cervicalMucus', 'ovulationTest', 'cramps', 'bbt'],
+    symptoms: ['pelvic_pain', 'tender_breasts', 'hot_flashes'],
+  },
+  luteal: {
+    fields: [...UNIVERSAL_LOG_FIELDS, 'cravings', 'bloating', 'cramps', 'pregnancyTest', 'bbt'],
+    symptoms: ['tender_breasts', 'acne', 'headache', 'fatigue', 'constipation', 'low_libido', 'joint_pain', 'nausea'],
+  },
+};
+export function isLogInputRelevant(phase: Phase, field: keyof DayLog): boolean {
+  return PHASE_LOG_RELEVANCE[phase].fields.includes(field);
+}
+
 const STORAGE_KEY = "bloom_data";
 const MS_DAY = 86400000;
 

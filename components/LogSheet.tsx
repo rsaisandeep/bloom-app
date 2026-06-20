@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
-import { loadData, saveLog, startPeriod, isNewPeriodStart, getCurrentPhase, type DayLog, type Phase } from '@/lib/cycle';
+import { loadData, saveLog, startPeriod, isNewPeriodStart, getCurrentPhase, isLogInputRelevant, PHASE_LOG_RELEVANCE, type DayLog, type Phase } from '@/lib/cycle';
 import { appDayKey } from '@/lib/day';
 import { fetchFromSheet, saveToSheet } from '@/lib/data';
 
@@ -83,6 +83,7 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
   const [saved, setSaved] = useState(false);
   const [phase, setPhase] = useState<Phase>('follicular');
   const [tab, setTab] = useState<Tab>('flow');
+  const [showMore, setShowMore] = useState(false); // reveal phase-atypical log inputs
   const isMorning = new Date().getHours() < 12;
 
   useEffect(() => {
@@ -90,6 +91,7 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
     setSaved(false);
     setSaving(false);
     setTab('flow');
+    setShowMore(false);
     const cachedData = loadData();
     const cached = cachedData.logs.find((l) => l.date === date);
     setForm(cached ?? DEFAULTS);
@@ -166,6 +168,46 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
     </div>
   );
 
+  const bbtCard = (
+    <div key="bbt" className="glass-card" style={{ padding: '14px 14px 12px' }}>
+      <p style={LABEL}>
+        Basal Body Temp{' '}
+        <span style={{ fontWeight: 600, textTransform: 'none', color: '#8A6A9A' }}>· measure before getting up</span>
+      </p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <input
+          type="number" inputMode="decimal" step="0.01" min="34" max="42"
+          value={form.bbt ?? ''}
+          onChange={(e) => setForm((f) => ({ ...f, bbt: e.target.value === '' ? undefined : Number(e.target.value) }))}
+          placeholder="36.55"
+          style={{
+            width: 120, padding: '10px 12px', borderRadius: 12, fontSize: '.95rem', fontWeight: 700,
+            border: '1px solid var(--glass-border-dim)', background: 'rgba(255,255,255,0.55)',
+            color: '#1C0B2E', fontFamily: 'inherit', outline: 'none',
+          }}
+        />
+        <span style={{ fontSize: '.85rem', fontWeight: 700, color: '#8A6A9A' }}>°C</span>
+      </div>
+    </div>
+  );
+
+  // Collapsible group for inputs that aren't typical for the current phase —
+  // kept reachable (collapse, not hide) so anything can still be logged.
+  const moreSection = (content: React.ReactNode) => (
+    <>
+      <button
+        onClick={() => setShowMore((s) => !s)}
+        style={{
+          alignSelf: 'flex-start', background: 'transparent', border: 'none', padding: '4px 2px',
+          color: '#8A6A9A', fontSize: '.8rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+        }}
+      >
+        {showMore ? '▴ Hide other inputs' : '▾ Other inputs · less common this phase'}
+      </button>
+      {showMore && content}
+    </>
+  );
+
   if (!open) return null;
 
   return createPortal(
@@ -220,7 +262,7 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
           {/* Tabs */}
           <div style={{ display: 'flex', borderBottom: '1px solid rgba(165,106,189,0.15)', padding: '0 8px' }}>
             {TABS.map((t) => (
-              <button key={t.id} onClick={() => setTab(t.id)} style={{
+              <button key={t.id} onClick={() => { setTab(t.id); setShowMore(false); }} style={{
                 flex: 1, padding: '9px 4px 8px', border: 'none', cursor: 'pointer',
                 fontFamily: 'inherit', fontSize: '.8rem', fontWeight: 800, background: 'transparent',
                 color: tab === t.id ? pc.color : '#8A6A9A',
@@ -236,54 +278,56 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
         {/* Tab content */}
         <div style={{ padding: '10px 16px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
 
-          {/* ── Flow tab ── */}
-          {tab === 'flow' && (
-            <>
-              {FLOW_FIELDS.map(fieldCard)}
+          {/* ── Flow tab (phase-relevant first, rest under "More") ── */}
+          {tab === 'flow' && (() => {
+            const relevant = FLOW_FIELDS.filter((f) => isLogInputRelevant(phase, f.key));
+            const other = FLOW_FIELDS.filter((f) => !isLogInputRelevant(phase, f.key));
+            const bbtRelevant = isLogInputRelevant(phase, 'bbt');
+            return (
+              <>
+                {relevant.map(fieldCard)}
+                {bbtRelevant && bbtCard}
+                {(other.length > 0 || !bbtRelevant) && moreSection(
+                  <>
+                    {other.map(fieldCard)}
+                    {!bbtRelevant && bbtCard}
+                  </>
+                )}
+              </>
+            );
+          })()}
+
+          {/* ── Symptoms tab (phase-likely symptoms shown first) ── */}
+          {tab === 'symptoms' && (() => {
+            const likely = new Set(PHASE_LOG_RELEVANCE[phase].symptoms);
+            const ordered = [...SYMPTOM_OPTIONS].sort(
+              (a, b) => (likely.has(a.value) ? 0 : 1) - (likely.has(b.value) ? 0 : 1)
+            );
+            return (
               <div className="glass-card" style={{ padding: '14px 14px 12px' }}>
-                <p style={LABEL}>
-                  Basal Body Temp{' '}
-                  <span style={{ fontWeight: 600, textTransform: 'none', color: '#8A6A9A' }}>· measure before getting up</span>
-                </p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <input
-                    type="number" inputMode="decimal" step="0.01" min="34" max="42"
-                    value={form.bbt ?? ''}
-                    onChange={(e) => setForm((f) => ({ ...f, bbt: e.target.value === '' ? undefined : Number(e.target.value) }))}
-                    placeholder="36.55"
-                    style={{
-                      width: 120, padding: '10px 12px', borderRadius: 12, fontSize: '.95rem', fontWeight: 700,
-                      border: '1px solid var(--glass-border-dim)', background: 'rgba(255,255,255,0.55)',
-                      color: '#1C0B2E', fontFamily: 'inherit', outline: 'none',
-                    }}
-                  />
-                  <span style={{ fontSize: '.85rem', fontWeight: 700, color: '#8A6A9A' }}>°C</span>
+                <p style={LABEL}>Symptoms <span style={{ fontWeight: 600, textTransform: 'none', color: '#8A6A9A' }}>· common for this phase first</span></p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+                  {ordered.map((opt) => {
+                    const active = (form.symptoms ?? []).includes(opt.value);
+                    return (
+                      <button key={opt.value} onClick={() => toggleSymptom(opt.value)} style={chipStyle(active)}>
+                        <span>{opt.emoji}</span><span>{opt.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-            </>
-          )}
+            );
+          })()}
 
-          {/* ── Symptoms tab ── */}
-          {tab === 'symptoms' && (
-            <div className="glass-card" style={{ padding: '14px 14px 12px' }}>
-              <p style={LABEL}>Symptoms <span style={{ fontWeight: 600, textTransform: 'none', color: '#8A6A9A' }}>· tap to log</span></p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
-                {SYMPTOM_OPTIONS.map((opt) => {
-                  const active = (form.symptoms ?? []).includes(opt.value);
-                  return (
-                    <button key={opt.value} onClick={() => toggleSymptom(opt.value)} style={chipStyle(active)}>
-                      <span>{opt.emoji}</span><span>{opt.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* ── Wellbeing tab ── */}
+          {/* ── Wellbeing tab (phase-relevant first, rest under "More") ── */}
           {tab === 'wellbeing' && (
             <>
-              {WELLBEING_FIELDS.map(fieldCard)}
+              {WELLBEING_FIELDS.filter((f) => isLogInputRelevant(phase, f.key)).map(fieldCard)}
+              {(() => {
+                const other = WELLBEING_FIELDS.filter((f) => !isLogInputRelevant(phase, f.key));
+                return other.length > 0 ? moreSection(<>{other.map(fieldCard)}</>) : null;
+              })()}
 
               {/* Water stepper */}
               <div className="glass-card" style={{ padding: '14px 14px 12px' }}>
