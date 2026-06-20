@@ -183,7 +183,8 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
         width: '100%', maxWidth: 448,
         background: 'linear-gradient(180deg,#EEE8F5 0%,#E4DCF0 100%)',
         borderRadius: '28px 28px 0 0', zIndex: 301,
-        maxHeight: '92dvh', overflowY: 'auto',
+        height: '90dvh', overflowY: 'auto',
+        overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch',
         animation: 'slideUp .32s cubic-bezier(.34,1.2,.64,1) both',
         paddingBottom: 'calc(20px + env(safe-area-inset-bottom))',
       }}>
