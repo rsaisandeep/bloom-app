@@ -520,29 +520,32 @@ export default function HomePage() {
       {/* ── Phase 2: smart notification card (one at a time) ── */}
       {activeNotif && notifMeta && (
         <div className="glass-card anim-float" style={{
+          position: 'relative',
           padding: '14px 16px', marginBottom: 14,
           display: 'flex', alignItems: 'center', gap: 12,
           background: notifMeta.bg, borderColor: notifMeta.border,
         }}>
+          <button
+            onClick={() => dismissNotif(activeNotif.type)}
+            className="liquid-pill"
+            style={{
+              position: 'absolute', top: 8, right: 8, zIndex: 2,
+              width: 26, height: 26, borderRadius: '50%', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 14, color: '#8A6A9A', fontFamily: 'var(--font-outfit)',
+            }}
+            aria-label="Dismiss notification"
+          >✕</button>
           <div style={{
             width: 40, height: 40, borderRadius: 14, flexShrink: 0,
             background: notifMeta.iconBg,
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
             boxShadow: '0 6px 16px rgba(0,0,0,0.12)',
           }}>{notifMeta.icon}</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ flex: 1, minWidth: 0, paddingRight: 22 }}>
             <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#1C0B2E' }}>{notifMeta.title}</p>
             <p style={{ margin: '2px 0 0', fontSize: 12, color: notifMeta.textColor, lineHeight: 1.4 }}>{activeNotif.message}</p>
           </div>
-          <button
-            onClick={() => dismissNotif(activeNotif.type)}
-            style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              color: '#A99BB5', fontSize: 16, padding: '4px 6px', flexShrink: 0,
-              fontFamily: 'var(--font-outfit)',
-            }}
-            aria-label="Dismiss notification"
-          >✕</button>
         </div>
       )}
 

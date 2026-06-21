@@ -71,7 +71,13 @@ export default function InfoModal() {
             boxShadow: '0 14px 44px rgba(110,52,130,0.24)',
             animation: 'rise .16s ease both',
           }}>
-            <div style={{ flexShrink: 0, padding: '14px 16px 10px', borderBottom: '1px solid rgba(165,106,189,0.15)' }}>
+            <button onClick={() => setOpen(false)} aria-label="Close" className="liquid-pill" style={{
+              position: 'absolute', top: 10, right: 10, zIndex: 2,
+              width: 28, height: 28, borderRadius: '50%', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 15, color: '#8A6A9A', fontFamily: 'var(--font-outfit)',
+            }}>✕</button>
+            <div style={{ flexShrink: 0, padding: '14px 44px 10px 16px', borderBottom: '1px solid rgba(165,106,189,0.15)' }}>
               <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#1C0B2E' }}>🌸 How Bloom works</p>
               <p style={{ margin: '2px 0 0', fontSize: 12, color: '#8A6A9A' }}>The more you log, the smarter it gets.</p>
             </div>

@@ -7,31 +7,65 @@ import { appDayKey } from '@/lib/day';
 
 interface Notif { type: string; title: string; message: string; icon: string }
 
-// "Streak at risk" — derived from the same streak logic as the home screen:
-// a consecutive-day logging streak ending yesterday that today hasn't extended yet.
+// Day-scoped dismissed set — shares the same sessionStorage key as the home
+// screen's smart-notification card so dismissing in one place clears both.
+function dismissedSet(): Set<string> {
+  if (typeof window === 'undefined') return new Set();
+  try {
+    const raw = sessionStorage.getItem(`bloom_notif_${appDayKey()}`);
+    return raw ? new Set(raw.split(',').filter(Boolean)) : new Set();
+  } catch { return new Set(); }
+}
+
+// Notifications mirroring the home screen's logic, newest-relevant first.
 function getNotifs(): Notif[] {
   const data = sanitize(loadData());
   const logDates = new Set(data.logs.map((l) => l.date));
   const today = appDayKey();
-  if (logDates.has(today)) return []; // streak already kept today
+  const dismissed = dismissedSet();
+  const out: Notif[] = [];
 
-  // Count consecutive logged days ending yesterday.
-  let streak = 0;
-  const d = new Date(today + 'T00:00:00');
-  d.setDate(d.getDate() - 1);
-  while (true) {
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    if (!logDates.has(key)) break;
-    streak++;
+  // 1. Streak at risk — a consecutive-day logging streak ending yesterday that
+  //    today hasn't extended yet (same derivation as the home screen).
+  if (!logDates.has(today)) {
+    let streak = 0;
+    const d = new Date(today + 'T00:00:00');
     d.setDate(d.getDate() - 1);
+    while (true) {
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      if (!logDates.has(key)) break;
+      streak++;
+      d.setDate(d.getDate() - 1);
+    }
+    if (streak >= 1) out.push({
+      type: 'logging_streak',
+      title: 'Streak at risk',
+      message: `Don't break your ${streak}-day streak — log today's symptoms.`,
+      icon: '🔥',
+    });
   }
-  if (streak < 1) return [];
-  return [{
-    type: 'logging_streak',
-    title: 'Streak at risk',
-    message: `Don't break your ${streak}-day streak — log today's symptoms.`,
-    icon: '🔥',
-  }];
+
+  // 2. Refine today — same evening trigger as app/page.tsx: today is logged and
+  //    it's past 5 PM, so invite refining the check-in.
+  const todayLogged = logDates.has(today);
+  if (todayLogged && new Date().getHours() >= 17) out.push({
+    type: 'evening_refine',
+    title: 'Refine today',
+    message: 'How did today actually go? Tap your check-in to refine it.',
+    icon: '🌙',
+  });
+
+  // 3. Try BBT tracking — only when the user has never logged a basal body
+  //    temperature (no log carries a bbt value).
+  const everLoggedBbt = data.logs.some((l) => typeof l.bbt === 'number');
+  if (!everLoggedBbt) out.push({
+    type: 'try_bbt',
+    title: 'Try BBT tracking',
+    message: 'Log your basal body temperature each morning for sharper ovulation predictions.',
+    icon: '🌡️',
+  });
+
+  return out.filter((n) => !dismissed.has(n.type));
 }
 
 export default function NotificationBell() {
@@ -56,6 +90,19 @@ export default function NotificationBell() {
   }
 
   function openMenu() { computePos(); setOpen(true); }
+
+  // Dismiss day-scoped, sharing the home card's sessionStorage key so a notif
+  // dismissed here stays gone there too for the rest of the day.
+  function dismiss(type: string) {
+    try {
+      const key = `bloom_notif_${appDayKey()}`;
+      const cur = sessionStorage.getItem(key);
+      const set = new Set(cur ? cur.split(',').filter(Boolean) : []);
+      set.add(type);
+      sessionStorage.setItem(key, [...set].join(','));
+    } catch {}
+    setNotifs(getNotifs());
+  }
 
   // Reposition on resize/scroll while open so the dropdown tracks its button.
   useEffect(() => {
@@ -113,6 +160,7 @@ export default function NotificationBell() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {notifs.map((n) => (
                     <div key={n.type} className="glass-card" style={{
+                      position: 'relative',
                       display: 'flex', alignItems: 'center', gap: 12, padding: '11px 12px',
                       background: 'linear-gradient(135deg,rgba(165,106,189,0.16),rgba(110,52,130,0.08))',
                       borderColor: 'rgba(165,106,189,0.40)',
@@ -122,10 +170,16 @@ export default function NotificationBell() {
                         background: 'linear-gradient(135deg,#A56ABD,#6E3482)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19,
                       }}>{n.icon}</div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ flex: 1, minWidth: 0, paddingRight: 20 }}>
                         <p style={{ margin: 0, fontSize: 13.5, fontWeight: 800, color: '#1C0B2E' }}>{n.title}</p>
                         <p style={{ margin: '2px 0 0', fontSize: 12, color: '#6E3482', lineHeight: 1.4 }}>{n.message}</p>
                       </div>
+                      <button onClick={() => dismiss(n.type)} aria-label="Dismiss" style={{
+                        position: 'absolute', top: 6, right: 6,
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        color: '#8A6A9A', fontSize: 14, padding: '2px 4px', lineHeight: 1,
+                        fontFamily: 'var(--font-outfit)',
+                      }}>✕</button>
                     </div>
                   ))}
                 </div>
