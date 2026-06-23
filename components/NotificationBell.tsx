@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { loadData } from '@/lib/cycle';
 import { sanitize } from '@/lib/data';
 import { appDayKey } from '@/lib/day';
+import { listPartners, respondInvite, type PartnerLink } from '@/lib/partners';
 
 interface Notif { type: string; title: string; message: string; icon: string }
 
@@ -71,15 +72,25 @@ function getNotifs(): Notif[] {
 export default function NotificationBell() {
   const [open, setOpen] = useState(false);
   const [notifs, setNotifs] = useState<Notif[]>([]);
+  const [invites, setInvites] = useState<PartnerLink[]>([]);
   const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
 
+  const refreshInvites = () => {
+    listPartners().then(({ iCanView }) => setInvites(iCanView.filter((p) => p.status === 'pending')));
+  };
+
   useEffect(() => {
-    const refresh = () => setNotifs(getNotifs());
+    const refresh = () => { setNotifs(getNotifs()); refreshInvites(); };
     refresh();
     window.addEventListener('bloom:refresh', refresh);
     return () => window.removeEventListener('bloom:refresh', refresh);
   }, []);
+
+  async function respond(link: PartnerLink, accept: boolean) {
+    await respondInvite(link.id, accept);
+    refreshInvites();
+  }
 
   function computePos() {
     const r = btnRef.current?.getBoundingClientRect();
@@ -115,7 +126,7 @@ export default function NotificationBell() {
     };
   }, [open]);
 
-  const count = notifs.length;
+  const count = notifs.length + invites.length;
 
   return (
     <>
@@ -152,6 +163,41 @@ export default function NotificationBell() {
             </div>
 
             <div style={{ flex: 1, overflowY: 'auto', padding: '12px 14px 14px' }}>
+              {/* Partner invites — accept/decline inline */}
+              {invites.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: notifs.length ? 8 : 0 }}>
+                  {invites.map((inv) => (
+                    <div key={inv.id} className="glass-card" style={{
+                      display: 'flex', alignItems: 'center', gap: 12, padding: '11px 12px',
+                      background: 'linear-gradient(135deg,rgba(110,52,130,0.16),rgba(165,106,189,0.08))',
+                      borderColor: 'rgba(110,52,130,0.40)',
+                    }}>
+                      <div style={{
+                        width: 38, height: 38, borderRadius: 12, flexShrink: 0,
+                        background: 'linear-gradient(135deg,#6E3482,#A56ABD)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19,
+                      }}>👥</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ margin: 0, fontSize: 13.5, fontWeight: 800, color: '#1C0B2E' }}>Partner invite</p>
+                        <p style={{ margin: '2px 0 0', fontSize: 12, color: '#6E3482', lineHeight: 1.4 }}>
+                          {inv.name || inv.handle || 'Someone'} wants to share their cycle with you (read-only).
+                        </p>
+                        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                          <button onClick={() => respond(inv, true)} style={{
+                            padding: '6px 14px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                            background: '#6E3482', color: '#fff', fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-outfit)',
+                          }}>Accept</button>
+                          <button onClick={() => respond(inv, false)} style={{
+                            padding: '6px 12px', background: 'none', border: 'none', cursor: 'pointer',
+                            color: '#dc2626', fontSize: 12, fontWeight: 600, fontFamily: 'var(--font-outfit)',
+                          }}>Decline</button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {count === 0 ? (
                 <p style={{ margin: '16px 0', fontSize: 13, color: '#8A6A9A', textAlign: 'center', lineHeight: 1.5 }}>
                   You&apos;re all caught up 🎉

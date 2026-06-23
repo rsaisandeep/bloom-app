@@ -14,7 +14,7 @@ import { localDateStr, appDayKey } from '@/lib/day';
 import { useAppDay } from '@/lib/useAppDay';
 import { detectAnomalies, type Anomaly } from '@/lib/anomalies';
 import { getActiveNudge, dismissNudge, type Nudge } from '@/lib/nudges';
-import { isViewMode, getViewOwner, getViewOwnerName, getCachedAccountType } from '@/lib/partners';
+import { isViewMode, getViewOwner, getViewOwnerName, getCachedAccountType, listPartners, respondInvite, type PartnerLink } from '@/lib/partners';
 import Hamburger from '@/components/Hamburger';
 import InfoModal from '@/components/InfoModal';
 import NotificationBell from '@/components/NotificationBell';
@@ -60,6 +60,7 @@ export default function HomePage() {
   const [done, setDone] = useState<number[]>([]);
   const [showLog, setShowLog] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [pendingInvites, setPendingInvites] = useState<PartnerLink[]>([]);
   const [dismissedAnomalies, setDismissedAnomalies] = useState<Set<string>>(new Set());
   const [nudge, setNudge] = useState<Nudge | null>(null);
   // Lazy-init from sessionStorage to avoid a one-frame flash where dismissed
@@ -278,6 +279,16 @@ export default function HomePage() {
 
   const viewMode = isViewMode();
 
+  // Pending partner invites — surfaced as a banner so the invitee can act here.
+  function loadInvites() {
+    listPartners().then(({ iCanView }) => setPendingInvites(iCanView.filter((p) => p.status === 'pending')));
+  }
+  useEffect(() => { loadInvites(); }, []);
+  async function respondToInvite(link: PartnerLink, accept: boolean) {
+    await respondInvite(link.id, accept);
+    loadInvites();
+  }
+
   function refresh() {
     const d = sanitize(loadData());
     setData(d);
@@ -475,6 +486,39 @@ export default function HomePage() {
         </div>
       </div>
       )}
+
+      {/* ── Pending partner invites ── */}
+      {pendingInvites.map((inv) => (
+        <div key={inv.id} className="glass-card anim-float" style={{
+          padding: '14px 16px', marginBottom: 14,
+          display: 'flex', alignItems: 'center', gap: 12,
+          background: 'linear-gradient(135deg, rgba(110,52,130,0.16), rgba(165,106,189,0.08))',
+          borderColor: 'rgba(110,52,130,0.40)',
+        }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: 14, flexShrink: 0,
+            background: 'linear-gradient(135deg,#6E3482,#A56ABD)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
+            boxShadow: '0 6px 16px rgba(110,52,130,0.3)',
+          }}>👥</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#1C0B2E' }}>Partner invite</p>
+            <p style={{ margin: '2px 0 0', fontSize: 12, color: '#6E3482', lineHeight: 1.4 }}>
+              {inv.name || inv.handle || 'Someone'} wants to share their cycle with you (read-only).
+            </p>
+            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+              <button onClick={() => respondToInvite(inv, true)} style={{
+                padding: '6px 14px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                background: '#6E3482', color: '#fff', fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-outfit)',
+              }}>Accept</button>
+              <button onClick={() => respondToInvite(inv, false)} style={{
+                padding: '6px 12px', background: 'none', border: 'none', cursor: 'pointer',
+                color: '#dc2626', fontSize: 12, fontWeight: 600, fontFamily: 'var(--font-outfit)',
+              }}>Decline</button>
+            </div>
+          </div>
+        </div>
+      ))}
 
       {/* ── Partner view-only banner ── */}
       {viewMode && (
