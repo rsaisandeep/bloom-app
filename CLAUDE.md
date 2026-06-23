@@ -45,10 +45,3 @@ Period-tracker PWA. Next.js 16 (App Router) + Supabase + web-push. This is the s
 ## Workflow
 - Auto-deploys via Vercel on push to main — always `git push` after committing changes.
 - `npm run dev` / `build` / `lint`.
-
-## graphify
-
-Knowledge graph at `graphify-out/` — use for *deep* questions ("how does sync flow end-to-end"), not for "which file" (this map answers that).
-- `graphify query "<question>"` when `graphify-out/graph.json` exists; `graphify path "<A>" "<B>"` for relationships; `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, smaller than GRAPH_REPORT.md or raw grep.
-- `graphify-out/wiki/index.md` for broad navigation if present; `GRAPH_REPORT.md` only for full architecture review.
-- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
