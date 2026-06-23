@@ -1,6 +1,5 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { getSettings, setPcosMode, setPaused, updateSettings, getGoals, loadData, deleteCycle, isLikelySkipped, type Cycle } from '@/lib/cycle';
@@ -13,7 +12,7 @@ import { apiLogout } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 import {
   getMyProfile, listPartners, invitePartner, removeLink,
-  clearViewOwner, isViewMode, getViewOwnerName,
+  isViewMode, getViewOwnerName,
   getCachedAccountType, type AccountType, type PartnerLink,
 } from '@/lib/partners';
 
@@ -25,7 +24,6 @@ const GOALS = [
 ];
 
 export default function ProfilePage() {
-  const router = useRouter();
   const [username, setUsername] = useState('');
   const [handle, setHandle] = useState<string | null>(null);
   const [pcos, setPcos] = useState(false);
@@ -45,6 +43,7 @@ export default function ProfilePage() {
   const [inviteHandle, setInviteHandle] = useState('');
   const [partnerMsg, setPartnerMsg] = useState<{ text: string; err: boolean } | null>(null);
   const [viewing, setViewing] = useState(false);
+  const [confirmRemove, setConfirmRemove] = useState<PartnerLink | null>(null);
 
   const refreshPartners = useCallback(async () => {
     const prof = await getMyProfile();
@@ -61,13 +60,7 @@ export default function ProfilePage() {
     if (r.ok) { setPartnerMsg({ text: 'Partner added — they must accept.', err: false }); setInviteHandle(''); refreshPartners(); }
     else setPartnerMsg({ text: r.error ?? 'Could not add.', err: true });
   }
-  async function unlink(link: PartnerLink) { await removeLink(link.id); refreshPartners(); }
-  async function exitView() {
-    clearViewOwner();
-    await fetchFromSheet(); // reload my own data
-    setViewing(false);
-    router.push('/');
-  }
+  async function unlink(link: PartnerLink) { await removeLink(link.id); setConfirmRemove(null); refreshPartners(); }
 
   function syncLocal() {
     const s = getSettings();
@@ -155,20 +148,16 @@ export default function ProfilePage() {
         Profile
       </h1>
 
-      {/* View-mode banner */}
+      {/* View-mode banner — read-only; the partner who logs controls access */}
       {viewing && (
         <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+          display: 'flex', alignItems: 'center', gap: 12,
           padding: '12px 16px', marginBottom: 12, borderRadius: 14,
           background: 'rgba(110,52,130,0.1)', border: '1px solid rgba(110,52,130,0.25)',
         }}>
           <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#6E3482' }}>
             👀 Viewing {getViewOwnerName()}’s data — read only
           </p>
-          <button onClick={exitView} style={{
-            padding: '7px 12px', borderRadius: 10, border: 'none', cursor: 'pointer',
-            background: '#6E3482', color: '#fff', fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-outfit)',
-          }}>Exit</button>
         </div>
       )}
 
@@ -331,7 +320,7 @@ export default function ProfilePage() {
                     {v.status === 'accepted' ? 'accepted' : 'pending'}
                   </span>
                 </span>
-                <button onClick={() => unlink(v)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: 12, fontWeight: 600 }}>Delete</button>
+                <button onClick={() => setConfirmRemove(v)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: 12, fontWeight: 600 }}>Delete</button>
               </div>
             ))}
           </div>
@@ -456,6 +445,29 @@ export default function ProfilePage() {
 
       <DoctorSummaryModal open={showSummary} onClose={() => setShowSummary(false)} />
       <ImportSheet open={showImport} onClose={() => setShowImport(false)} onImported={() => fetchFromSheet().then(syncLocal)} />
+
+      {/* Remove-partner confirmation */}
+      {confirmRemove && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <div className="glass-card" style={{ width: '100%', maxWidth: 360, padding: 24, textAlign: 'center' }}>
+            <div style={{ fontSize: 34, marginBottom: 10 }}>👥</div>
+            <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 800, color: '#1C0B2E' }}>Remove partner?</h3>
+            <p style={{ margin: '0 0 18px', fontSize: 13.5, color: '#8A6A9A', lineHeight: 1.5 }}>
+              {confirmRemove.name || confirmRemove.handle || 'This partner'} will immediately lose access to your cycle data. You can add them again later.
+            </p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setConfirmRemove(null)} style={{
+                flex: 1, padding: '12px', borderRadius: 12, cursor: 'pointer', fontFamily: 'var(--font-outfit)',
+                border: '1.5px solid rgba(165,106,189,0.3)', background: 'transparent', color: '#6E3482', fontSize: 14, fontWeight: 700,
+              }}>Cancel</button>
+              <button onClick={() => unlink(confirmRemove)} style={{
+                flex: 1, padding: '12px', borderRadius: 12, border: 'none', cursor: 'pointer', fontFamily: 'var(--font-outfit)',
+                background: 'linear-gradient(135deg,#dc2626,#9d174d)', color: '#fff', fontSize: 14, fontWeight: 700,
+              }}>Remove</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete confirmation modal */}
       {showDeleteModal && (

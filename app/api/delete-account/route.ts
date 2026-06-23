@@ -27,10 +27,17 @@ export async function POST(req: Request) {
     return o?.message || o?.details || o?.code || JSON.stringify(e) || 'unknown error';
   };
 
-  for (const table of ['daily_logs', 'cycles', 'settings']) {
+  for (const table of ['daily_logs', 'cycles', 'settings', 'push_subscriptions']) {
     const { error: e } = await adminClient.from(table).delete().eq('user_id', uid);
     if (e) fails.push(`${table}: ${errMsg(e)}`);
   }
+
+  // Partner links reference this user as either the owner or the viewer.
+  const { error: linkErr } = await adminClient
+    .from('partner_links')
+    .delete()
+    .or(`owner_id.eq.${uid},viewer_id.eq.${uid}`);
+  if (linkErr) fails.push(`partner_links: ${errMsg(linkErr)}`);
 
   const { error: profErr } = await adminClient.from('profiles').delete().eq('id', uid);
   if (profErr) fails.push(`profiles: ${errMsg(profErr)}`);

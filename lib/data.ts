@@ -84,6 +84,11 @@ export async function fetchFromSheet(targetUserId?: string): Promise<BloomData> 
 }
 
 export async function saveToSheet(data: BloomData): Promise<boolean> {
+  // A viewer is looking at someone else's cached data. Because `cycle_id` is a
+  // global primary key, upserting the owner's rows under the viewer's user_id
+  // would reassign (clobber) the owner's cycles — which is what made the owner's
+  // tracking "reset and ask for setup again". Viewers must never write.
+  if (typeof window !== 'undefined' && localStorage.getItem('bloom_view_owner')) return true;
   saveData(data); // cache first for instant UI
   const userId = await getUserId();
   if (!userId) return true;

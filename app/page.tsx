@@ -139,6 +139,7 @@ export default function HomePage() {
   }, []);
 
   function toggleDone(i: number) {
+    if (isViewMode()) return; // viewers can see struck/pending tasks but not change them
     setDone((prev) => {
       const next = prev.includes(i) ? prev.filter((x) => x !== i) : [...prev, i];
       localStorage.setItem(`bloom_actions_${todayKey}`, JSON.stringify(next));
@@ -729,9 +730,10 @@ export default function HomePage() {
                 const i = ++flatIdx;
                 const isDone = done.includes(i);
                 return (
-                  <button key={i} onClick={() => toggleDone(i)} style={{
+                  <button key={i} onClick={() => toggleDone(i)} disabled={viewMode} style={{
                     width: '100%', display: 'flex', alignItems: 'center', gap: 12,
-                    padding: '12px 10px', background: 'none', border: 'none', cursor: 'pointer',
+                    padding: '12px 10px', background: 'none', border: 'none',
+                    cursor: viewMode ? 'default' : 'pointer',
                     borderBottom: j < g.items.length - 1 ? '1px solid rgba(165,106,189,0.12)' : 'none',
                     textAlign: 'left', fontFamily: 'var(--font-outfit)',
                   }}>
