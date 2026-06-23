@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiLogin, apiLoginByUsername, apiRegister, HANDLE_RE } from '@/lib/api';
 import { fetchFromSheet } from '@/lib/data';
-import { setAccountType } from '@/lib/partners';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -54,12 +53,6 @@ export default function LoginPage() {
         const r = id.includes('@') ? await apiLogin(id, password) : await apiLoginByUsername(id, password);
         if (!r.ok) { setMsg({ text: r.error ?? 'Something went wrong.', err: true }); setLoading(false); return; }
         await fetchFromSheet();
-        if (asViewer) {
-          // Partner/view-only login: mark the account and go pick whose cycle to view.
-          await setAccountType('viewer').catch(() => {});
-          router.push(r.handle ? '/profile' : '/choose-username');
-          return;
-        }
         // Legacy accounts with no username yet pick one before continuing.
         router.push(r.handle ? '/' : '/choose-username');
       }
@@ -246,22 +239,24 @@ export default function LoginPage() {
               />
             </div>
 
-            <button type="button" onClick={() => setAsViewer(v => !v)} style={{
-              display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 'none',
-              padding: '2px 0', cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font-outfit)',
-            }}>
-              <span style={{
-                width: 20, height: 20, borderRadius: 6, flexShrink: 0,
-                border: asViewer ? 'none' : '2px solid rgba(165,106,189,0.5)',
-                background: asViewer ? '#A56ABD' : 'transparent',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
+            {isReg && (
+              <button type="button" onClick={() => setAsViewer(v => !v)} style={{
+                display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 'none',
+                padding: '2px 0', cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font-outfit)',
               }}>
-                {asViewer && <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-              </span>
-              <span style={{ fontSize: 13, color: 'rgba(231,219,239,0.75)' }}>
-                {isReg ? "I'm a partner (view only — no cycle setup)" : 'Log in as partner (view only)'}
-              </span>
-            </button>
+                <span style={{
+                  width: 20, height: 20, borderRadius: 6, flexShrink: 0,
+                  border: asViewer ? 'none' : '2px solid rgba(165,106,189,0.5)',
+                  background: asViewer ? '#A56ABD' : 'transparent',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {asViewer && <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                </span>
+                <span style={{ fontSize: 13, color: 'rgba(231,219,239,0.75)' }}>
+                  I&apos;m a partner (view only — no cycle setup)
+                </span>
+              </button>
+            )}
 
             {msg && (
               <p style={{

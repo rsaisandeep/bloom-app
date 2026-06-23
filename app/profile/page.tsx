@@ -11,25 +11,11 @@ const ImportSheet = dynamic(() => import('@/components/ImportSheet'), { ssr: fal
 import { buildLogsCSV, downloadCSV } from '@/lib/export';
 import { apiLogout } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
-import { usePushNotifications } from '@/lib/usePushNotifications';
 import {
-  getMyProfile, setAccountType, setGender, listPartners, invitePartner,
-  respondInvite, removeLink, setViewOwner, clearViewOwner, isViewMode, getViewOwnerName,
+  getMyProfile, listPartners, invitePartner, removeLink,
+  clearViewOwner, isViewMode, getViewOwnerName,
   getCachedAccountType, type AccountType, type PartnerLink,
 } from '@/lib/partners';
-
-const GENDERS = [
-  { id: 'female', label: 'Female' },
-  { id: 'male', label: 'Male' },
-  { id: 'other', label: 'Other' },
-  { id: 'prefer_not', label: 'Prefer not to say' },
-];
-
-const NOTIF_CATEGORIES = [
-  { id: 'log_reminder', label: 'Log reminder', sub: 'Daily nudge to log your symptoms' },
-  { id: 'period_soon', label: 'Period alert', sub: 'Heads-up when your period is predicted soon' },
-  { id: 'cycle_update', label: 'Cycle update', sub: 'Notification when your phase changes' },
-];
 
 const GOALS = [
   { id: 'track', emoji: '📅', label: 'Track my cycle', sub: 'Know where I am in my cycle' },
@@ -52,50 +38,30 @@ export default function ProfilePage() {
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
-  const { status: notifStatus, subscribe: notifSubscribe, unsubscribe: notifUnsubscribe } = usePushNotifications();
-  const [categories, setCategories] = useState<string[]>(['log_reminder', 'period_soon', 'cycle_update']);
 
   // Partner mode
   const [accountType, setAccountTypeState] = useState<AccountType>(() => getCachedAccountType());
-  const [gender, setGenderState] = useState<string>('');
   const [myViewers, setMyViewers] = useState<PartnerLink[]>([]);
-  const [iCanView, setICanView] = useState<PartnerLink[]>([]);
   const [inviteHandle, setInviteHandle] = useState('');
   const [partnerMsg, setPartnerMsg] = useState<{ text: string; err: boolean } | null>(null);
   const [viewing, setViewing] = useState(false);
 
   const refreshPartners = useCallback(async () => {
     const prof = await getMyProfile();
-    if (prof) { setAccountTypeState(prof.accountType); setGenderState(prof.gender ?? ''); setHandle(prof.handle); }
-    const { myViewers, iCanView } = await listPartners();
+    if (prof) { setAccountTypeState(prof.accountType); setHandle(prof.handle); }
+    const { myViewers } = await listPartners();
     setMyViewers(myViewers);
-    setICanView(iCanView);
   }, []);
 
-  async function changeAccountType(type: AccountType) {
-    setAccountTypeState(type);
-    await setAccountType(type);
-  }
-  async function changeGender(g: string) {
-    setGenderState(g);
-    await setGender(g);
-  }
   async function sendInvite() {
     const h = inviteHandle.trim().toLowerCase();
     if (!h) return;
     setPartnerMsg({ text: 'Sending…', err: false });
     const r = await invitePartner(h);
-    if (r.ok) { setPartnerMsg({ text: 'Invite sent — they must accept.', err: false }); setInviteHandle(''); refreshPartners(); }
-    else setPartnerMsg({ text: r.error ?? 'Could not send.', err: true });
+    if (r.ok) { setPartnerMsg({ text: 'Partner added — they must accept.', err: false }); setInviteHandle(''); refreshPartners(); }
+    else setPartnerMsg({ text: r.error ?? 'Could not add.', err: true });
   }
-  async function accept(link: PartnerLink) { await respondInvite(link.id, true); refreshPartners(); }
-  async function decline(link: PartnerLink) { await respondInvite(link.id, false); refreshPartners(); }
   async function unlink(link: PartnerLink) { await removeLink(link.id); refreshPartners(); }
-  async function viewPartner(link: PartnerLink) {
-    setViewOwner(link.userId, link.name || link.handle || 'partner');
-    await fetchFromSheet(link.userId);
-    router.push('/');
-  }
   async function exitView() {
     clearViewOwner();
     await fetchFromSheet(); // reload my own data
@@ -109,48 +75,6 @@ export default function ProfilePage() {
     setPausedState(!!s.paused);
     setGoalsState(getGoals(s));
     setCycles([...loadData().cycles].reverse()); // newest first
-  }
-
-  const loadCategories = useCallback(async () => {
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData.session?.access_token;
-    if (!token) return;
-    const res = await fetch('/api/push/preferences', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (res.ok) {
-      const json = await res.json();
-      setCategories(json.categories ?? ['log_reminder', 'period_soon', 'cycle_update']);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (notifStatus === 'subscribed') loadCategories();
-  }, [notifStatus, loadCategories]);
-
-  async function toggleNotif() {
-    if (notifStatus === 'subscribed') {
-      await notifUnsubscribe();
-      setCategories(['log_reminder', 'period_soon', 'cycle_update']);
-    } else {
-      await notifSubscribe();
-      loadCategories();
-    }
-  }
-
-  async function toggleCategory(id: string) {
-    const next = categories.includes(id)
-      ? categories.filter(c => c !== id)
-      : [...categories, id];
-    setCategories(next);
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData.session?.access_token;
-    if (!token) return;
-    await fetch('/api/push/preferences', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ categories: next }),
-    });
   }
 
   function toggleGoal(id: string) {
@@ -331,81 +255,6 @@ export default function ProfilePage() {
         </div>
       </div>}
 
-      {/* Notifications */}
-      {!viewer && notifStatus !== 'unsupported' && (
-        <div className="glass-card" style={{ padding: '16px 18px', marginBottom: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, flex: 1 }}>
-              <span style={{ fontSize: 18, marginTop: 1 }}>🔔</span>
-              <div>
-                <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#1C0B2E' }}>Notifications</p>
-                <p style={{ margin: '2px 0 0', fontSize: 12, color: '#8A6A9A', lineHeight: 1.45 }}>
-                  {notifStatus === 'denied'
-                    ? 'Blocked — enable in browser settings'
-                    : notifStatus === 'subscribed' ? 'On' : 'Off'}
-                </p>
-              </div>
-            </div>
-            {notifStatus !== 'denied' && (
-              <button
-                onClick={toggleNotif}
-                role="switch"
-                aria-checked={notifStatus === 'subscribed'}
-                aria-label="Notifications"
-                disabled={notifStatus === 'loading'}
-                style={{
-                  width: 50, height: 30, borderRadius: 999, border: 'none',
-                  cursor: notifStatus === 'loading' ? 'default' : 'pointer',
-                  padding: 3, flexShrink: 0,
-                  background: notifStatus === 'subscribed'
-                    ? 'linear-gradient(135deg,#6E3482,#A56ABD)'
-                    : 'rgba(165,106,189,0.25)',
-                  transition: 'background .25s cubic-bezier(.34,1.4,.64,1)',
-                  boxShadow: notifStatus === 'subscribed' ? '0 4px 12px rgba(110,52,130,0.3)' : 'none',
-                  opacity: notifStatus === 'loading' ? 0.6 : 1,
-                }}>
-                <span style={{
-                  display: 'block', width: 24, height: 24, borderRadius: '50%', background: '#fff',
-                  transform: notifStatus === 'subscribed' ? 'translateX(20px)' : 'translateX(0)',
-                  transition: 'transform .25s cubic-bezier(.34,1.56,.64,1)',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
-                }} />
-              </button>
-            )}
-          </div>
-          {notifStatus === 'subscribed' && (
-            <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 1 }}>
-              {NOTIF_CATEGORIES.map((cat, i) => {
-                const on = categories.includes(cat.id);
-                return (
-                  <button key={cat.id} onClick={() => toggleCategory(cat.id)} style={{
-                    display: 'flex', alignItems: 'center', gap: 12,
-                    padding: '10px 0',
-                    borderTop: i > 0 ? '1px solid rgba(165,106,189,0.12)' : '1px solid rgba(165,106,189,0.12)',
-                    background: 'transparent', border: 'none', cursor: 'pointer',
-                    borderBottom: 'none', width: '100%', textAlign: 'left',
-                    fontFamily: 'var(--font-outfit)',
-                  }}>
-                    <div style={{ flex: 1 }}>
-                      <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#1C0B2E' }}>{cat.label}</p>
-                      <p style={{ margin: '1px 0 0', fontSize: 12, color: '#8A6A9A' }}>{cat.sub}</p>
-                    </div>
-                    <div style={{
-                      width: 22, height: 22, borderRadius: 7, flexShrink: 0,
-                      border: on ? 'none' : '2px solid rgba(165,106,189,0.4)',
-                      background: on ? '#6E3482' : 'transparent',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      {on && <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Your goals */}
       {!viewer && <div className="glass-card" style={{ padding: '16px 18px', marginBottom: 12 }}>
         <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 700, color: '#1C0B2E' }}>Your goals</p>
@@ -441,55 +290,22 @@ export default function ProfilePage() {
         </div>
       </div>}
 
-      {/* Partner mode — trackers only; viewers manage from the waiting screen */}
+      {/* Partner mode — trackers add a read-only viewer by username */}
       {!viewer && <div className="glass-card" style={{ padding: '16px 18px', marginBottom: 12 }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12 }}>
           <span style={{ fontSize: 18, marginTop: 1 }}>👥</span>
           <div>
             <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#1C0B2E' }}>Partner mode</p>
             <p style={{ margin: '2px 0 0', fontSize: 12, color: '#8A6A9A', lineHeight: 1.45 }}>
-              Share read-only access with a partner, or view a partner’s cycle. They can see, never edit.
+              Add a partner by username to share read-only access to your cycle. They can see, never edit.
             </p>
           </div>
         </div>
 
-        {/* Account type */}
-        <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 700, color: '#49225B' }}>I am a…</p>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-          {(['tracker', 'viewer'] as AccountType[]).map(t => {
-            const on = accountType === t;
-            return (
-              <button key={t} onClick={() => changeAccountType(t)} style={{
-                flex: 1, padding: '10px', borderRadius: 12, cursor: 'pointer', fontFamily: 'var(--font-outfit)',
-                border: `1.5px solid ${on ? '#6E3482' : 'rgba(165,106,189,0.25)'}`,
-                background: on ? 'rgba(110,52,130,0.12)' : 'transparent',
-                color: on ? '#6E3482' : '#49225B', fontSize: 13, fontWeight: on ? 700 : 500,
-              }}>{t === 'tracker' ? 'Tracker' : 'Viewer (partner)'}</button>
-            );
-          })}
-        </div>
-
-        {/* Gender */}
-        <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 700, color: '#49225B' }}>Gender</p>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
-          {GENDERS.map(g => {
-            const on = gender === g.id;
-            return (
-              <button key={g.id} onClick={() => changeGender(g.id)} style={{
-                padding: '7px 12px', borderRadius: 999, cursor: 'pointer', fontFamily: 'var(--font-outfit)',
-                border: `1.5px solid ${on ? '#6E3482' : 'rgba(165,106,189,0.25)'}`,
-                background: on ? 'rgba(110,52,130,0.12)' : 'transparent',
-                color: on ? '#6E3482' : '#49225B', fontSize: 12, fontWeight: on ? 700 : 500,
-              }}>{g.label}</button>
-            );
-          })}
-        </div>
-
-        {/* Invite a viewer by username */}
-        <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 700, color: '#49225B' }}>Add a partner who can view my data</p>
+        {/* Add a partner by username */}
         <div style={{ display: 'flex', gap: 8 }}>
           <input value={inviteHandle} onChange={e => { setInviteHandle(e.target.value); setPartnerMsg(null); }}
-            placeholder="their username" autoCapitalize="none"
+            placeholder="partner's username" autoCapitalize="none"
             style={{
               flex: 1, background: 'rgba(255,255,255,0.55)', border: '1px solid rgba(165,106,189,0.25)',
               borderRadius: 12, padding: '10px 12px', color: '#1C0B2E', fontSize: 14, outline: 'none',
@@ -503,10 +319,10 @@ export default function ProfilePage() {
         </div>
         {partnerMsg && <p style={{ margin: '8px 0 0', fontSize: 12, color: partnerMsg.err ? '#dc2626' : '#6E3482' }}>{partnerMsg.text}</p>}
 
-        {/* People who can view MY data */}
+        {/* Partners you've added — delete revokes their access */}
         {myViewers.length > 0 && (
           <div style={{ marginTop: 14 }}>
-            <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 700, color: '#49225B' }}>Can view my data</p>
+            <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 700, color: '#49225B' }}>Your partners</p>
             {myViewers.map(v => (
               <div key={v.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '8px 0' }}>
                 <span style={{ fontSize: 13, color: '#1C0B2E' }}>
@@ -515,34 +331,7 @@ export default function ProfilePage() {
                     {v.status === 'accepted' ? 'accepted' : 'pending'}
                   </span>
                 </span>
-                <button onClick={() => unlink(v)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: 12, fontWeight: 600 }}>Remove</button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Partners whose data I can view */}
-        {iCanView.length > 0 && (
-          <div style={{ marginTop: 14 }}>
-            <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 700, color: '#49225B' }}>Partners I can view</p>
-            {iCanView.map(p => (
-              <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '8px 0' }}>
-                <span style={{ fontSize: 13, color: '#1C0B2E' }}>
-                  {p.name || p.handle || 'user'}{p.handle ? ` · @${p.handle}` : ''}
-                </span>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {p.status === 'pending' ? (
-                    <>
-                      <button onClick={() => accept(p)} style={{ padding: '6px 12px', borderRadius: 10, border: 'none', cursor: 'pointer', background: '#6E3482', color: '#fff', fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-outfit)' }}>Accept</button>
-                      <button onClick={() => decline(p)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: 12, fontWeight: 600 }}>Decline</button>
-                    </>
-                  ) : (
-                    <>
-                      <button onClick={() => viewPartner(p)} style={{ padding: '6px 12px', borderRadius: 10, border: '1.5px solid rgba(110,52,130,0.35)', cursor: 'pointer', background: 'rgba(110,52,130,0.1)', color: '#6E3482', fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-outfit)' }}>View</button>
-                      <button onClick={() => unlink(p)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: 12, fontWeight: 600 }}>Remove</button>
-                    </>
-                  )}
-                </div>
+                <button onClick={() => unlink(v)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: 12, fontWeight: 600 }}>Delete</button>
               </div>
             ))}
           </div>

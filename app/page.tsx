@@ -18,7 +18,6 @@ import { isViewMode, getViewOwner, getViewOwnerName, isWaitingViewer, listPartne
 import ViewerWaiting from '@/components/ViewerWaiting';
 import Hamburger from '@/components/Hamburger';
 import InfoModal from '@/components/InfoModal';
-import NotificationBell from '@/components/NotificationBell';
 import LogoutButton from '@/components/LogoutButton';
 import PeriodStartModal from '@/components/PeriodStartModal';
 const LogSheet = dynamic(() => import('@/components/LogSheet'), { ssr: false });
@@ -325,7 +324,6 @@ export default function HomePage() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <NotificationBell />
           <LogoutButton />
         </div>
       </div>
