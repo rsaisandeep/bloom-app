@@ -19,6 +19,17 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/check-map-drift.sh\" 2>/dev/null || true",
+            "statusMessage": "Checking CLAUDE.md is in sync"
+          }
+        ]
+      }
     ]
   }
 }
