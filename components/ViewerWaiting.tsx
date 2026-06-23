@@ -8,18 +8,24 @@ import { fetchFromSheet } from '@/lib/data';
 // hasn't been added & accepted into a partner's data yet. Pending invites can be
 // accepted right here; accepting enters read-only view mode for that partner.
 export default function ViewerWaiting() {
-  const [invites, setInvites] = useState<PartnerLink[]>([]);
+  const [links, setLinks] = useState<PartnerLink[]>([]);
 
   function load() {
-    listPartners().then(({ iCanView }) => setInvites(iCanView.filter((p) => p.status === 'pending')));
+    listPartners().then(({ iCanView }) => setLinks(iCanView));
   }
   useEffect(load, []);
 
+  const pending = links.filter((p) => p.status === 'pending');
+  const accepted = links.filter((p) => p.status === 'accepted');
+
+  async function enterView(p: PartnerLink) {
+    setViewOwner(p.userId, p.name || p.handle || 'partner');
+    await fetchFromSheet(p.userId);
+    window.location.href = '/'; // reload into view mode
+  }
   async function accept(inv: PartnerLink) {
     await respondInvite(inv.id, true);
-    setViewOwner(inv.userId, inv.name || inv.handle || 'partner');
-    await fetchFromSheet(inv.userId);
-    window.location.href = '/'; // reload into view mode
+    await enterView(inv);
   }
   async function decline(inv: PartnerLink) {
     await respondInvite(inv.id, false);
@@ -39,9 +45,9 @@ export default function ViewerWaiting() {
           you’ll get a notification to accept.
         </p>
 
-        {invites.length > 0 && (
+        {(pending.length > 0 || accepted.length > 0) && (
           <div style={{ width: '100%', maxWidth: 340, marginTop: 24, display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {invites.map((inv) => (
+            {pending.map((inv) => (
               <div key={inv.id} className="glass-card" style={{
                 display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', textAlign: 'left',
                 background: 'linear-gradient(135deg,rgba(110,52,130,0.16),rgba(165,106,189,0.08))',
@@ -67,6 +73,27 @@ export default function ViewerWaiting() {
                     }}>Decline</button>
                   </div>
                 </div>
+              </div>
+            ))}
+            {accepted.map((p) => (
+              <div key={p.id} className="glass-card" style={{
+                display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', textAlign: 'left',
+              }}>
+                <div style={{
+                  width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+                  background: 'linear-gradient(135deg,#6E3482,#A56ABD)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
+                }}>🌸</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ margin: 0, fontSize: 13.5, fontWeight: 800, color: '#1C0B2E' }}>
+                    {p.name || p.handle || 'Partner'}
+                  </p>
+                  <p style={{ margin: '1px 0 0', fontSize: 11.5, color: '#8A6A9A' }}>Tap to view their cycle</p>
+                </div>
+                <button onClick={() => enterView(p)} style={{
+                  padding: '8px 16px', borderRadius: 10, border: 'none', cursor: 'pointer', flexShrink: 0,
+                  background: '#6E3482', color: '#fff', fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-outfit)',
+                }}>View</button>
               </div>
             ))}
           </div>

@@ -529,7 +529,7 @@ export default function HomePage() {
         }}>
           <span style={{ fontSize: 16 }}>👀</span>
           <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#6E3482', flex: 1 }}>
-            Viewing {getViewOwnerName()}’s cycle — read only. Manage in Profile.
+            Viewing {getViewOwnerName()}’s cycle — read only.
           </p>
         </div>
       )}

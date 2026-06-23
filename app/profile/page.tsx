@@ -439,8 +439,8 @@ export default function ProfilePage() {
         </div>
       </div>}
 
-      {/* Partner mode */}
-      <div className="glass-card" style={{ padding: '16px 18px', marginBottom: 12 }}>
+      {/* Partner mode — trackers only; viewers manage from the waiting screen */}
+      {!viewer && <div className="glass-card" style={{ padding: '16px 18px', marginBottom: 12 }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12 }}>
           <span style={{ fontSize: 18, marginTop: 1 }}>👥</span>
           <div>
@@ -545,7 +545,7 @@ export default function ProfilePage() {
             ))}
           </div>
         )}
-      </div>
+      </div>}
 
       {/* Re-setup cycle */}
       {!viewer && <Link href="/onboarding" style={{ textDecoration: 'none', display: 'block', marginBottom: 12 }}>
