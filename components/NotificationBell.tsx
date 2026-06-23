@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 import { loadData } from '@/lib/cycle';
 import { sanitize } from '@/lib/data';
 import { appDayKey } from '@/lib/day';
-import { listPartners, respondInvite, type PartnerLink } from '@/lib/partners';
+import { listPartners, respondInvite, isViewer, type PartnerLink } from '@/lib/partners';
 
 interface Notif { type: string; title: string; message: string; icon: string }
 
@@ -81,7 +81,8 @@ export default function NotificationBell() {
   };
 
   useEffect(() => {
-    const refresh = () => { setNotifs(getNotifs()); refreshInvites(); };
+    // Viewers don't track, so tracking nudges (streak, BBT, refine) never apply.
+    const refresh = () => { setNotifs(isViewer() ? [] : getNotifs()); refreshInvites(); };
     refresh();
     window.addEventListener('bloom:refresh', refresh);
     return () => window.removeEventListener('bloom:refresh', refresh);
@@ -112,7 +113,7 @@ export default function NotificationBell() {
       set.add(type);
       sessionStorage.setItem(key, [...set].join(','));
     } catch {}
-    setNotifs(getNotifs());
+    setNotifs(isViewer() ? [] : getNotifs());
   }
 
   // Reposition on resize/scroll while open so the dropdown tracks its button.

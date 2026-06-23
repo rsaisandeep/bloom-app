@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { getArticle } from '@/lib/articles';
 import { getCurrentPhase } from '@/lib/cycle';
 import { fetchFromSheet } from '@/lib/data';
+import { isViewer, getViewOwner } from '@/lib/partners';
 import TopBar from '@/components/TopBar';
 
 const PHASE_SLUG: Record<string, string> = {
@@ -34,7 +35,11 @@ export default function ReadPage() {
       const slug = new URL(window.location.href).searchParams.get('open');
       if (slug) setOpenSlug(slug);
     } catch {}
-    fetchFromSheet().then((data) => {
+    // Viewers have no cycle of their own, so don't surface a personal "your
+    // current phase" recommendation. Fetch the partner's data (never the
+    // viewer's own) so we don't clobber the cached partner view.
+    if (isViewer()) return;
+    fetchFromSheet(getViewOwner() ?? undefined).then((data) => {
       const { phase } = getCurrentPhase(data);
       setCurrentSlug(PHASE_SLUG[phase]);
     });

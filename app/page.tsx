@@ -586,7 +586,7 @@ export default function HomePage() {
       )}
 
       {/* ── Phase 2: smart notification card (one at a time) ── */}
-      {activeNotif && notifMeta && (
+      {activeNotif && notifMeta && !viewMode && (
         <div className="glass-card anim-float" style={{
           position: 'relative',
           padding: '14px 16px', marginBottom: 14,
@@ -772,7 +772,7 @@ export default function HomePage() {
       </>)}
 
       {/* ── Feature adoption nudge ── */}
-      {!paused && nudge && (
+      {!paused && nudge && !viewMode && (
         <div className="glass-card anim-float" style={{
           padding: '14px 16px', marginBottom: 14, marginTop: 4,
           display: 'flex', alignItems: 'center', gap: 12,
