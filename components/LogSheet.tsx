@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { loadData, saveLog, startPeriod, isNewPeriodStart, getCurrentPhase, isLogInputRelevant, tracksFertility, PHASE_LOG_RELEVANCE, type DayLog, type Phase } from '@/lib/cycle';
 import { appDayKey } from '@/lib/day';
 import { fetchFromSheet, saveToSheet } from '@/lib/data';
+import { isViewMode } from '@/lib/partners';
 
 type Option = { value: string; label: string; emoji: string };
 type Field = { key: keyof DayLog; label: string; options: Option[] };
@@ -213,7 +214,8 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
     </>
   );
 
-  if (!open) return null;
+  // Viewers are read-only — never render the log sheet, whatever opens it.
+  if (!open || isViewMode()) return null;
 
   return createPortal(
     <>

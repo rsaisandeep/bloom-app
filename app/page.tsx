@@ -15,6 +15,7 @@ import { useAppDay } from '@/lib/useAppDay';
 import { detectAnomalies, type Anomaly } from '@/lib/anomalies';
 import { getActiveNudge, dismissNudge, type Nudge } from '@/lib/nudges';
 import { isViewMode, getViewOwner, getViewOwnerName, isWaitingViewer, listPartners, respondInvite, type PartnerLink } from '@/lib/partners';
+import { fetchTaskDone, saveTaskDone } from '@/lib/tasks';
 import ViewerWaiting from '@/components/ViewerWaiting';
 import Hamburger from '@/components/Hamburger';
 import InfoModal from '@/components/InfoModal';
@@ -103,12 +104,17 @@ export default function HomePage() {
     });
   }, [router]);
 
-  // Reset the focus checklist whenever the logical day changes (incl. live 5 AM rollover).
+  // Reset the focus checklist whenever the logical day changes (incl. live 5 AM
+  // rollover). Show the local cache instantly, then reconcile with the synced
+  // copy — the owner's own across devices, or (in view mode) the partner's.
   useEffect(() => {
     try {
       const saved = localStorage.getItem(`bloom_actions_${todayKey}`);
       setDone(saved ? JSON.parse(saved) : []);
     } catch { setDone([]); }
+    fetchTaskDone(todayKey, getViewOwner() ?? undefined)
+      .then((remote) => { if (remote) setDone(remote); })
+      .catch(() => {});
   }, [todayKey]);
 
   // Load per-day dismissed notification set from sessionStorage.
@@ -143,6 +149,7 @@ export default function HomePage() {
     setDone((prev) => {
       const next = prev.includes(i) ? prev.filter((x) => x !== i) : [...prev, i];
       localStorage.setItem(`bloom_actions_${todayKey}`, JSON.stringify(next));
+      saveTaskDone(todayKey, next).catch(() => {}); // sync across devices + to partners
       return next;
     });
   }

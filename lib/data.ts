@@ -108,7 +108,11 @@ export async function saveToSheet(data: BloomData): Promise<boolean> {
       period_end_source: c.period_end_source ?? null,
     }));
     if (cycleRows.length > 0) {
-      const { error } = await supabase.from('cycles').upsert(cycleRows, { onConflict: 'cycle_id' });
+      // Prefer the per-user conflict key so two users sharing a generated
+      // cycle_id (e.g. me_2024-06-01) never clobber each other. Falls back to the
+      // legacy global cycle_id key if the composite PK isn't migrated yet.
+      let { error } = await supabase.from('cycles').upsert(cycleRows, { onConflict: 'user_id,cycle_id' });
+      if (error) ({ error } = await supabase.from('cycles').upsert(cycleRows, { onConflict: 'cycle_id' }));
       // If optional columns aren't migrated yet, retry without them.
       if (error) {
         const stripped = cycleRows.map((r) => {

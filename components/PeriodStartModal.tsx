@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { addPeriodStart, editPeriodStart, setPeriodEnd, clearPeriodEnd, deleteCycle, loadData, getActivePeriodCycle, periodName, type Cycle } from '@/lib/cycle';
 import { fetchFromSheet, saveToSheet } from '@/lib/data';
+import { isViewMode } from '@/lib/partners';
 
 function session() {
   try { return JSON.parse(localStorage.getItem('bloom_session') || '{}'); } catch { return {}; }
@@ -197,6 +198,9 @@ export default function PeriodStartModal({
         <span style={{ color: '#A56ABD', fontSize: 16 }}>›</span>
       </span>
     );
+
+  // Viewers are read-only — never render any period-logging trigger/modal.
+  if (isViewMode()) return null;
 
   return (
     <>
