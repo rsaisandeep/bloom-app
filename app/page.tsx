@@ -398,8 +398,8 @@ export default function HomePage() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
           <div
-            onClick={!hasCycles && loaded ? () => router.push('/onboarding') : undefined}
-            style={{ position: 'relative', flexShrink: 0, cursor: !hasCycles && loaded ? 'pointer' : 'default' }}
+            onClick={!hasCycles && loaded && !viewMode ? () => router.push('/onboarding') : undefined}
+            style={{ position: 'relative', flexShrink: 0, cursor: !hasCycles && loaded && !viewMode ? 'pointer' : 'default' }}
           >
             <svg width="120" height="120" style={{ display: 'block', transform: 'rotate(-90deg)' }}>
               <defs>
@@ -434,7 +434,7 @@ export default function HomePage() {
             <p style={{ margin: '0 0 2px', fontSize: 10, color: 'rgba(255,255,255,0.5)', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>CURRENT PHASE</p>
             <p style={{ margin: '0 0 5px', fontSize: 18, color: '#fff', fontWeight: 800, lineHeight: 1.2 }}>{meta.emoji} {meta.label}</p>
             <p style={{ margin: '0 0 14px', fontSize: 12, color: 'rgba(255,255,255,0.60)', lineHeight: 1.5 }}>
-              {!loaded ? '' : hasCycles ? meta.description : 'Add your last period date to unlock predictions.'}
+              {!loaded ? '' : hasCycles ? meta.description : viewMode ? `${getViewOwnerName() ?? 'Your partner'} hasn’t set up their cycle yet.` : 'Add your last period date to unlock predictions.'}
             </p>
             {hasCycles && predictions ? (
               <div className="pill" style={{ background: 'rgba(255,255,255,0.14)', padding: '7px 14px', display: 'inline-flex', alignItems: 'center', gap: 6, maxWidth: '100%' }}>
@@ -449,7 +449,7 @@ export default function HomePage() {
                       : 'Period may be due'}
                 </span>
               </div>
-            ) : !hasCycles ? (
+            ) : !hasCycles && !viewMode ? (
               <Link href="/onboarding" className="pill" style={{ display: 'inline-block', background: 'rgba(255,255,255,0.18)', padding: '7px 14px', fontSize: 12, color: '#fff', fontWeight: 700, textDecoration: 'none' }}>
                 Set up cycle →
               </Link>
@@ -713,7 +713,9 @@ export default function HomePage() {
         <div>
           <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#1C0B2E' }}>Today&apos;s focus</p>
           <p style={{ margin: '1px 0 0', fontSize: 12, color: '#8A6A9A' }}>
-            {todayLog
+            {viewMode
+              ? `${done.length}/${actions.length} done · ${meta.label} phase`
+              : todayLog
               ? `${done.length}/${actions.length} done · ${meta.label} phase`
               : tasksFromYesterday
                 ? 'Based on yesterday — log to refresh'
