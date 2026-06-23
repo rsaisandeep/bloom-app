@@ -37,12 +37,13 @@ export default function LoginPage() {
 
     try {
       if (isReg) {
-        const r = await apiRegister(name.trim(), username.trim().toLowerCase(), email.trim().toLowerCase(), password);
+        const r = await apiRegister(name.trim(), username.trim().toLowerCase(), email.trim().toLowerCase(), password, asViewer ? 'viewer' : 'tracker');
         if (!r.ok) { setMsg({ text: r.error ?? 'Something went wrong.', err: true }); setLoading(false); return; }
         if (r.session) {
           // Email confirmation disabled — already signed in. Celebrate, then go.
+          // Viewers skip cycle onboarding and go pick a partner to view.
           setMsg({ text: '🌸 Hurray! You’ve registered with Bloom', err: false });
-          setTimeout(() => router.push('/onboarding'), 1500);
+          setTimeout(() => router.push(asViewer ? '/profile' : '/onboarding'), 1500);
         } else {
           setMsg({ text: 'Account created! Check your email to verify before logging in.', err: false });
           setLoading(false);
@@ -245,22 +246,22 @@ export default function LoginPage() {
               />
             </div>
 
-            {!isReg && (
-              <button type="button" onClick={() => setAsViewer(v => !v)} style={{
-                display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 'none',
-                padding: '2px 0', cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font-outfit)',
+            <button type="button" onClick={() => setAsViewer(v => !v)} style={{
+              display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 'none',
+              padding: '2px 0', cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font-outfit)',
+            }}>
+              <span style={{
+                width: 20, height: 20, borderRadius: 6, flexShrink: 0,
+                border: asViewer ? 'none' : '2px solid rgba(165,106,189,0.5)',
+                background: asViewer ? '#A56ABD' : 'transparent',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
-                <span style={{
-                  width: 20, height: 20, borderRadius: 6, flexShrink: 0,
-                  border: asViewer ? 'none' : '2px solid rgba(165,106,189,0.5)',
-                  background: asViewer ? '#A56ABD' : 'transparent',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  {asViewer && <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-                </span>
-                <span style={{ fontSize: 13, color: 'rgba(231,219,239,0.75)' }}>Log in as partner (view only)</span>
-              </button>
-            )}
+                {asViewer && <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+              </span>
+              <span style={{ fontSize: 13, color: 'rgba(231,219,239,0.75)' }}>
+                {isReg ? "I'm a partner (view only — no cycle setup)" : 'Log in as partner (view only)'}
+              </span>
+            </button>
 
             {msg && (
               <p style={{

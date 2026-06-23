@@ -41,7 +41,18 @@ export async function getMyProfile(): Promise<{ handle: string | null; accountTy
   };
 }
 
+// Cached locally so onboarding/home can branch synchronously without a round-trip.
+const TYPE_KEY = 'bloom_account_type';
+export function getCachedAccountType(): AccountType {
+  if (typeof window === 'undefined') return 'tracker';
+  return (localStorage.getItem(TYPE_KEY) as AccountType) ?? 'tracker';
+}
+export function cacheAccountType(type: AccountType) {
+  if (typeof window !== 'undefined') localStorage.setItem(TYPE_KEY, type);
+}
+
 export async function setAccountType(type: AccountType) {
+  cacheAccountType(type);
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
   await supabase.from('profiles').update({ account_type: type }).eq('id', user.id);

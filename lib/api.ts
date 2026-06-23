@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { cacheAccountType, type AccountType } from './partners';
 
 // Username rules: lowercase letters/digits/underscore, 3–20 chars.
 export const HANDLE_RE = /^[a-z0-9_]{3,20}$/;
@@ -10,7 +11,7 @@ export async function isHandleAvailable(handle: string): Promise<boolean> {
   return data === true;
 }
 
-export async function apiRegister(name: string, handle: string, email: string, password: string) {
+export async function apiRegister(name: string, handle: string, email: string, password: string, accountType: AccountType = 'tracker') {
   const h = handle.trim().toLowerCase();
   if (!HANDLE_RE.test(h)) return { ok: false, error: 'Username must be 3–20 letters, numbers or underscores.' };
   if (!(await isHandleAvailable(h))) return { ok: false, error: 'That username is taken.' };
@@ -18,10 +19,10 @@ export async function apiRegister(name: string, handle: string, email: string, p
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    // Stash handle in user_metadata so it survives until the profile row is
-    // created — when email confirmation is ON there's no session at signup,
-    // so the profile (and its handle) is written on first login instead.
-    options: { data: { name, handle: h } },
+    // Stash handle + account_type in user_metadata so they survive until the
+    // profile row is created — when email confirmation is ON there's no session
+    // at signup, so the profile is written on first login instead.
+    options: { data: { name, handle: h, account_type: accountType } },
   });
   if (error) {
     const msg = (error.message ?? '').toLowerCase();
@@ -38,7 +39,8 @@ export async function apiRegister(name: string, handle: string, email: string, p
   // (When confirmation is on, data.session is null and the profile is created
   // on first login instead — RLS blocks the insert without a session.)
   if (data.session) {
-    await supabase.from('profiles').insert({ id: data.user.id, username: email, handle: h });
+    await supabase.from('profiles').insert({ id: data.user.id, username: email, handle: h, account_type: accountType });
+    cacheAccountType(accountType);
   }
   return { ok: true, session: !!data.session };
 }
@@ -55,15 +57,18 @@ async function afterSignIn(): Promise<{ handle: string | null }> {
 
   let handle: string | null = null;
   if (user) {
-    const { data: existing } = await supabase.from('profiles').select('handle').eq('id', user.id).maybeSingle();
+    const { data: existing } = await supabase.from('profiles').select('handle, account_type').eq('id', user.id).maybeSingle();
     if (existing) {
       handle = existing.handle ?? null;
+      cacheAccountType((existing.account_type as AccountType) ?? 'tracker');
     } else {
       // First login after confirmed signup: create the profile, carrying the
-      // handle the user chose at registration (stored in user_metadata).
+      // handle + account_type the user chose at registration (in user_metadata).
       const metaHandle = (user.user_metadata?.handle as string | undefined) ?? null;
-      await supabase.from('profiles').insert({ id: user.id, username: email, handle: metaHandle });
+      const metaType = (user.user_metadata?.account_type as AccountType | undefined) ?? 'tracker';
+      await supabase.from('profiles').insert({ id: user.id, username: email, handle: metaHandle, account_type: metaType });
       handle = metaHandle;
+      cacheAccountType(metaType);
     }
   }
   return { handle };
