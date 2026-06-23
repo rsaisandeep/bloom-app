@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
-import { loadData, saveLog, startPeriod, isNewPeriodStart, getCurrentPhase, isLogInputRelevant, tracksFertility, PHASE_LOG_RELEVANCE, type DayLog, type Phase } from '@/lib/cycle';
+import { loadData, saveLog, startPeriod, isNewPeriodStart, getCurrentPhase, isLogInputRelevant, tracksFertility, PHASE_LOG_RELEVANCE, cachedHandle, type DayLog, type Phase } from '@/lib/cycle';
 import { appDayKey } from '@/lib/day';
 import { fetchFromSheet, saveToSheet } from '@/lib/data';
 import { isViewMode } from '@/lib/partners';
@@ -121,7 +121,7 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
       const data = loadData();
       if (isNewPeriodStart(data, date)) {
         const session = (() => { try { return JSON.parse(localStorage.getItem('bloom_session') || '{}'); } catch { return {}; } })();
-        startPeriod(date, session.username || 'me');
+        startPeriod(date, session.username || cachedHandle());
       }
     }
   }

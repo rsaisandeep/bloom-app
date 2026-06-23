@@ -178,6 +178,15 @@ function viewMode(): boolean {
   return typeof window !== "undefined" && !!localStorage.getItem("bloom_view_owner");
 }
 
+// The signed-in user's handle, used to namespace generated cycle ids
+// (`<handle>_<date>`). Falls back to "me" only for legacy/unknown accounts.
+// A handle-prefixed id is globally distinct, so even on an un-migrated client
+// two users can never collide on the same generated id.
+export function cachedHandle(): string {
+  if (typeof window === "undefined") return "me";
+  return localStorage.getItem("bloom_username") || "me";
+}
+
 // ── Local cache (mirror of sheet) ──
 export function loadData(): BloomData {
   if (typeof window === "undefined") return emptyData();
@@ -281,7 +290,7 @@ function recomputeCycles(data: BloomData) {
 
 // Insert a period start at any date (today or back-dated). Chronologically
 // correct and idempotent — ignores a duplicate within a day of an existing one.
-export function addPeriodStart(date: string, username = "me") {
+export function addPeriodStart(date: string, username = cachedHandle()) {
   if (viewMode()) return;
   if (date > todayLocal()) return;
   const data = loadData();
@@ -297,7 +306,7 @@ export function addPeriodStart(date: string, username = "me") {
 export const startPeriod = addPeriodStart;
 
 // Change an existing period's start date.
-export function editPeriodStart(id: string, newDate: string, username = "me") {
+export function editPeriodStart(id: string, newDate: string, username = cachedHandle()) {
   if (viewMode()) return;
   const data = loadData();
   const c = data.cycles.find((x) => x.id === id);

@@ -240,22 +240,29 @@ export default function LoginPage() {
             </div>
 
             {isReg && (
-              <button type="button" onClick={() => setAsViewer(v => !v)} style={{
-                display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 'none',
-                padding: '2px 0', cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font-outfit)',
-              }}>
-                <span style={{
-                  width: 20, height: 20, borderRadius: 6, flexShrink: 0,
-                  border: asViewer ? 'none' : '2px solid rgba(165,106,189,0.5)',
-                  background: asViewer ? '#A56ABD' : 'transparent',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  {asViewer && <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-                </span>
-                <span style={{ fontSize: 13, color: 'rgba(231,219,239,0.75)' }}>
-                  I&apos;m a partner (view only — no cycle setup)
-                </span>
-              </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label style={{ color: 'rgba(231,219,239,0.65)', fontSize: 13, fontWeight: 500 }}>Account type</label>
+                <select
+                  value={asViewer ? 'viewer' : 'tracker'}
+                  onChange={e => setAsViewer(e.target.value === 'viewer')}
+                  style={{
+                    ...fieldStyle,
+                    appearance: 'none',
+                    WebkitAppearance: 'none',
+                    cursor: 'pointer',
+                    backgroundImage: 'url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'8\' viewBox=\'0 0 12 8\'><path d=\'M1 1l5 5 5-5\' stroke=\'%23A56ABD\' stroke-width=\'2\' fill=\'none\' stroke-linecap=\'round\' stroke-linejoin=\'round\'/></svg>")',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 14px center',
+                    paddingRight: 36,
+                  }}
+                >
+                  <option value="tracker" style={{ color: '#1C0B2E' }}>Tracker — log &amp; track my cycle</option>
+                  <option value="viewer" style={{ color: '#1C0B2E' }}>Partner — view only (no cycle setup)</option>
+                </select>
+                <p style={{ margin: 0, fontSize: 11.5, color: 'rgba(231,219,239,0.45)' }}>
+                  This is permanent and can&apos;t be changed later.
+                </p>
+              </div>
             )}
 
             {msg && (

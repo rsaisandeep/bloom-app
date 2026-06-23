@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { addPeriodStart, editPeriodStart, setPeriodEnd, clearPeriodEnd, deleteCycle, loadData, getActivePeriodCycle, periodName, type Cycle } from '@/lib/cycle';
+import { addPeriodStart, editPeriodStart, setPeriodEnd, clearPeriodEnd, deleteCycle, loadData, getActivePeriodCycle, periodName, cachedHandle, type Cycle } from '@/lib/cycle';
 import { fetchFromSheet, saveToSheet } from '@/lib/data';
 import { isViewMode } from '@/lib/partners';
 
@@ -106,7 +106,7 @@ export default function PeriodStartModal({
 
   async function confirm() {
     setSaving(true);
-    const uname = session().username || 'me';
+    const uname = session().username || cachedHandle();
 
     if (startDate) {
       if (activeId) {
