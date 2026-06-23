@@ -8,15 +8,23 @@ import { fetchFromSheet } from '@/lib/data';
 // hasn't been added & accepted into a partner's data yet. Pending invites can be
 // accepted right here; accepting enters read-only view mode for that partner.
 export default function ViewerWaiting() {
-  const [links, setLinks] = useState<PartnerLink[]>([]);
+  const [links, setLinks] = useState<PartnerLink[] | null>(null); // null = still loading
+  const [restoring, setRestoring] = useState(false);
 
   function load() {
-    listPartners().then(({ iCanView }) => setLinks(iCanView));
+    listPartners().then(({ iCanView }) => {
+      setLinks(iCanView);
+      // Auto-resume: logout wipes the local view selection, but the accepted link
+      // lives in the DB. If there's exactly one accepted partner, re-enter their
+      // view automatically instead of making the user pick again every login.
+      const acc = iCanView.filter((p) => p.status === 'accepted');
+      if (acc.length === 1) { setRestoring(true); enterView(acc[0]); }
+    });
   }
-  useEffect(load, []);
+  useEffect(() => { load(); }, []);
 
-  const pending = links.filter((p) => p.status === 'pending');
-  const accepted = links.filter((p) => p.status === 'accepted');
+  const pending = (links ?? []).filter((p) => p.status === 'pending');
+  const accepted = (links ?? []).filter((p) => p.status === 'accepted');
 
   async function enterView(p: PartnerLink) {
     setViewOwner(p.userId, p.name || p.handle || 'partner');
@@ -30,6 +38,19 @@ export default function ViewerWaiting() {
   async function decline(inv: PartnerLink) {
     await respondInvite(inv.id, false);
     load();
+  }
+
+  // While loading the link list (or auto-resuming a single partner), show a quiet
+  // placeholder so the "ask your partner" message doesn't flash.
+  if (links === null || restoring) {
+    return (
+      <>
+        <TopBar />
+        <div style={{ minHeight: 'calc(100dvh - 120px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <p style={{ fontSize: 14, color: '#8A6A9A' }}>Loading…</p>
+        </div>
+      </>
+    );
   }
 
   return (
