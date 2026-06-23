@@ -41,6 +41,7 @@ const GOALS = [
 export default function ProfilePage() {
   const router = useRouter();
   const [username, setUsername] = useState('');
+  const [handle, setHandle] = useState<string | null>(null);
   const [pcos, setPcos] = useState(false);
   const [paused, setPausedState] = useState(false);
   const [goals, setGoalsState] = useState<string[]>([]);
@@ -65,7 +66,7 @@ export default function ProfilePage() {
 
   const refreshPartners = useCallback(async () => {
     const prof = await getMyProfile();
-    if (prof) { setAccountTypeState(prof.accountType); setGenderState(prof.gender ?? ''); }
+    if (prof) { setAccountTypeState(prof.accountType); setGenderState(prof.gender ?? ''); setHandle(prof.handle); }
     const { myViewers, iCanView } = await listPartners();
     setMyViewers(myViewers);
     setICanView(iCanView);
@@ -259,6 +260,7 @@ export default function ProfilePage() {
           {initial}
         </div>
         <p style={{ margin: '0 0 2px', fontSize: 20, fontWeight: 700, color: '#1C0B2E' }}>{username}</p>
+        {handle && <p style={{ margin: '0 0 2px', fontSize: 13, fontWeight: 600, color: '#6E3482' }}>@{handle}</p>}
         <p style={{ margin: 0, fontSize: 13, color: '#8A6A9A' }}>Bloom member</p>
       </div>
 
