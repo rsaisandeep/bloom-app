@@ -85,9 +85,11 @@ export default function HomePage() {
     if (isWaitingViewer()) { setLoaded(true); return; }
 
     const cached = sanitize(loadData());
-    // Redirect new users to onboarding immediately from cache
-    if (!cached.settings.onboardingComplete) {
-      fetchFromSheet(getViewOwner() ?? undefined).then(d => {
+    // Redirect new users to onboarding immediately from cache. NEVER for a
+    // viewer in view mode — they're looking at a partner's data, not their own,
+    // so they must never be sent into cycle setup.
+    if (!isViewMode() && !cached.settings.onboardingComplete) {
+      fetchFromSheet().then(d => {
         if (!d.settings.onboardingComplete) router.push('/onboarding');
         else { setData(d); setLoaded(true); }
       });

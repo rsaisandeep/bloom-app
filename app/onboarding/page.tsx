@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { loadData } from '@/lib/cycle';
 import { saveToSheet } from '@/lib/data';
-import { setGender as saveGender } from '@/lib/partners';
+import { setGender as saveGender, isViewer } from '@/lib/partners';
 
 const GENDERS = [
   { id: 'female', label: 'Female' },
@@ -83,6 +83,9 @@ export default function OnboardingPage() {
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  // Viewers (partner accounts) have no cycle of their own — never let them onboard.
+  useEffect(() => { if (isViewer()) router.replace('/'); }, [router]);
 
   // Step 1
   const [age, setAge] = useState('');
