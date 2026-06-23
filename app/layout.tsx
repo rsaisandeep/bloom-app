@@ -6,6 +6,7 @@ import NavWrapper from "@/components/NavWrapper";
 import InstallPrompt from "@/components/InstallPrompt";
 import PullToRefresh from "@/components/PullToRefresh";
 import PageTransition from "@/components/PageTransition";
+import AnimatedBackground from "@/components/AnimatedBackground";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -35,6 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${outfit.variable} h-full`}>
       <body className="min-h-full flex flex-col max-w-md mx-auto relative">
+        <AnimatedBackground />
         <AuthGuard>
           <NavWrapper />
           <PullToRefresh>

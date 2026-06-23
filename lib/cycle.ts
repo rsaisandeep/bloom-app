@@ -202,6 +202,9 @@ export function loadData(): BloomData {
 
 export function saveData(data: BloomData) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  // Let same-tab listeners (e.g. the phase-tinted background) re-derive state.
+  // `storage` events don't fire in the tab that wrote, so we emit our own.
+  if (typeof window !== "undefined") window.dispatchEvent(new Event("bloom:data"));
 }
 
 // ── Mutations ──
@@ -553,4 +556,39 @@ export const PHASE_META: Record<Phase, { label: string; color: string; bg: strin
   follicular: { label: "Follicular", color: "text-violet-600", bg: "bg-violet-50", emoji: "🌱", description: "Energy is rising. A great time to start new things." },
   ovulation: { label: "Ovulation", color: "text-amber-600", bg: "bg-amber-50", emoji: "🌕", description: "Peak energy and confidence. Your power window." },
   luteal: { label: "Luteal", color: "text-indigo-600", bg: "bg-indigo-50", emoji: "🌘", description: "Turn inward. Nourish and prepare." },
+};
+
+// Full-screen accent per phase — the Apple-Sports-style background that the app
+// crossfades to as the cycle phase changes. `tint` is the hero color; `gradient`
+// is layered over the base body gradient by <AnimatedBackground>. Kept subtle so
+// foreground glass cards stay legible.
+export const PHASE_ACCENT: Record<Phase, { tint: string; gradient: string }> = {
+  menstrual: {
+    tint: "#F43F5E",
+    gradient:
+      "radial-gradient(1000px 620px at 85% -12%, rgba(244,63,94,0.22), transparent 60%)," +
+      "radial-gradient(760px 640px at 8% 108%, rgba(244,63,94,0.12), transparent 55%)," +
+      "linear-gradient(160deg, #F7E9EE 0%, #F0DCE3 100%)",
+  },
+  follicular: {
+    tint: "#7C3AED",
+    gradient:
+      "radial-gradient(1000px 620px at 85% -12%, rgba(124,58,237,0.20), transparent 60%)," +
+      "radial-gradient(760px 640px at 8% 108%, rgba(124,58,237,0.11), transparent 55%)," +
+      "linear-gradient(160deg, #EEE8F8 0%, #E5DCF2 100%)",
+  },
+  ovulation: {
+    tint: "#D97706",
+    gradient:
+      "radial-gradient(1000px 620px at 85% -12%, rgba(217,119,6,0.20), transparent 60%)," +
+      "radial-gradient(760px 640px at 8% 108%, rgba(245,158,11,0.12), transparent 55%)," +
+      "linear-gradient(160deg, #F6EEE2 0%, #F1E6D6 100%)",
+  },
+  luteal: {
+    tint: "#4F46E5",
+    gradient:
+      "radial-gradient(1000px 620px at 85% -12%, rgba(79,70,229,0.20), transparent 60%)," +
+      "radial-gradient(760px 640px at 8% 108%, rgba(99,102,241,0.11), transparent 55%)," +
+      "linear-gradient(160deg, #E9E9F6 0%, #DEDEF1 100%)",
+  },
 };

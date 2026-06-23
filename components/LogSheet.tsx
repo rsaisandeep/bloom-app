@@ -1,6 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { AnimatePresence, motion } from 'motion/react';
+import { spring } from '@/lib/motion';
 import { useRouter } from 'next/navigation';
 import { loadData, saveLog, startPeriod, isNewPeriodStart, getCurrentPhase, isLogInputRelevant, tracksFertility, PHASE_LOG_RELEVANCE, cachedHandle, type DayLog, type Phase } from '@/lib/cycle';
 import { appDayKey } from '@/lib/day';
@@ -215,26 +217,36 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
   );
 
   // Viewers are read-only — never render the log sheet, whatever opens it.
-  if (!open || isViewMode()) return null;
+  if (isViewMode()) return null;
 
   return createPortal(
-    <>
-      <div
+    <AnimatePresence>
+      {open && (
+        <>
+      <motion.div
         onClick={onClose}
         onTouchMove={(e) => e.preventDefault()}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
         style={{
           position: 'fixed', inset: 0, background: 'rgba(28,11,46,0.45)',
           backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', zIndex: 300,
         }}
       />
-      <div style={{
-        position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+      <motion.div
+        initial={{ y: '100%' }}
+        animate={{ y: 0 }}
+        exit={{ y: '100%' }}
+        transition={spring}
+        style={{
+        position: 'fixed', bottom: 0, left: '50%', x: '-50%',
         width: '100%', maxWidth: 448,
         background: 'linear-gradient(180deg,#EEE8F5 0%,#E4DCF0 100%)',
         borderRadius: '28px 28px 0 0', zIndex: 301,
         height: '90dvh', overflowY: 'auto',
         overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch',
-        animation: 'slideUp .32s cubic-bezier(.34,1.2,.64,1) both',
         paddingBottom: 'calc(20px + env(safe-area-inset-bottom))',
       }}>
 
@@ -463,8 +475,10 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
             </>
           )}
         </div>
-      </div>
-    </>,
+      </motion.div>
+        </>
+      )}
+    </AnimatePresence>,
     document.body
   );
 }

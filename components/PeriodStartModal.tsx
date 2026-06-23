@@ -1,6 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { AnimatePresence, motion } from 'motion/react';
+import { spring } from '@/lib/motion';
 import { addPeriodStart, editPeriodStart, setPeriodEnd, clearPeriodEnd, deleteCycle, loadData, getActivePeriodCycle, periodName, cachedHandle, type Cycle } from '@/lib/cycle';
 import { fetchFromSheet, saveToSheet } from '@/lib/data';
 import { isViewMode } from '@/lib/partners';
@@ -211,17 +213,30 @@ export default function PeriodStartModal({
         {trigger}
       </button>
 
-      {open && mounted && createPortal(
-        <div onClick={() => setOpen(false)} style={{
+      {mounted && createPortal(
+        <AnimatePresence>
+        {open && (
+        <motion.div
+          onClick={() => setOpen(false)}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          style={{
           position: 'fixed', inset: 0, zIndex: 500, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
           background: 'rgba(28,11,46,0.4)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
-          animation: 'rise .2s ease both',
         }}>
-          <div onClick={(e) => e.stopPropagation()} style={{
+          <motion.div
+            onClick={(e) => e.stopPropagation()}
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={spring}
+            style={{
             width: '100%', maxWidth: 448, background: 'rgba(255,255,255,0.92)',
             backdropFilter: 'blur(40px) saturate(180%)', WebkitBackdropFilter: 'blur(40px) saturate(180%)',
             borderRadius: '28px 28px 0 0', padding: '24px 20px calc(28px + env(safe-area-inset-bottom))',
-            boxShadow: '0 -10px 48px rgba(110,52,130,0.22)', animation: 'floatIn .3s cubic-bezier(.22,.8,.3,1) both',
+            boxShadow: '0 -10px 48px rgba(110,52,130,0.22)',
           }}>
             <div style={{ width: 40, height: 4, borderRadius: 2, background: 'rgba(165,106,189,0.3)', margin: '0 auto 18px' }} />
 
@@ -315,8 +330,10 @@ export default function PeriodStartModal({
                 boxShadow: '0 6px 20px rgba(110,52,130,0.35)', opacity: (saving || fetching) ? 0.6 : 1,
               }}>{saving ? 'Saving…' : 'Confirm'}</button>
             </div>
-          </div>
-        </div>,
+          </motion.div>
+        </motion.div>
+        )}
+        </AnimatePresence>,
         document.body
       )}
     </>
