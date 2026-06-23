@@ -4,6 +4,14 @@ import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { loadData } from '@/lib/cycle';
 import { saveToSheet } from '@/lib/data';
+import { setGender as saveGender } from '@/lib/partners';
+
+const GENDERS = [
+  { id: 'female', label: 'Female' },
+  { id: 'male', label: 'Male' },
+  { id: 'other', label: 'Other' },
+  { id: 'prefer_not', label: 'Prefer not to say' },
+];
 
 const CONDITIONS: { id: string; label: string; info?: { title: string; body: string; cycle: string } }[] = [
   { id: 'none', label: 'None' },
@@ -78,6 +86,7 @@ export default function OnboardingPage() {
 
   // Step 1
   const [age, setAge] = useState('');
+  const [gender, setGender] = useState('female');
   const [conditions, setConditions] = useState<string[]>([]);
   const [birthControl, setBirthControl] = useState('none');
   const [goals, setGoals] = useState<string[]>([]);
@@ -147,6 +156,7 @@ export default function OnboardingPage() {
     };
 
     await saveToSheet(data);
+    saveGender(gender).catch(() => {}); // profiles row — best-effort
     router.push('/');
   }
 
@@ -191,6 +201,16 @@ export default function OnboardingPage() {
               <p style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700, color: '#49225B' }}>How old are you?</p>
               <input type="number" min="10" max="60" value={age} onChange={e => { setAge(e.target.value); setError(''); }}
                 placeholder="e.g. 26" style={inputBase} />
+            </div>
+
+            {/* Gender */}
+            <div className="glass-card" style={{ padding: 20 }}>
+              <p style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700, color: '#49225B' }}>Gender</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {GENDERS.map(g => (
+                  <button key={g.id} onClick={() => setGender(g.id)} style={pill(gender === g.id)}>{g.label}</button>
+                ))}
+              </div>
             </div>
 
             {/* Health conditions */}

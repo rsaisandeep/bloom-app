@@ -27,8 +27,10 @@ async function getUserId(): Promise<string | null> {
   return data.user?.id ?? null;
 }
 
-export async function fetchFromSheet(): Promise<BloomData> {
-  const userId = await getUserId();
+// `targetUserId` lets a viewer load a partner's data instead of their own —
+// RLS only returns rows the viewer is an accepted partner for (read-only).
+export async function fetchFromSheet(targetUserId?: string): Promise<BloomData> {
+  const userId = targetUserId ?? await getUserId();
   if (!userId) return loadData();
 
   try {

@@ -14,6 +14,7 @@ import { localDateStr, appDayKey } from '@/lib/day';
 import { useAppDay } from '@/lib/useAppDay';
 import { detectAnomalies, type Anomaly } from '@/lib/anomalies';
 import { getActiveNudge, dismissNudge, type Nudge } from '@/lib/nudges';
+import { isViewMode, getViewOwner, getViewOwnerName } from '@/lib/partners';
 import Hamburger from '@/components/Hamburger';
 import InfoModal from '@/components/InfoModal';
 import NotificationBell from '@/components/NotificationBell';
@@ -80,7 +81,7 @@ export default function HomePage() {
     const cached = sanitize(loadData());
     // Redirect new users to onboarding immediately from cache
     if (!cached.settings.onboardingComplete) {
-      fetchFromSheet().then(d => {
+      fetchFromSheet(getViewOwner() ?? undefined).then(d => {
         if (!d.settings.onboardingComplete) router.push('/onboarding');
         else { setData(d); setLoaded(true); }
       });
@@ -90,7 +91,7 @@ export default function HomePage() {
     setLoaded(true);
     const { phase: cachedPhase } = getCurrentPhase(cached);
     setNudge(getActiveNudge(cached, cachedPhase));
-    fetchFromSheet().then(d => {
+    fetchFromSheet(getViewOwner() ?? undefined).then(d => {
       setData(d);
       const { phase: freshPhase } = getCurrentPhase(d);
       setNudge(getActiveNudge(d, freshPhase));
@@ -126,7 +127,7 @@ export default function HomePage() {
   useEffect(() => {
     function onRefresh() {
       setData(sanitize(loadData()));
-      fetchFromSheet().then(setData);
+      fetchFromSheet(getViewOwner() ?? undefined).then(setData);
     }
     window.addEventListener('bloom:refresh', onRefresh);
     return () => window.removeEventListener('bloom:refresh', onRefresh);
@@ -268,10 +269,12 @@ export default function HomePage() {
     setDismissedAnomalies((prev) => new Set([...prev, type]));
   }
 
+  const viewMode = isViewMode();
+
   function refresh() {
     const d = sanitize(loadData());
     setData(d);
-    fetchFromSheet().then((fresh) => {
+    fetchFromSheet(getViewOwner() ?? undefined).then((fresh) => {
       setData(fresh);
       const { phase } = getCurrentPhase(fresh);
       setNudge(getActiveNudge(fresh, phase));
@@ -466,10 +469,24 @@ export default function HomePage() {
       </div>
       )}
 
+      {/* ── Partner view-only banner ── */}
+      {viewMode && (
+        <div className="anim-float" style={{
+          display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14,
+          padding: '12px 16px', borderRadius: 14,
+          background: 'rgba(110,52,130,0.1)', border: '1px solid rgba(110,52,130,0.25)',
+        }}>
+          <span style={{ fontSize: 16 }}>👀</span>
+          <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#6E3482', flex: 1 }}>
+            Viewing {getViewOwnerName()}’s cycle — read only. Manage in Profile.
+          </p>
+        </div>
+      )}
+
       {/* ── Period end / Period started prompts ── */}
-      {showPeriodEnd && <div className="anim-float" style={{ marginBottom: 14 }}><PeriodStartModal variant="card" label="Log period end" onDone={refresh} /></div>}
+      {showPeriodEnd && !viewMode && <div className="anim-float" style={{ marginBottom: 14 }}><PeriodStartModal variant="card" label="Log period end" onDone={refresh} /></div>}
       {/* ── Phase 3A: period end auto-fill banner ── */}
-      {showPeriodEndBanner && predictedEndDate && (
+      {showPeriodEndBanner && predictedEndDate && !viewMode && (
         <div className="anim-float" style={{ marginBottom: 14 }}>
           <PeriodStartModal
             variant="period-end-banner"
@@ -480,10 +497,10 @@ export default function HomePage() {
           />
         </div>
       )}
-      {showPeriodStart && <div className="anim-float" style={{ marginBottom: 14 }}><PeriodStartModal variant="card" label="Period started?" onDone={refresh} /></div>}
+      {showPeriodStart && !viewMode && <div className="anim-float" style={{ marginBottom: 14 }}><PeriodStartModal variant="card" label="Period started?" onDone={refresh} /></div>}
 
       {/* ── Late-period reminder ── */}
-      {lateInfo && (
+      {lateInfo && !viewMode && (
         <div className="glass-card anim-float shimmer-host" style={{
           padding: '14px 16px', marginBottom: 14,
           display: 'flex', alignItems: 'center', gap: 12,
@@ -576,7 +593,7 @@ export default function HomePage() {
       ))}
 
       {/* ── No-log nudge banner ── */}
-      {!paused && !todayLog && (
+      {!paused && !todayLog && !viewMode && (
         <button onClick={() => setShowLog(true)} style={{ width: '100%', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', display: 'block', marginBottom: 14 }}>
           <div className="glass-card anim-float shimmer-host" style={{
             padding: '14px 16px',
@@ -620,10 +637,12 @@ export default function HomePage() {
               }}>{streak}-day streak</span>
             )}
           </div>
-          <button onClick={() => setShowLog(true)} style={{
-            background: 'none', border: 'none', cursor: 'pointer', padding: '4px 10px',
-            fontSize: 12, fontWeight: 700, color: '#A56ABD', fontFamily: 'var(--font-outfit)',
-          }}>Edit ›</button>
+          {!viewMode && (
+            <button onClick={() => setShowLog(true)} style={{
+              background: 'none', border: 'none', cursor: 'pointer', padding: '4px 10px',
+              fontSize: 12, fontWeight: 700, color: '#A56ABD', fontFamily: 'var(--font-outfit)',
+            }}>Edit ›</button>
+          )}
         </div>
       )}
 

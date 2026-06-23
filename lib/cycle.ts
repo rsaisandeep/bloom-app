@@ -171,6 +171,13 @@ function syncAfterSave() {
   import("./sync").then((m) => m.syncToSheet()).catch(() => {});
 }
 
+// In partner view-mode the cache holds someone else's data — block every
+// mutation so a viewer can never edit it. (RLS also rejects the write; this is
+// the local-cache guard so the viewer's UI never shows phantom changes.)
+function viewMode(): boolean {
+  return typeof window !== "undefined" && !!localStorage.getItem("bloom_view_owner");
+}
+
 // ── Local cache (mirror of sheet) ──
 export function loadData(): BloomData {
   if (typeof window === "undefined") return emptyData();
@@ -190,6 +197,7 @@ export function saveData(data: BloomData) {
 
 // ── Mutations ──
 export function saveLog(log: DayLog) {
+  if (viewMode()) return;
   const data = loadData();
   const idx = data.logs.findIndex((l) => l.date === log.date);
   if (idx >= 0) data.logs[idx] = log;
@@ -213,6 +221,7 @@ export function saveLog(log: DayLog) {
 // Explicitly set the period end date. Targets the cycle with `id` if given,
 // otherwise the most recent cycle.
 export function setPeriodEnd(endDate: string, id?: string, source: 'manual' | 'computer' = 'manual') {
+  if (viewMode()) return;
   const data = loadData();
   if (data.cycles.length === 0) return;
   const c = id ? data.cycles.find((x) => x.id === id) : data.cycles[data.cycles.length - 1];
@@ -229,6 +238,7 @@ export function setPeriodEnd(endDate: string, id?: string, source: 'manual' | 'c
 // Remove the period end date. Targets the cycle with `id` if given, otherwise
 // the most recent cycle.
 export function clearPeriodEnd(id?: string) {
+  if (viewMode()) return;
   const data = loadData();
   if (data.cycles.length === 0) return;
   const c = id ? data.cycles.find((x) => x.id === id) : data.cycles[data.cycles.length - 1];
@@ -272,6 +282,7 @@ function recomputeCycles(data: BloomData) {
 // Insert a period start at any date (today or back-dated). Chronologically
 // correct and idempotent — ignores a duplicate within a day of an existing one.
 export function addPeriodStart(date: string, username = "me") {
+  if (viewMode()) return;
   if (date > todayLocal()) return;
   const data = loadData();
   if (data.cycles.some((c) => Math.abs(daysBetween(c.startDate, date)) <= 1)) return;
@@ -287,6 +298,7 @@ export const startPeriod = addPeriodStart;
 
 // Change an existing period's start date.
 export function editPeriodStart(id: string, newDate: string, username = "me") {
+  if (viewMode()) return;
   const data = loadData();
   const c = data.cycles.find((x) => x.id === id);
   if (!c) return;
@@ -307,6 +319,7 @@ export function getActivePeriodCycle(data: BloomData): Cycle | null {
 }
 
 export function deleteCycle(id: string) {
+  if (viewMode()) return;
   const data = loadData();
   data.cycles = data.cycles.filter((c) => c.id !== id);
   recomputeCycles(data);
@@ -326,6 +339,7 @@ export function getSettings(): BloomSettings {
   return loadData().settings ?? {};
 }
 export function updateSettings(patch: Partial<BloomSettings>) {
+  if (viewMode()) return;
   const data = loadData();
   data.settings = { ...data.settings, ...patch };
   saveData(data);

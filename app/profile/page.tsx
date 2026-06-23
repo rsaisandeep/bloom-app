@@ -12,6 +12,18 @@ import { buildLogsCSV, downloadCSV } from '@/lib/export';
 import { apiLogout } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 import { usePushNotifications } from '@/lib/usePushNotifications';
+import {
+  getMyProfile, setAccountType, setGender, listPartners, invitePartner,
+  respondInvite, removeLink, setViewOwner, clearViewOwner, isViewMode, getViewOwnerName,
+  type AccountType, type PartnerLink,
+} from '@/lib/partners';
+
+const GENDERS = [
+  { id: 'female', label: 'Female' },
+  { id: 'male', label: 'Male' },
+  { id: 'other', label: 'Other' },
+  { id: 'prefer_not', label: 'Prefer not to say' },
+];
 
 const NOTIF_CATEGORIES = [
   { id: 'log_reminder', label: 'Log reminder', sub: 'Daily nudge to log your symptoms' },
@@ -41,6 +53,54 @@ export default function ProfilePage() {
   const [deleteError, setDeleteError] = useState('');
   const { status: notifStatus, subscribe: notifSubscribe, unsubscribe: notifUnsubscribe } = usePushNotifications();
   const [categories, setCategories] = useState<string[]>(['log_reminder', 'period_soon', 'cycle_update']);
+
+  // Partner mode
+  const [accountType, setAccountTypeState] = useState<AccountType>('tracker');
+  const [gender, setGenderState] = useState<string>('');
+  const [myViewers, setMyViewers] = useState<PartnerLink[]>([]);
+  const [iCanView, setICanView] = useState<PartnerLink[]>([]);
+  const [inviteHandle, setInviteHandle] = useState('');
+  const [partnerMsg, setPartnerMsg] = useState<{ text: string; err: boolean } | null>(null);
+  const [viewing, setViewing] = useState(false);
+
+  const refreshPartners = useCallback(async () => {
+    const prof = await getMyProfile();
+    if (prof) { setAccountTypeState(prof.accountType); setGenderState(prof.gender ?? ''); }
+    const { myViewers, iCanView } = await listPartners();
+    setMyViewers(myViewers);
+    setICanView(iCanView);
+  }, []);
+
+  async function changeAccountType(type: AccountType) {
+    setAccountTypeState(type);
+    await setAccountType(type);
+  }
+  async function changeGender(g: string) {
+    setGenderState(g);
+    await setGender(g);
+  }
+  async function sendInvite() {
+    const h = inviteHandle.trim().toLowerCase();
+    if (!h) return;
+    setPartnerMsg({ text: 'Sending…', err: false });
+    const r = await invitePartner(h);
+    if (r.ok) { setPartnerMsg({ text: 'Invite sent — they must accept.', err: false }); setInviteHandle(''); refreshPartners(); }
+    else setPartnerMsg({ text: r.error ?? 'Could not send.', err: true });
+  }
+  async function accept(link: PartnerLink) { await respondInvite(link.id, true); refreshPartners(); }
+  async function decline(link: PartnerLink) { await respondInvite(link.id, false); refreshPartners(); }
+  async function unlink(link: PartnerLink) { await removeLink(link.id); refreshPartners(); }
+  async function viewPartner(link: PartnerLink) {
+    setViewOwner(link.userId, link.name || link.handle || 'partner');
+    await fetchFromSheet(link.userId);
+    router.push('/');
+  }
+  async function exitView() {
+    clearViewOwner();
+    await fetchFromSheet(); // reload my own data
+    setViewing(false);
+    router.push('/');
+  }
 
   function syncLocal() {
     const s = getSettings();
@@ -101,10 +161,12 @@ export default function ProfilePage() {
   useEffect(() => {
     const u = localStorage.getItem('bloom_username');
     if (u) setUsername(u);
+    setViewing(isViewMode());
     syncLocal();                          // instant from cache
-    fetchFromSheet().then(syncLocal);     // then sheet truth
-
-  }, []);
+    // In view mode the cache is the partner's data — don't overwrite it with mine.
+    if (!isViewMode()) fetchFromSheet().then(syncLocal);
+    refreshPartners();
+  }, [refreshPartners]);
 
   function togglePcos() {
     const next = !pcos;
@@ -166,6 +228,23 @@ export default function ProfilePage() {
       <h1 style={{ margin: '0 0 24px', fontSize: 26, fontWeight: 800, color: '#1C0B2E', letterSpacing: -0.5, textAlign: 'center' }}>
         Profile
       </h1>
+
+      {/* View-mode banner */}
+      {viewing && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+          padding: '12px 16px', marginBottom: 12, borderRadius: 14,
+          background: 'rgba(110,52,130,0.1)', border: '1px solid rgba(110,52,130,0.25)',
+        }}>
+          <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#6E3482' }}>
+            👀 Viewing {getViewOwnerName()}’s data — read only
+          </p>
+          <button onClick={exitView} style={{
+            padding: '7px 12px', borderRadius: 10, border: 'none', cursor: 'pointer',
+            background: '#6E3482', color: '#fff', fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-outfit)',
+          }}>Exit</button>
+        </div>
+      )}
 
       {/* Avatar */}
       <div className="glass-card" style={{ padding: 24, textAlign: 'center', marginBottom: 12 }}>
@@ -357,6 +436,114 @@ export default function ProfilePage() {
             );
           })}
         </div>
+      </div>
+
+      {/* Partner mode */}
+      <div className="glass-card" style={{ padding: '16px 18px', marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12 }}>
+          <span style={{ fontSize: 18, marginTop: 1 }}>👥</span>
+          <div>
+            <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#1C0B2E' }}>Partner mode</p>
+            <p style={{ margin: '2px 0 0', fontSize: 12, color: '#8A6A9A', lineHeight: 1.45 }}>
+              Share read-only access with a partner, or view a partner’s cycle. They can see, never edit.
+            </p>
+          </div>
+        </div>
+
+        {/* Account type */}
+        <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 700, color: '#49225B' }}>I am a…</p>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+          {(['tracker', 'viewer'] as AccountType[]).map(t => {
+            const on = accountType === t;
+            return (
+              <button key={t} onClick={() => changeAccountType(t)} style={{
+                flex: 1, padding: '10px', borderRadius: 12, cursor: 'pointer', fontFamily: 'var(--font-outfit)',
+                border: `1.5px solid ${on ? '#6E3482' : 'rgba(165,106,189,0.25)'}`,
+                background: on ? 'rgba(110,52,130,0.12)' : 'transparent',
+                color: on ? '#6E3482' : '#49225B', fontSize: 13, fontWeight: on ? 700 : 500,
+              }}>{t === 'tracker' ? 'Tracker' : 'Viewer (partner)'}</button>
+            );
+          })}
+        </div>
+
+        {/* Gender */}
+        <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 700, color: '#49225B' }}>Gender</p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
+          {GENDERS.map(g => {
+            const on = gender === g.id;
+            return (
+              <button key={g.id} onClick={() => changeGender(g.id)} style={{
+                padding: '7px 12px', borderRadius: 999, cursor: 'pointer', fontFamily: 'var(--font-outfit)',
+                border: `1.5px solid ${on ? '#6E3482' : 'rgba(165,106,189,0.25)'}`,
+                background: on ? 'rgba(110,52,130,0.12)' : 'transparent',
+                color: on ? '#6E3482' : '#49225B', fontSize: 12, fontWeight: on ? 700 : 500,
+              }}>{g.label}</button>
+            );
+          })}
+        </div>
+
+        {/* Invite a viewer by username */}
+        <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 700, color: '#49225B' }}>Add a partner who can view my data</p>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input value={inviteHandle} onChange={e => { setInviteHandle(e.target.value); setPartnerMsg(null); }}
+            placeholder="their username" autoCapitalize="none"
+            style={{
+              flex: 1, background: 'rgba(255,255,255,0.55)', border: '1px solid rgba(165,106,189,0.25)',
+              borderRadius: 12, padding: '10px 12px', color: '#1C0B2E', fontSize: 14, outline: 'none',
+              fontFamily: 'var(--font-outfit)', boxSizing: 'border-box',
+            }} />
+          <button onClick={sendInvite} style={{
+            padding: '10px 16px', borderRadius: 12, border: 'none', cursor: 'pointer',
+            background: 'linear-gradient(135deg,#6E3482,#A56ABD)', color: '#fff',
+            fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-outfit)', flexShrink: 0,
+          }}>Add</button>
+        </div>
+        {partnerMsg && <p style={{ margin: '8px 0 0', fontSize: 12, color: partnerMsg.err ? '#dc2626' : '#6E3482' }}>{partnerMsg.text}</p>}
+
+        {/* People who can view MY data */}
+        {myViewers.length > 0 && (
+          <div style={{ marginTop: 14 }}>
+            <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 700, color: '#49225B' }}>Can view my data</p>
+            {myViewers.map(v => (
+              <div key={v.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '8px 0' }}>
+                <span style={{ fontSize: 13, color: '#1C0B2E' }}>
+                  {v.name || v.handle || 'user'}{v.handle ? ` · @${v.handle}` : ''}
+                  <span style={{ fontSize: 11, fontWeight: 700, color: v.status === 'accepted' ? '#16a34a' : '#d97706', marginLeft: 8 }}>
+                    {v.status === 'accepted' ? 'accepted' : 'pending'}
+                  </span>
+                </span>
+                <button onClick={() => unlink(v)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: 12, fontWeight: 600 }}>Remove</button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Partners whose data I can view */}
+        {iCanView.length > 0 && (
+          <div style={{ marginTop: 14 }}>
+            <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 700, color: '#49225B' }}>Partners I can view</p>
+            {iCanView.map(p => (
+              <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '8px 0' }}>
+                <span style={{ fontSize: 13, color: '#1C0B2E' }}>
+                  {p.name || p.handle || 'user'}{p.handle ? ` · @${p.handle}` : ''}
+                </span>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {p.status === 'pending' ? (
+                    <>
+                      <button onClick={() => accept(p)} style={{ padding: '6px 12px', borderRadius: 10, border: 'none', cursor: 'pointer', background: '#6E3482', color: '#fff', fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-outfit)' }}>Accept</button>
+                      <button onClick={() => decline(p)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: 12, fontWeight: 600 }}>Decline</button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => viewPartner(p)} style={{ padding: '6px 12px', borderRadius: 10, border: '1.5px solid rgba(110,52,130,0.35)', cursor: 'pointer', background: 'rgba(110,52,130,0.1)', color: '#6E3482', fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-outfit)' }}>View</button>
+                      <button onClick={() => unlink(p)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: 12, fontWeight: 600 }}>Remove</button>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Re-setup cycle */}
