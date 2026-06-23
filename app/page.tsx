@@ -14,7 +14,8 @@ import { localDateStr, appDayKey } from '@/lib/day';
 import { useAppDay } from '@/lib/useAppDay';
 import { detectAnomalies, type Anomaly } from '@/lib/anomalies';
 import { getActiveNudge, dismissNudge, type Nudge } from '@/lib/nudges';
-import { isViewMode, getViewOwner, getViewOwnerName, getCachedAccountType, listPartners, respondInvite, type PartnerLink } from '@/lib/partners';
+import { isViewMode, getViewOwner, getViewOwnerName, isWaitingViewer, listPartners, respondInvite, type PartnerLink } from '@/lib/partners';
+import ViewerWaiting from '@/components/ViewerWaiting';
 import Hamburger from '@/components/Hamburger';
 import InfoModal from '@/components/InfoModal';
 import NotificationBell from '@/components/NotificationBell';
@@ -79,12 +80,9 @@ export default function HomePage() {
     const u = localStorage.getItem('bloom_username');
     if (u) setUsername(u);
 
-    // A viewer who isn't currently viewing a partner has no cycle of their own —
-    // send them to Profile to accept/select a partner instead of cycle onboarding.
-    if (getCachedAccountType() === 'viewer' && !getViewOwner()) {
-      router.push('/profile');
-      return;
-    }
+    // A waiting viewer (no partner accepted yet) gets the waiting screen below —
+    // don't run cycle/onboarding logic for them.
+    if (isWaitingViewer()) { setLoaded(true); return; }
 
     const cached = sanitize(loadData());
     // Redirect new users to onboarding immediately from cache
@@ -298,6 +296,8 @@ export default function HomePage() {
       setNudge(getActiveNudge(fresh, phase));
     });
   }
+
+  if (isWaitingViewer()) return <ViewerWaiting />;
 
   return (
     <div style={{ minHeight: '100dvh', padding: '0 16px' }}>

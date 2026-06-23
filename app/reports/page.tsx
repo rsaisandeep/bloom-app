@@ -7,6 +7,8 @@ import { computeInsights, type Insights, type TrendPoint } from '@/lib/insights'
 import { buildSampleData, SAMPLE_RECS } from '@/lib/sampleData';
 import type { Recommendations } from '@/lib/matcher';
 import { fetchFromSheet, sanitize } from '@/lib/data';
+import ViewerWaiting from '@/components/ViewerWaiting';
+import { isWaitingViewer, isViewMode, getViewOwner } from '@/lib/partners';
 import { appDayKey } from '@/lib/day';
 import TopBar from '@/components/TopBar';
 const LogSheet = dynamic(() => import('@/components/LogSheet'), { ssr: false });
@@ -397,7 +399,7 @@ export default function ReportsPage() {
     if (!cachedLog) {
       setHasLog(false);
       setLoading(false);
-      fetchFromSheet().then((d) => {
+      fetchFromSheet(getViewOwner() ?? undefined).then((d) => {
         setData(d);
         const p = applyPhase(d);
         const sheetLog = d.logs.find((l) => l.date === todayStr);
@@ -409,7 +411,7 @@ export default function ReportsPage() {
     // Have a local log — show spinner, fetch fresh data + recs
     setHasLog(true);
     setRecs(null);
-    fetchFromSheet().then((d) => {
+    fetchFromSheet(getViewOwner() ?? undefined).then((d) => {
       setData(d);
       const p = applyPhase(d);
       const log = d.logs.find((l) => l.date === todayStr) ?? cachedLog;
@@ -424,8 +426,10 @@ export default function ReportsPage() {
   const shownInsights = sampleMode ? sampleInsights : realInsights!;
   const recsToShow: Recommendations | null = recs ?? (sampleMode ? SAMPLE_RECS : null);
   const recsLoading = loading && hasLog;               // fetching the real, today-log-based recs
-  const showLogCta = !hasLog && !sampleMode;           // real history, but nothing logged today
+  const showLogCta = !hasLog && !sampleMode && !isViewMode(); // real history, nothing logged today (never for read-only viewers)
   const meta = PHASE_META[phase as keyof typeof PHASE_META];
+
+  if (isWaitingViewer()) return <ViewerWaiting />;
 
   if (!data) return (
     <>

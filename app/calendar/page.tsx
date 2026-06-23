@@ -6,6 +6,8 @@ import { fetchFromSheet } from "@/lib/data";
 import { localDateStr } from "@/lib/day";
 import TopBar from "@/components/TopBar";
 import LogSheet from "@/components/LogSheet";
+import ViewerWaiting from "@/components/ViewerWaiting";
+import { isWaitingViewer, isViewMode, getViewOwner } from "@/lib/partners";
 
 const PHASE_COLORS: Record<string, string> = {
   menstrual: "#fca5a5", follicular: "#c4b5fd", ovulation: "#fde68a", luteal: "#a5b4fc",
@@ -17,9 +19,9 @@ export default function CalendarPage() {
   const [logDate, setLogDate] = useState<string | null>(null);
   // Month currently shown (1st of month). Starts on the real current month.
   const [view, setView] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
-  useEffect(() => { fetchFromSheet().then(setData); }, []);
+  useEffect(() => { fetchFromSheet(getViewOwner() ?? undefined).then(setData); }, []);
   useEffect(() => {
-    function onRefresh() { fetchFromSheet().then(setData); }
+    function onRefresh() { fetchFromSheet(getViewOwner() ?? undefined).then(setData); }
     window.addEventListener('bloom:refresh', onRefresh);
     return () => window.removeEventListener('bloom:refresh', onRefresh);
   }, []);
@@ -85,6 +87,9 @@ export default function CalendarPage() {
   const monthLabel = view.toLocaleDateString("en-US", { month: "long", year: "numeric" });
   const navBtn = { width: 34, height: 34, borderRadius: 999, border: "none", cursor: "pointer", background: "rgba(165,106,189,0.15)", color: "#6E3482", fontSize: 16, fontWeight: 800, fontFamily: "var(--font-outfit)", display: "flex", alignItems: "center", justifyContent: "center" } as const;
 
+  if (isWaitingViewer()) return <ViewerWaiting />;
+  const readOnly = isViewMode();
+
   return (
     <><TopBar title="Calendar" />
     <div style={{ minHeight: "100dvh", padding: "4px 16px 24px" }}>
@@ -143,7 +148,7 @@ export default function CalendarPage() {
                 {hasLog && <div style={{ position: "absolute", bottom: 2, width: 4, height: 4, borderRadius: "50%", background: "#6E3482" }} />}
               </div>
             );
-            return isFuture
+            return isFuture || readOnly
               ? <div key={day}>{cell}</div>
               : <button key={day} onClick={() => setLogDate(cellStr)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'block', width: '100%' }}>{cell}</button>;
           })}

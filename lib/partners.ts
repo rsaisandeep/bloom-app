@@ -51,6 +51,14 @@ export function cacheAccountType(type: AccountType) {
   if (typeof window !== 'undefined') localStorage.setItem(TYPE_KEY, type);
 }
 
+export function isViewer(): boolean {
+  return getCachedAccountType() === 'viewer';
+}
+// A viewer who isn't currently viewing a partner — nothing to show yet.
+export function isWaitingViewer(): boolean {
+  return isViewer() && !isViewMode();
+}
+
 export async function setAccountType(type: AccountType) {
   cacheAccountType(type);
   const { data: { user } } = await supabase.auth.getUser();

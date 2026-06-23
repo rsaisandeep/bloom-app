@@ -15,7 +15,7 @@ import { usePushNotifications } from '@/lib/usePushNotifications';
 import {
   getMyProfile, setAccountType, setGender, listPartners, invitePartner,
   respondInvite, removeLink, setViewOwner, clearViewOwner, isViewMode, getViewOwnerName,
-  type AccountType, type PartnerLink,
+  getCachedAccountType, type AccountType, type PartnerLink,
 } from '@/lib/partners';
 
 const GENDERS = [
@@ -55,7 +55,7 @@ export default function ProfilePage() {
   const [categories, setCategories] = useState<string[]>(['log_reminder', 'period_soon', 'cycle_update']);
 
   // Partner mode
-  const [accountType, setAccountTypeState] = useState<AccountType>('tracker');
+  const [accountType, setAccountTypeState] = useState<AccountType>(() => getCachedAccountType());
   const [gender, setGenderState] = useState<string>('');
   const [myViewers, setMyViewers] = useState<PartnerLink[]>([]);
   const [iCanView, setICanView] = useState<PartnerLink[]>([]);
@@ -221,6 +221,7 @@ export default function ProfilePage() {
   }
 
   const initial = username ? username[0].toUpperCase() : '🌸';
+  const viewer = accountType === 'viewer';
 
   return (
     <><TopBar />
@@ -262,7 +263,7 @@ export default function ProfilePage() {
       </div>
 
       {/* PCOS mode toggle */}
-      <div className="glass-card" style={{ padding: '16px 18px', marginBottom: 12 }}>
+      {!viewer && <div className="glass-card" style={{ padding: '16px 18px', marginBottom: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, flex: 1 }}>
             <span style={{ fontSize: 18, marginTop: 1 }}>🩺</span>
@@ -297,10 +298,10 @@ export default function ProfilePage() {
             }}>📖 Read our PCOS guides for food & tracking tips ›</p>
           </Link>
         )}
-      </div>
+      </div>}
 
       {/* Pause tracking toggle */}
-      <div className="glass-card" style={{ padding: '16px 18px', marginBottom: 12 }}>
+      {!viewer && <div className="glass-card" style={{ padding: '16px 18px', marginBottom: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, flex: 1 }}>
             <span style={{ fontSize: 18, marginTop: 1 }}>⏸️</span>
@@ -326,10 +327,10 @@ export default function ProfilePage() {
             }} />
           </button>
         </div>
-      </div>
+      </div>}
 
       {/* Notifications */}
-      {notifStatus !== 'unsupported' && (
+      {!viewer && notifStatus !== 'unsupported' && (
         <div className="glass-card" style={{ padding: '16px 18px', marginBottom: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, flex: 1 }}>
@@ -404,7 +405,7 @@ export default function ProfilePage() {
       )}
 
       {/* Your goals */}
-      <div className="glass-card" style={{ padding: '16px 18px', marginBottom: 12 }}>
+      {!viewer && <div className="glass-card" style={{ padding: '16px 18px', marginBottom: 12 }}>
         <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 700, color: '#1C0B2E' }}>Your goals</p>
         <p style={{ margin: '0 0 12px', fontSize: 12, color: '#8A6A9A', lineHeight: 1.45 }}>
           Pick all that apply — tailors your daily tasks and what your reports emphasise.
@@ -436,7 +437,7 @@ export default function ProfilePage() {
             );
           })}
         </div>
-      </div>
+      </div>}
 
       {/* Partner mode */}
       <div className="glass-card" style={{ padding: '16px 18px', marginBottom: 12 }}>
@@ -547,7 +548,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Re-setup cycle */}
-      <Link href="/onboarding" style={{ textDecoration: 'none', display: 'block', marginBottom: 12 }}>
+      {!viewer && <Link href="/onboarding" style={{ textDecoration: 'none', display: 'block', marginBottom: 12 }}>
         <div className="glass-card" style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ fontSize: 18 }}>🗓</span>
@@ -558,10 +559,10 @@ export default function ProfilePage() {
           </div>
           <span style={{ color: '#A56ABD', fontSize: 16 }}>→</span>
         </div>
-      </Link>
+      </Link>}
 
       {/* Cycle history */}
-      {cycles.length > 0 && (
+      {!viewer && cycles.length > 0 && (
         <div className="glass-card" style={{ padding: '14px 18px', marginBottom: 12, overflow: 'visible' }}>
           <p style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 800, color: '#1C0B2E' }}>Cycle history</p>
           <div style={{ maxHeight: 320, overflowY: 'auto', overflowX: 'hidden' }}>
@@ -596,11 +597,16 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* Your data — export + doctor summary */}
+      {/* Your data — export + doctor summary. For a viewer this mirrors the
+          partner's data currently loaded (read-only). */}
       <div className="glass-card" style={{ padding: '14px 18px', marginBottom: 12 }}>
-        <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 800, color: '#1C0B2E' }}>Your data</p>
+        <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 800, color: '#1C0B2E' }}>
+          {viewer ? `${getViewOwnerName() ?? 'Partner'}’s data` : 'Your data'}
+        </p>
         <p style={{ margin: '0 0 12px', fontSize: 12, color: '#8A6A9A', lineHeight: 1.45 }}>
-          Export your logs or generate a doctor-ready cycle summary.
+          {viewer
+            ? 'Export their logs or generate a doctor-ready cycle summary.'
+            : 'Export your logs or generate a doctor-ready cycle summary.'}
         </p>
         <div style={{ display: 'flex', gap: 10 }}>
           <button onClick={() => setShowSummary(true)} style={{
@@ -614,11 +620,13 @@ export default function ProfilePage() {
             color: '#6E3482', fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-outfit)',
           }}>⬇ Export CSV</button>
         </div>
-        <button onClick={() => setShowImport(true)} style={{
-          width: '100%', marginTop: 10, padding: '12px', borderRadius: 12, cursor: 'pointer',
-          border: '1.5px dashed rgba(165,106,189,0.45)', background: 'transparent',
-          color: '#6E3482', fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-outfit)',
-        }}>⬆ Import from another app (Flo, Clue…)</button>
+        {!viewer && (
+          <button onClick={() => setShowImport(true)} style={{
+            width: '100%', marginTop: 10, padding: '12px', borderRadius: 12, cursor: 'pointer',
+            border: '1.5px dashed rgba(165,106,189,0.45)', background: 'transparent',
+            color: '#6E3482', fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-outfit)',
+          }}>⬆ Import from another app (Flo, Clue…)</button>
+        )}
       </div>
 
       {/* App info */}

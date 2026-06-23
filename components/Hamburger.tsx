@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import PeriodStartModal from '@/components/PeriodStartModal';
 import { useInstall } from '@/lib/useInstall';
+import { isViewer } from '@/lib/partners';
 const LogSheet = dynamic(() => import('@/components/LogSheet'), { ssr: false });
 
 export default function Hamburger({ username }: { username: string }) {
@@ -13,10 +14,12 @@ export default function Hamburger({ username }: { username: string }) {
   const [showLog, setShowLog] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [readVisited, setReadVisited] = useState(true); // true = no badge (safe default before hydration)
+  const [viewer, setViewer] = useState(false); // viewers don't track — hide the Track section
   const { canInstall, isIos, isIosSafari, installable, promptInstall } = useInstall();
   useEffect(() => {
     setMounted(true);
     setReadVisited(sessionStorage.getItem('bloom_read_visited') === 'true');
+    setViewer(isViewer());
   }, []);
 
   // Lock background scroll while the drawer is open
@@ -131,7 +134,7 @@ export default function Hamburger({ username }: { username: string }) {
               </div>
 
               {/* TRACK */}
-              <div>
+              {!viewer && <div>
                 <p style={sectionHdr}>Track</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <PeriodStartModal variant="menu" onDone={() => setOpen(false)} />
@@ -146,7 +149,7 @@ export default function Hamburger({ username }: { username: string }) {
                     </div>
                   </button>
                 </div>
-              </div>
+              </div>}
 
               {/* LEARN */}
               <div>
