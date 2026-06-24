@@ -169,6 +169,10 @@ export default function HomePage() {
   const paused = isPaused(data);
   const lateInfo = hasCycles ? getLateInfo(data) : null;
   const showPeriodEnd = phase === 'menstrual' && !paused; // show throughout menstrual phase so user can set/update end date
+  // Late-luteal "due soon" window: in luteal day 25+ but the period isn't
+  // overdue yet. Covered by the same prompt banner as `lateInfo` (which only
+  // fires once past the predicted date) so an early start still has a CTA.
+  const dueSoon = phase === 'luteal' && dayOfCycle >= 25 && !paused && !lateInfo;
   const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   const meta = PHASE_META[phase];
 
@@ -556,30 +560,34 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* ── Late-period reminder ── */}
-      {lateInfo && !viewMode && (
+      {/* ── Period-due / late reminder (one banner, both states) ── */}
+      {(lateInfo || dueSoon) && !viewMode && (
         <div className="glass-card anim-float shimmer-host" style={{
           padding: '14px 16px', marginBottom: 14,
           display: 'flex', alignItems: 'center', gap: 12,
-          background: 'linear-gradient(135deg, rgba(220,38,38,0.14), rgba(157,23,77,0.08))',
-          borderColor: 'rgba(220,38,38,0.35)',
+          background: lateInfo
+            ? 'linear-gradient(135deg, rgba(220,38,38,0.14), rgba(157,23,77,0.08))'
+            : 'linear-gradient(135deg, rgba(165,106,189,0.16), rgba(110,52,130,0.08))',
+          borderColor: lateInfo ? 'rgba(220,38,38,0.35)' : 'rgba(165,106,189,0.40)',
         }}>
           <div style={{
             width: 40, height: 40, borderRadius: 14, flexShrink: 0,
-            background: 'linear-gradient(135deg,#dc2626,#9d174d)',
+            background: lateInfo ? 'linear-gradient(135deg,#dc2626,#9d174d)' : 'linear-gradient(135deg,#6E3482,#A56ABD)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
-            boxShadow: '0 6px 16px rgba(220,38,38,0.3)',
+            boxShadow: lateInfo ? '0 6px 16px rgba(220,38,38,0.3)' : '0 6px 16px rgba(110,52,130,0.3)',
           }}>🩸</div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#1C0B2E' }}>
-              Period {lateInfo.daysLate} {lateInfo.daysLate === 1 ? 'day' : 'days'} late
+              {lateInfo
+                ? `Period ${lateInfo.daysLate} ${lateInfo.daysLate === 1 ? 'day' : 'days'} late`
+                : 'Period due soon'}
             </p>
-            <p style={{ margin: '2px 0 0', fontSize: 12, color: '#9d174d', lineHeight: 1.4 }}>
-              {lateInfo.suggestPause
+            <p style={{ margin: '2px 0 0', fontSize: 12, color: lateInfo ? '#9d174d' : '#6E3482', lineHeight: 1.4 }}>
+              {lateInfo?.suggestPause
                 ? 'Very overdue. Pause tracking if pregnant or on a break.'
                 : pcosMode ? 'Normal with PCOS — log it once it starts.' : 'Tap when it starts so predictions stay accurate.'}
             </p>
-            {lateInfo.suggestPause && (
+            {lateInfo?.suggestPause && (
               <button onClick={() => { setPaused(true); refresh(); }} style={{
                 marginTop: 6, background: 'rgba(217,119,6,0.14)', border: 'none', borderRadius: 999,
                 padding: '5px 12px', fontSize: 11, fontWeight: 800, color: '#b45309', cursor: 'pointer',
