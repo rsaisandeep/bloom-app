@@ -588,7 +588,9 @@ export default function HomePage() {
             <p style={{ margin: '2px 0 0', fontSize: 12, color: lateInfo ? '#9d174d' : '#6E3482', lineHeight: 1.4 }}>
               {lateInfo?.suggestPause
                 ? 'Very overdue. Pause tracking if pregnant or on a break.'
-                : pcosMode ? 'Normal with PCOS — log it once it starts.' : 'Tap when it starts so predictions stay accurate.'}
+                : pcosMode ? 'Normal with PCOS — log it once it starts.'
+                : lateInfo ? 'Tap when it starts so predictions stay accurate.'
+                : 'Watch for PMS symptoms — tap when it starts so predictions stay accurate.'}
             </p>
             {lateInfo?.suggestPause && (
               <button onClick={() => { setPaused(true); refresh(); }} style={{
