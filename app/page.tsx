@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import {
   loadData, emptyData, getCurrentPhase, getPredictions, getPredictionWindow, getAverageCycleLength,
   getAveragePeriodLength, needsPeriodEnd,
-  getLateInfo, isPaused, setPaused, PHASE_META, carryForward, type Phase, type BloomData,
+  getLateInfo, isPaused, setPaused, PHASE_META, carryForward, hasGoal, type Phase, type BloomData,
 } from '@/lib/cycle';
 import { getActionItems, getActionGroups } from '@/lib/actions';
 import { fetchFromSheet, sanitize } from '@/lib/data';
@@ -21,6 +21,7 @@ import Hamburger from '@/components/Hamburger';
 import InfoModal from '@/components/InfoModal';
 import LogoutButton from '@/components/LogoutButton';
 import PeriodStartModal from '@/components/PeriodStartModal';
+import PartnerTasks from '@/components/PartnerTasks';
 const LogSheet = dynamic(() => import('@/components/LogSheet'), { ssr: false });
 import BloomMascot from '@/components/BloomMascot';
 import AnimatedNumber from '@/components/AnimatedNumber';
@@ -291,6 +292,9 @@ export default function HomePage() {
   }
 
   const viewMode = isViewMode();
+  // Trying-to-conceive partner tasks. In view mode `data` is the partner's, so
+  // this reflects the tracker's goal either way.
+  const wantsConceive = hasGoal(data.settings, 'conceive');
 
   // Pending partner invites — surfaced as a banner so the invitee can act here.
   function loadInvites() {
@@ -548,6 +552,9 @@ export default function HomePage() {
         </div>
       )}
 
+      {/* ── Partner support tasks (trying to conceive) ── */}
+      {viewMode && wantsConceive && <PartnerTasks mode="viewer" todayKey={todayKey} />}
+
       {/* ── Period end / Period started prompts ── */}
       {showPeriodEnd && !viewMode && <div className="anim-float" style={{ marginBottom: 14 }}><PeriodStartModal variant="card" label="Log period end" onDone={refresh} /></div>}
       {/* ── Phase 3A: period end auto-fill banner ── */}
@@ -717,6 +724,9 @@ export default function HomePage() {
       )}
 
       <LogSheet open={showLog} onClose={() => setShowLog(false)} onSaved={refresh} />
+
+      {/* ── Partner's support tasks (tracker sees what their partner ticked) ── */}
+      {!viewMode && wantsConceive && <PartnerTasks mode="tracker" todayKey={todayKey} />}
 
       {/* ── Today's focus — checkable reminders ── */}
       {!paused && (<>
