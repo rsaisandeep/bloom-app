@@ -169,7 +169,6 @@ export default function HomePage() {
   const paused = isPaused(data);
   const lateInfo = hasCycles ? getLateInfo(data) : null;
   const showPeriodEnd = phase === 'menstrual' && !paused; // show throughout menstrual phase so user can set/update end date
-  const showPeriodStart = phase === 'luteal' && dayOfCycle >= 25 && !paused;
   const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   const meta = PHASE_META[phase];
 
@@ -556,7 +555,6 @@ export default function HomePage() {
           />
         </div>
       )}
-      {showPeriodStart && !viewMode && <div className="anim-float" style={{ marginBottom: 14 }}><PeriodStartModal variant="card" label="Period started?" onDone={refresh} /></div>}
 
       {/* ── Late-period reminder ── */}
       {lateInfo && !viewMode && (
