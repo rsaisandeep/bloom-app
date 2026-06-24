@@ -26,9 +26,8 @@ import BloomMascot from '@/components/BloomMascot';
 import AnimatedNumber from '@/components/AnimatedNumber';
 import { motion } from 'motion/react';
 
-type NotifType = 'late_period' | 'long_cycle' | 'fertile_window' | 'pms_incoming' | 'luteal_halfway' | 'logging_streak' | 'evening_refine';
+type NotifType = 'long_cycle' | 'fertile_window' | 'pms_incoming' | 'luteal_halfway' | 'logging_streak' | 'evening_refine';
 const NOTIF_META: Record<NotifType, { title: string; icon: string; bg: string; border: string; iconBg: string; textColor: string }> = {
-  late_period:    { title: 'Period might be late',  icon: '📅', bg: 'linear-gradient(135deg,rgba(220,38,38,0.12),rgba(157,23,77,0.07))',    border: 'rgba(220,38,38,0.30)',   iconBg: 'linear-gradient(135deg,#dc2626,#9d174d)', textColor: '#9d174d' },
   long_cycle:     { title: 'Cycle running long',    icon: '⏳', bg: 'linear-gradient(135deg,rgba(245,158,11,0.14),rgba(217,119,6,0.08))',   border: 'rgba(245,158,11,0.40)',  iconBg: 'linear-gradient(135deg,#f59e0b,#d97706)', textColor: '#b45309' },
   fertile_window: { title: 'Fertile window open',   icon: '🌸', bg: 'linear-gradient(135deg,rgba(251,191,36,0.14),rgba(165,106,189,0.08))', border: 'rgba(251,191,36,0.40)',  iconBg: 'linear-gradient(135deg,#fbbf24,#f59e0b)', textColor: '#92400e' },
   pms_incoming:   { title: 'PMS watch',             icon: '🌧️', bg: 'linear-gradient(135deg,rgba(99,102,241,0.12),rgba(79,70,229,0.07))',  border: 'rgba(99,102,241,0.30)',  iconBg: 'linear-gradient(135deg,#818cf8,#6366f1)', textColor: '#4338ca' },
@@ -197,7 +196,9 @@ export default function HomePage() {
     const MS_DAY = 86400000;
     const candidates: { type: NotifType; message: string }[] = [];
 
-    if (dayOfCycle > 40 && phase !== 'menstrual')
+    // Skip when the period-late banner is already on screen — it's the canonical
+    // "your cycle is overdue" prompt, so this would just double up.
+    if (dayOfCycle > 40 && phase !== 'menstrual' && !lateInfo)
       candidates.push({ type: 'long_cycle', message: 'Cycle running long (40+ days). Consider logging or checking in with a doctor.' });
 
     if (predictions && phase === 'ovulation') {
@@ -208,7 +209,9 @@ export default function HomePage() {
         candidates.push({ type: 'fertile_window', message: "You're in your fertile window today." });
     }
 
-    if (predictions && predictions.daysUntilPeriod === 3)
+    // Suppressed while the "Period due soon" banner is up (same day-25+ window),
+    // which already carries the timing + a log-it-started CTA.
+    if (predictions && predictions.daysUntilPeriod === 3 && !dueSoon)
       candidates.push({ type: 'pms_incoming', message: 'Period likely in 3 days — watch for PMS symptoms.' });
 
     if (predictions && phase === 'luteal') {
@@ -230,7 +233,7 @@ export default function HomePage() {
     if (todayLog && new Date().getHours() >= 17)
       candidates.push({ type: 'evening_refine', message: 'How did today actually go? Tap your check-in to refine it.' });
 
-    const priority: NotifType[] = ['late_period', 'long_cycle', 'fertile_window', 'pms_incoming', 'luteal_halfway', 'logging_streak', 'evening_refine'];
+    const priority: NotifType[] = ['long_cycle', 'fertile_window', 'pms_incoming', 'luteal_halfway', 'logging_streak', 'evening_refine'];
     for (const t of priority) {
       const c = candidates.find(x => x.type === t);
       if (c && !dismissedNotifs.has(t)) return c;
