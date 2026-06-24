@@ -40,9 +40,11 @@ export default function InfoModal() {
   const youLog = ['Period start & end', 'Flow & cramps', 'Mood & energy', 'BBT & cervical mucus', 'Sleep & cravings', 'Symptoms & ovulation'];
   const youGet = [
     { icon: '🌅', t: 'Morning & evening check-ins',  s: 'Phase-aware fields shown at the right time of day' },
-    { icon: '🌙', t: 'Your phase & cycle day',       s: 'Adapts to your real period & cycle length' },
+    { icon: '🌙', t: 'Your phase & cycle day',       s: 'Adapts to your real period & cycle length — the app even themes to your phase' },
     { icon: '🗓', t: 'Period & fertile predictions',  s: 'A date range in PCOS mode too' },
-    { icon: '📊', t: 'Personalised recommendations', s: 'Structured food, movement & self-care cards per phase' },
+    { icon: '✅', t: 'Today’s focus tasks',           s: 'Food, movement & self-care tuned to your phase and goals' },
+    { icon: '📊', t: 'Reports & recommendations',    s: 'Your patterns, trends and per-phase guidance' },
+    { icon: '👀', t: 'Partner mode',                 s: 'Share a read-only view with your partner — and conceive support tasks they can tick off' },
     { icon: '📖', t: 'Curated article library',      s: 'Guides on phases, conditions, fertility & more' },
   ];
 

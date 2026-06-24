@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { spring } from '@/lib/motion';
 import { useRouter } from 'next/navigation';
 import PeriodStartModal from '@/components/PeriodStartModal';
+import ChangelogSheet from '@/components/ChangelogSheet';
 import { useInstall } from '@/lib/useInstall';
 import { isViewer } from '@/lib/partners';
 const LogSheet = dynamic(() => import('@/components/LogSheet'), { ssr: false });
@@ -14,6 +15,7 @@ export default function Hamburger({ username }: { username: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [showLog, setShowLog] = useState(false);
+  const [showChangelog, setShowChangelog] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [readVisited, setReadVisited] = useState(true); // true = no badge (safe default before hydration)
   const [viewer, setViewer] = useState(false); // viewers don't track — hide the Track section
@@ -192,6 +194,16 @@ export default function Hamburger({ username }: { username: string }) {
                       </div>
                     </button>
                   ))}
+                  <button onClick={() => { setOpen(false); setShowChangelog(true); }} className="liquid-pill" style={{
+                    display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left',
+                    padding: '13px 16px', borderRadius: 18, cursor: 'pointer', fontFamily: 'var(--font-outfit)',
+                  }}>
+                    <span style={{ fontSize: 20 }}>✨</span>
+                    <div>
+                      <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#1C0B2E' }}>What&apos;s new</p>
+                      <p style={{ margin: '1px 0 0', fontSize: 11, color: '#8A6A9A' }}>Latest features & updates</p>
+                    </div>
+                  </button>
                 </div>
               </div>
 
@@ -212,6 +224,7 @@ export default function Hamburger({ username }: { username: string }) {
       )}
 
       <LogSheet open={showLog} onClose={() => setShowLog(false)} />
+      <ChangelogSheet open={showChangelog} onClose={() => setShowChangelog(false)} />
     </>
   );
 }
