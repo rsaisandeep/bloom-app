@@ -11,6 +11,9 @@ import ViewerWaiting from '@/components/ViewerWaiting';
 import { isWaitingViewer, isViewMode, getViewOwner } from '@/lib/partners';
 import { appDayKey } from '@/lib/day';
 import TopBar from '@/components/TopBar';
+import { AnimatePresence, motion } from 'motion/react';
+import { createPortal } from 'react-dom';
+import { spring } from '@/lib/motion';
 const LogSheet = dynamic(() => import('@/components/LogSheet'), { ssr: false });
 import AnimatedNumber from '@/components/AnimatedNumber';
 
@@ -352,6 +355,7 @@ export default function ReportsPage() {
   const [hasLog, setHasLog] = useState(false);
   const [showLog, setShowLog] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [openRec, setOpenRec] = useState<string | null>(null);
   useEffect(() => {
     function onRefresh() { setRefreshKey(k => k + 1); }
     window.addEventListener('bloom:refresh', onRefresh);
@@ -511,16 +515,77 @@ export default function ReportsPage() {
               {REC_CARDS.map(({ key, emoji, label, tint, border, color }) => {
                 const d = recsToShow[key as keyof Recommendations] as { text: string; science: string };
                 return (
-                  <div key={key} className="glass-card" style={{ background: tint, borderColor: border, padding: '14px 16px' }}>
-                    <p style={{ margin: '0 0 6px', fontSize: 10, fontWeight: 800, letterSpacing: 0.6, color, textTransform: 'uppercase' }}>
+                  <motion.div
+                    key={key}
+                    layoutId={`rec-${key}`}
+                    onClick={() => setOpenRec(key)}
+                    className="glass-card"
+                    style={{ background: tint, borderColor: border, padding: '14px 16px', cursor: 'pointer' }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <motion.p layout="position" style={{ margin: '0 0 6px', fontSize: 10, fontWeight: 800, letterSpacing: 0.6, color, textTransform: 'uppercase' }}>
                       {emoji} {label}
-                    </p>
-                    <p style={{ margin: '0 0 8px', fontSize: 14.5, fontWeight: 800, color: '#1C0B2E', lineHeight: 1.5 }}>{d.text}</p>
-                    <p style={{ margin: 0, fontSize: 12, color: '#6E3482', lineHeight: 1.55, fontStyle: 'italic' }}>{d.science}</p>
-                  </div>
+                    </motion.p>
+                    <motion.p layout="position" style={{ margin: '0 0 8px', fontSize: 14.5, fontWeight: 800, color: '#1C0B2E', lineHeight: 1.5 }}>{d.text}</motion.p>
+                    <motion.p layout="position" style={{ margin: 0, fontSize: 12, color: '#6E3482', lineHeight: 1.55, fontStyle: 'italic' }}>{d.science}</motion.p>
+                  </motion.div>
                 );
               })}
             </div>
+
+            {/* Card → detail zoom: the tapped card morphs into a centered sheet
+                via the shared layoutId, iOS context-menu style. Portalled to
+                body so it escapes the page's stacking context (otherwise the
+                fixed bottom nav paints over the dimmed backdrop). */}
+            {typeof document !== 'undefined' && createPortal(
+            <AnimatePresence>
+              {openRec && (() => {
+                const card = REC_CARDS.find((c) => c.key === openRec)!;
+                const d = recsToShow[openRec as keyof Recommendations] as { text: string; science: string };
+                return (
+                  <motion.div
+                    onClick={() => setOpenRec(null)}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    style={{
+                      position: 'fixed', inset: 0, zIndex: 600, display: 'flex',
+                      alignItems: 'center', justifyContent: 'center', padding: 20,
+                      background: 'rgba(28,11,46,0.45)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
+                    }}
+                  >
+                    <motion.div
+                      layoutId={`rec-${openRec}`}
+                      onClick={(e) => e.stopPropagation()}
+                      transition={spring}
+                      className="glass-card"
+                      style={{
+                        background: card.tint, borderColor: card.border, padding: '24px 22px',
+                        width: '100%', maxWidth: 420, borderRadius: 28,
+                        boxShadow: '0 24px 70px rgba(28,11,46,0.4)',
+                      }}
+                    >
+                      <motion.p layout="position" style={{ margin: '0 0 10px', fontSize: 12, fontWeight: 800, letterSpacing: 0.6, color: card.color, textTransform: 'uppercase' }}>
+                        {card.emoji} {card.label}
+                      </motion.p>
+                      <motion.p layout="position" style={{ margin: '0 0 14px', fontSize: 19, fontWeight: 800, color: '#1C0B2E', lineHeight: 1.45 }}>{d.text}</motion.p>
+                      <motion.p layout="position" style={{ margin: 0, fontSize: 14, color: '#6E3482', lineHeight: 1.6, fontStyle: 'italic' }}>{d.science}</motion.p>
+                      <motion.button
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
+                        onClick={() => setOpenRec(null)}
+                        style={{
+                          marginTop: 20, width: '100%', padding: '12px', borderRadius: 14, border: 'none',
+                          background: 'rgba(110,52,130,0.12)', color: '#6E3482', fontSize: 14, fontWeight: 800,
+                          cursor: 'pointer', fontFamily: 'var(--font-outfit)',
+                        }}
+                      >Close</motion.button>
+                    </motion.div>
+                  </motion.div>
+                );
+              })()}
+            </AnimatePresence>,
+            document.body)}
           </>
         )}
 

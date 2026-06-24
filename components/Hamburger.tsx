@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { createPortal } from 'react-dom';
+import { AnimatePresence, motion } from 'motion/react';
+import { spring } from '@/lib/motion';
 import { useRouter } from 'next/navigation';
 import PeriodStartModal from '@/components/PeriodStartModal';
 import { useInstall } from '@/lib/useInstall';
@@ -63,22 +65,34 @@ export default function Hamburger({ username }: { username: string }) {
       </button>
 
       {/* Overlay — portalled to document.body to escape TopBar's stacking context */}
-      {open && mounted && createPortal(
-        <div onClick={() => setOpen(false)} style={{
+      {mounted && createPortal(
+        <AnimatePresence>
+        {open && (
+        <motion.div
+          onClick={() => setOpen(false)}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          style={{
           position: 'fixed', inset: 0, zIndex: 500,
           background: 'rgba(28,11,46,0.34)',
           backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
-          animation: 'rise .2s ease both',
         }}>
           {/* Panel */}
-          <div onClick={(e) => e.stopPropagation()} style={{
+          <motion.div
+            onClick={(e) => e.stopPropagation()}
+            initial={{ x: '-100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '-100%' }}
+            transition={spring}
+            style={{
             position: 'absolute', top: 0, left: 0, bottom: 0, width: '72%', maxWidth: 300,
             background: 'rgba(255,255,255,0.72)',
             backdropFilter: 'blur(40px) saturate(180%)', WebkitBackdropFilter: 'blur(40px) saturate(180%)',
             borderRight: '1px solid rgba(255,255,255,0.8)',
             boxShadow: '8px 0 48px rgba(110,52,130,0.22)',
             padding: '28px 20px', display: 'flex', flexDirection: 'column',
-            animation: 'slideIn .32s cubic-bezier(.22,.8,.3,1) both',
           }}>
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
@@ -190,8 +204,10 @@ export default function Hamburger({ username }: { username: string }) {
                 </div>
               </div>
             </div>
-          </div>
-        </div>,
+          </motion.div>
+        </motion.div>
+        )}
+        </AnimatePresence>,
         document.body
       )}
 

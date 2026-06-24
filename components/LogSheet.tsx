@@ -295,19 +295,30 @@ export default function LogSheet({ open, onClose, onSaved, date: dateProp }: Log
             </div>
           </div>
 
-          {/* Tabs */}
+          {/* Tabs — active underline springs between tabs via shared layoutId. */}
           <div style={{ display: 'flex', borderBottom: '1px solid rgba(165,106,189,0.15)', padding: '0 8px' }}>
-            {TABS.map((t) => (
+            {TABS.map((t) => {
+              const on = tab === t.id;
+              return (
               <button key={t.id} onClick={() => { setTab(t.id); setShowMore(false); }} style={{
-                flex: 1, padding: '9px 4px 8px', border: 'none', cursor: 'pointer',
+                position: 'relative', flex: 1, padding: '9px 4px 10px', border: 'none', cursor: 'pointer',
                 fontFamily: 'inherit', fontSize: '.8rem', fontWeight: 800, background: 'transparent',
-                color: tab === t.id ? pc.color : '#8A6A9A',
-                borderBottom: tab === t.id ? `2.5px solid ${pc.color}` : '2.5px solid transparent',
-                transition: 'all .2s', marginBottom: -1,
+                color: on ? pc.color : '#8A6A9A', transition: 'color .2s', marginBottom: -1,
               }}>
                 {t.emoji} {t.label}
+                {on && (
+                  <motion.div
+                    layoutId="logtab-underline"
+                    transition={{ type: 'spring', stiffness: 500, damping: 34, mass: 0.6 }}
+                    style={{
+                      position: 'absolute', bottom: 0, left: 6, right: 6, height: 2.5,
+                      borderRadius: 2, background: pc.color,
+                    }}
+                  />
+                )}
               </button>
-            ))}
+              );
+            })}
           </div>
         </div>
 
